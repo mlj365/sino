@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>经销商管理</title>
+    <script type="text/javascript" src="../../js/jquery1.8.min.js"></script>
+    <script type="text/javascript" src="../../js/echarts.min.js"></script>
+    <script type="text/javascript" src="../../js/random.js"></script>
+    <style>
+        .halfleftbottom {
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 58%;
+            height: 42%;
+            left: 0;
+            bottom: 0;
+            padding: 5px;
+        }
+        .halfrightbottom{
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 38%;
+            height: 42%;
+            right: 0;
+            bottom: 0;
+            padding: 5px;
+        }
+        .halflefttop{
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 58%;
+            height: 48%;
+            left: 0;
+            top: 0;
+            padding: 5px;
+        }
+        .halfrighttop{
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 38%;
+            height: 48%;
+            right: 0;
+            top: 0;
+            padding: 5px;
+        }
+        .details-bottom {
+			position: absolute;
+			top: 5%;
+			right: 5%;
+			line-height: 30px;
+			border-bottom: 1px solid #a5e0ff;
+			font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+			font-size: 16px;
+			color: #a5e0ff;
+			font-style: italic;
+			cursor: pointer;
+		}
+		.details-bottom :HOVER {
+			color: #138bca;
+			border-bottom: 1px solid #138bca;
+		}
+    </style>
+</head>
+
+<script>
+    // Generate data
+    var distributordata = ['江苏美安医药股份有限公司', '大连金诺利尔医疗器械有限公司', '北京乐章商贸有限公司', '哈尔滨斯迪沃医疗器械经销有限公司', '贵州昕烨医疗器械有限公司', '黑龙江博士利医疗器械有限责任公司'];
+    var accountdata = [6.23,6.99,7.54,7.97,8.07,11.36];
+    var inventorydata  = [15,42,5,2,2,34];
+    inventorydata.sort(function (a, b) {
+        return a - b;
+    });
+    accountdata.sort(function (a, b) {
+        return a - b;
+    });
+    var lineData = [];
+    var barData1 = [7062.98, 5162.85, 7077.31, 8128.29, 8160.30, 7069.38, 9369.64, 8197.22, 9915.02, 7328.66, 8911.29, 12208.91];
+    var barData2 = [-7646.61, -3676.97, -3676.97, -7102.17, -7861.35, -8374.55, -7696.98, -7798.31, -7653.95, -8287.94, -7514.01, -9116.28, -8998.56];
+    var barData3 = [-739460.7, -295983.65, -923090.2, -1713525.6, -2497963, -2796791.8, -5957490.59, -6293550.32, -6471681.16, -6782499.6, -7086835.34, -4181327.76];                        
+    var barData4 = [729160.7, 294883.65, 913070.2, 1913125.6, 2487933, 2696701.8, 5959480.59, 6283450.32, 6491671.16, 6792399.6, 7096735.34, 4171127.76]; 
+	var category = [];               
+    for (var i = 1; i <= 12; i++) {
+
+        category.push(i + '月');
+        // if (i<=10&&i>=1){
+        //     category.push(i);
+        // }
+        //var b = Math.random() * 200;
+       // var d = Math.random() * (-200);
+       var c = (Math.random() - 0.4) * (100);
+        //barData1.push(b);
+       // barData2.push(d);
+        lineData.push(c);
+    }
+
+    var compareoption = {
+        title: {
+            text: '经销商月度进销对比',
+            textStyle:{
+                color:'#222',
+
+            },
+            left:'5%'
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow',
+                label: {
+                    show: true,
+                    backgroundColor: '#333'
+                }
+            }
+        },
+        legend: {
+            data: ['SellIn','SellOut'],
+            textStyle: {
+                color: '#222'
+            }
+        },
+        grid:{
+        	containLabel: true,
+             bottom:'0',
+             left:10,
+             right:10
+        },
+        xAxis: {
+            type: 'category',
+            data: category,
+            axisTick: {
+                alignWithLabel: true
+            },
+
+            splitLine: {
+                show: false,
+
+            },
+            axisLabel:{
+                //fontWeight:10,
+                //interval:2,
+                fontsize:2,
+                align:'center',
+                color:'rgba(0,0,0,0.3)'
+            }
+        },
+        yAxis: [{
+            type: 'value',
+            splitLine: {
+                show: true,
+                lineStyle:{
+                    color:'rgba(0,0,0,0.2)'
+                }
+            },
+            axisLine:{
+                show:false
+            },
+            axisLabel:{
+
+                fontWeight:10,
+                fontsize:5,
+                color:'rgba(0,0,0,0.3)'
+            }
+
+        }],
+       toolbox: {        show: true,        feature: {            saveAsImage: {}        }    },series: [{
+            name: 'SellIn',
+            type: 'bar',
+            stack: '总量',
+            barWidth: 10,
+            itemStyle: {
+                normal: {
+                    barBorderRadius: 50,
+                    color: new echarts.graphic.LinearGradient(
+                        0, 0, 0, 1,
+                        [
+                            {offset: 0, color: '#BC34BC'},
+                            {offset: 1, color: '#7F3594'}
+                        ]
+                    )
+                }
+            },
+            data: barData1
+        },{
+            name: 'SellOut',
+            type: 'bar',
+            stack: '总量',
+            barWidth: 10,
+            itemStyle: {
+                normal: {
+                    barBorderRadius: 50,
+                    color: new echarts.graphic.LinearGradient(
+                        0, 0, 0, 1,
+                        [
+                            {offset: 0, color: '#4740C8'},
+                            {offset: 1, color: '#EF71FF'}
+                        ]
+                    )
+                }
+            },
+            data: barData2
+        }]
+    };
+
+    var inventoryoption = {
+        title: {
+            text: '经销商月度库存实际/预计对比',
+            textStyle:{
+                color:'#222',
+
+            },
+            left:'2%'
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow',
+                label: {
+                    show: true,
+                    backgroundColor: '#333'
+                }
+            }
+        },
+        grid:{
+        	containLabel: true,
+             bottom:'0',
+             left:10,
+             right:10
+        },
+        legend: {
+        	right:'10%',
+            data: ['预计库存','实际库存','差异比'],
+            textStyle: {
+                color: '#222'
+            }
+        },
+        xAxis: {
+            type: 'category',
+            data: category,
+            axisTick: {
+                alignWithLabel: true
+            },
+            splitLine: {
+                show: false,
+
+            },
+            axisLabel:{
+                //fontWeight:10,
+                //interval:2,
+                fontsize:2,
+                align:'center',
+                color:'rgba(0,0,0,0.3)'
+            }
+        },
+        yAxis: [{
+            type: 'value',
+            splitLine: {
+                show: true,
+                lineStyle:{
+                    color:'rgba(0,0,0,0.2)'
+                }
+            },
+            max: function(value) {
+	            if(Math.abs(value.max) > Math.abs(value.min)){
+	                return (Math.abs(value.max)*1.2).toFixed(2);
+	            }else{
+	                return (Math.abs(value.min)*1.2).toFixed(2);
+	            }
+	        },
+	        min: function(value) {
+	            if(Math.abs(value.max) > Math.abs(value.min)){
+	                return (-Math.abs(value.max) * 1.2).toFixed(2);
+	            }else{
+	                return (-Math.abs(value.min) * 1.2).toFixed(2);
+	            }
+	        },
+
+            axisLine:{
+                show:false
+            },
+            axisLabel:{
+
+                fontWeight:10,
+                fontsize:5,
+                color:'rgba(0,0,0,0.3)'
+            }
+
+        },
+        {
+            type: 'value',
+            max: function(value) {
+	            if(Math.abs(value.max) > Math.abs(value.min)){
+	                return (Math.abs(value.max)*1.2).toFixed(2);
+	            }else{
+	                return (Math.abs(value.min)*1.2).toFixed(2);
+	            }
+	        },
+	        min: function(value) {
+	            if(Math.abs(value.max) > Math.abs(value.min)){
+	                return (-Math.abs(value.max) * 1.2).toFixed(2);
+	            }else{
+	                return (-Math.abs(value.min) * 1.2).toFixed(2);
+	            }
+	        },
+            splitLine: {
+                show: false,
+                lineStyle:{
+                    color:'rgba(0,0,0,0.2)'
+                }
+            },
+            axisLine:{
+                show:false
+            },
+            axisLabel:{
+
+                fontWeight:10,
+                fontsize:5,
+                color:'rgba(0,0,0,0.3)'
+            }
+
+        }],
+       /*toolbox: {        show: true,        feature: {  myDownload: {
+                   show: true,
+                   title: '数据导出',
+                   icon: 'image://http://localhost:8080/smbi/image/excel.svg',
+                   onclick: function (){
+                       alert('暂不支持');
+                   }
+               },          saveAsImage: {}        }    },*/
+
+        series: [{
+            name: '预计库存',
+            type: 'bar',
+            stack: '总量',
+            barWidth: 10,
+            itemStyle: {
+                normal: {
+                    barBorderRadius: 50,
+                    color: new echarts.graphic.LinearGradient(
+                        0, 0, 0, 1,
+                        [
+                            {offset: 0, color: '#00a2ff'},
+                            {offset: 1, color: '#70ffac'}
+                        ]
+                    )
+                }
+            },
+            data: barData3
+        },{
+            name: '实际库存',
+            type: 'bar',
+            stack: '总量',
+            barWidth: 10,
+            itemStyle: {
+                normal: {
+                    barBorderRadius: 50,
+                    color: new echarts.graphic.LinearGradient(
+                        0, 0, 0, 1,
+                        [
+                            {offset: 0, color: '#70ff'},
+                            {offset: 1, color: '#EF71FF'}
+                        ]
+                    )
+                }
+            },
+            data: barData4
+        },
+            {
+                name: '差异比',
+                type: 'line',
+				yAxisIndex:1,
+                barWidth: 10,
+                itemStyle: {
+                    normal: {
+                        barBorderRadius: 50,
+                        color: new echarts.graphic.LinearGradient(
+                            0, 0, 0, 1,
+                            [
+                                {offset: 0, color: '#70ff'},
+                                {offset: 1, color: '#EF71FF'}
+                            ]
+                        )
+                    }
+                },
+                data: lineData
+            }]
+    };
+
+
+    var accountOption = {
+        title:{
+            text:'top经销商账期(月)',
+            left:'left',
+            textStyle:{
+                color:'#222'
+            }
+        },
+
+        grid: {
+            containLabel: true,
+            bottom:'0',
+            right:'5%'
+        },
+
+        tooltip: {
+            show: "true",
+            trigger: 'axis',
+            axisPointer: { // 坐标轴指示器，坐标轴触发有效
+                type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+            }
+        },
+        xAxis: {
+            type: 'value',
+            axisTick: {
+                show: true
+            },
+            axisLine: {
+                show: true,
+                lineStyle: {
+                    color: '#222',
+                }
+            },
+            splitLine: {
+                show: true
+            },
+        },
+        yAxis: [{
+            type: 'category',
+            axisTick: {
+                show: false
+            },
+            axisLine: {
+                show: true,
+                lineStyle: {
+                    color: '#222',
+                }
+            },data: distributordata
+        }
+
+        ],
+       /*toolbox: {        show: true,        feature: {   myDownload: {
+                   show: true,
+                   title: '数据导出',
+                   icon: 'image://http://localhost:8080/smbi/image/excel.svg',
+                   onclick: function (){
+                       alert('暂不支持');
+                   }
+               },         saveAsImage: {}        }    },*/
+
+        series: [{
+            name: '账期',
+            type: 'bar',
+
+            itemStyle: {
+                normal: {
+                    show: true,
+                    color: '#277ace',
+                    barBorderRadius: 50,
+                    borderWidth: 0,
+                    borderColor: '#333',
+                }
+            },
+            barGap: '0%',
+            barCategoryGap: '50%',
+            data:accountdata
+        }]
+
+    };
+
+    var inventorysOption = {
+        title:{
+            text:'top经销商库存天数',
+            left:'left',
+            textStyle:{
+                color:'#222'
+            }
+        },
+
+        grid: {
+            containLabel: true,
+             bottom:'0',
+             right:'5%'
+        },
+
+        tooltip: {
+            show: "true",
+            trigger: 'axis',
+            axisPointer: { // 坐标轴指示器，坐标轴触发有效
+                type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+            }
+        },
+        xAxis: {
+            type: 'value',
+            axisTick: {
+                show: true
+            },
+            axisLine: {
+                show: true,
+                lineStyle: {
+                    color: '#222',
+                }
+            },
+            splitLine: {
+                show: true
+            },
+        },
+        yAxis: [{
+            type: 'category',
+            axisTick: {
+                show: false
+            },
+            axisLine: {
+                show: true,
+                lineStyle: {
+                    color: '#222',
+                }
+            },data: distributordata
+        }
+
+        ],
+       toolbox: {        show: true,        feature: {   myDownload: {
+                   show: true,
+                   title: '数据导出',
+                   icon: 'image://http://localhost:8080/smbi/image/excel.svg',
+                   onclick: function (){
+                       alert('暂不支持');
+                   }
+               },         saveAsImage: {}        }    },series: [{
+            name: '库存天数',
+            type: 'bar',
+
+            itemStyle: {
+                normal: {
+                    show: true,
+                    color: '#277ace',
+                    barBorderRadius: 50,
+                    borderWidth: 0,
+                    borderColor: '#333',
+                }
+            },
+            barGap: '0%',
+            barCategoryGap: '50%',
+            data:inventorydata
+        }]
+
+    };
+
+    $(document).ready(function () {
+        var middleChart = echarts.init(document.getElementById("scatter"));
+        middleChart.setOption(compareoption);
+        var righttopChart = echarts.init(document.getElementById("sales-acount"));
+        righttopChart.setOption(inventorysOption);
+        var rightbottomchart = echarts.init(document.getElementById("invetory-variance"));
+        rightbottomchart.setOption(inventoryoption);
+
+        var piechart = echarts.init(document.getElementById("pie"));
+        piechart.setOption(accountOption);
+        
+        $(window).bind('resize',resizeChart);initPeroidMonth();
+    });
+</script>
+
+<body style="margin: 0;background: #f9f9f9">
+<div id="scatter" class="halfleftbottom">
+	
+</div>
+<div class="halfrightbottom">
+<div id="sales-acount" style="width: 100%;height: 100%"></div> 
+<div class = "details-bottom" onclick="changetab('../bi/distributoraccount.html',2,4)">&nbsp;&gt;&gt;&nbsp;明细&nbsp;&nbsp;</div>
+
+</div>
+<div id="invetory-variance" class="halflefttop">
+</div>
+<div  class="halfrighttop">
+	<div id="pie" style="width: 100%;height: 100%"></div>
+	<div class = "details-bottom" onclick="changetab('../bi/inventorysum.html', 2, 3)">&nbsp;&gt;&gt;&nbsp;明细&nbsp;&nbsp;</div>
+
+</div>
+
+</body>
+
+</html>

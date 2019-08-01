@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="getList">
+		<sql name="getPurchase">
+			<![CDATA[
+			  select 
+			  		ROW_NUMBER() OVER(order by [BizDate] desc) as rownum, *
+			  from (
+		      SELECT 
+				  [Id],
+				  DATENAME(YEAR, [BizDate]) AS [Year],
+                  DATENAME(MONTH, [BizDate]) AS [Month],
+				  [BizDate],
+				  [VendorCode],
+			      [VendorName],
+			      [RawVendorName]
+			      [VendorProvince],
+			      [VendorCity],
+			      [VendorType],
+			      DATA.[DistributorCode],
+			      DATA.[DistributorName],
+			      D.[DistributorLevel],
+			      [DistributorProvince],
+			      [DistributorCity],
+			      [ProductCode],
+			      [ProductName],
+			      DATA.[brand],
+			      [Specification],
+			      [LotNo],
+			      [Quantity],
+			      [UnitName],PRH4,PRH5,
+			      [dbo].[GetSeparatorThousandMoney]([RawPrice],1) AS [RawPrice],
+			      [dbo].[GetSeparatorThousandMoney]([RawAmount],1) AS [RawAmount],
+			      [dbo].[GetSeparatorThousandMoney]([Price],1) AS [Price],
+			      [dbo].[GetSeparatorThousandMoney]([Amount],1) AS [Amount],
+			      [Manufacturer],
+			      [RawSpecification],
+			      [AdditionalNote],
+			      [RecordNo],
+			      [CreateTime]
+			      FROM [dbo].[VIEW_DataPurchase]  as DATA
+			      left join Distributor D ON D.DistributorCode = DATA.DistributorCode
+			      WHERE     BizDate >= '@{startDate}'
+                        AND BizDate <= '@{endDate}' 
+			      ) tb
+			  where  @{filter}  AND  @{distributor} 
+			]]>
+		</sql>
+			
+		<sql name="getSales">
+			<![CDATA[
+				select
+					ROW_NUMBER() OVER(order by [BizDate] desc) as rownum, *
+				from (
+					SELECT 
+						[BizDate] ,
+						DATENAME(YEAR, [BizDate]) AS [Year],
+                        DATENAME(MONTH, [BizDate]) AS [Month],
+				        DATA.[DistributorCode],
+				        DATA.[DistributorName] as distributorname,
+				        DATA.[DistributorLevel],
+				        D.DistributorCode AS AscriptionCode,
+				        D.DistributorName AS AscriptionName,
+				        [CustomerCode],
+				        C.Family,
+				        [CustomerName],
+				        [CustomerType],
+				        DATA.[brand],
+				        DATA.[ProductCode],
+				        DATA.[ProductName],
+				        P.ProductType,
+				        [Quantity],
+				        [dbo].[GetSeparatorThousandMoney](DATA.[Price], 1) AS [Price],
+				        [dbo].[GetSeparatorThousandMoney]([Amount], 1) AS [Amount],
+				        [dbo].[GetSeparatorThousandMoney]([RawPrice], 1) AS [RawPrice],
+				        [dbo].[GetSeparatorThousandMoney]([RawAmount], 1) AS [RawAmount],
+				        [CustomerProvince],
+				        [CustomerCity],
+				       	DATA.[Specification],
+				        [LotNo],
+				        [UnitName],
+				        DATA.[Manufacturer],
+				        [CustomerAddress],P.PRH4,P.PRH5,
+				        [RawSpecification],[CreateTime]
+					FROM  [dbo].[VIEW_DataSales] AS DATA
+				    LEFT  JOIN [dbo].[DistributorRelationship] DRS ON DRS.SubDistributorCode = DATA.DistributorCode
+				    LEFT  JOIN dbo.Distributor D ON D.DistributorCode = DRS.DistributorCode
+				    LEFT  JOIN dbo.Company C ON C.CompanyCode = DATA.CustomerCode
+				    LEFT  JOIN dbo.Product P ON P.ProductCode = DATA.ProductCode
+				    WHERE     BizDate >= '@{startDate}' AND BizDate <= '@{endDate}') tb
+			WHERE   @{filter}  and @{distributor}
+			]]>
+		</sql>
+		
+		<sql name="getInventory">
+			<![CDATA[
+			 select ROW_NUMBER() OVER(order by [DistributorCode] desc) as rownum, * 
+			 from (
+			 	SELECT DATA.brand,
+						 	bizdate,
+						 	month,
+						 	DATA.distributorcode,
+						 	DATA.distributorname,
+						 	DATA.distributorprovince,
+						 	DATA.distributorcity,
+						 	productcode,
+						 	productname,
+						 	producttype,
+						 	lotno,
+						 	consignmentquantity,
+						 	inventorystatus,
+						 	quantity,
+						 	unitname,
+						 	manufacturer,
+						 	rawspecification,PRH4,PRH5,
+						 	D.[DistributorLevel],[CreateTime] 
+			    FROM [dbo].[VIEW_DataInventory] as DATA 
+			    LEFT  JOIN dbo.Distributor D ON D.DistributorCode = DATA.DistributorCode
+			    WHERE BizDate = '@{endDate}' 
+			   )tb
+			 where @{filter}  and @{distributor}
+			]]>
+		</sql>
+	</dataSpace>	
+	
+</sqls>

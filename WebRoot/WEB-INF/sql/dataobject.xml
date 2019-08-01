@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?DOCTYPE sqls SYSTEM "../config/sql.dtd" ?>
+	
+<sqls>
+	<dataSpace name="system_default">
+		<sql name="insert">
+			insert into @{tablename} (@{fieldNames}) values(@{fieldValues})
+		</sql>
+	  
+		<sql name="deleteById">
+			delete from @{tablename} where id = '@{id}'
+		</sql>
+	  
+		<sql name="deleteByCriteria">
+			delete from @{tablename} where @{filter} 
+		</sql>
+
+		<sql name="updateById">
+			update @{tablename} set @{fieldNameValues} where @{fieldNameId} = @{id}
+		</sql>
+		
+		<sql name="updateByCriteria">
+			update @{tablename} set @{fieldNameValues} where @{filter}
+		</sql>
+		
+		<sql name="updateBychinaname">
+			update @{tablename} set @{fieldNameValues} where @{fieldNameId}=@{id}
+		</sql>
+		
+		<sql name="getLineById">
+			select * from @{tablename} where @{fieldNameId} = @{id}
+		</sql>
+	
+		<sql name="getSetByPage">
+			<![CDATA[
+			select * from @{tablename} where @{filter} @{orderby}
+			
+			]]>
+		</sql>
+		<sql name="getLoginname">
+			select loginname from @{tablename} where @{filter} 
+		</sql>
+		
+		<sql name="getDataSet">
+			select * from @{tablename} where @{filter} 
+		</sql>
+		
+		<sql name="getTree">
+			select * from @{tablename} where @{filter} order by parentId
+		</sql>
+		
+		<sql name="getRecentUid">
+			select userid from @{tablename} where @{filter}
+		</sql>
+		
+		<sql name="getCount">
+			select count(1) from @{tablename} where @{filter}
+		</sql>
+		
+		<sql name="getCountOfId">
+			select count(1) from @{tablename} where id = @{id}
+		</sql>
+		
+		<sql name="getCountOfkey">
+			select count(1) from @{tablename} where @{key}= @{key}
+		</sql>
+		
+		<sql name="batchInsert">
+			insert into @{tablename} (@{fieldNames}) values(@{placeHolders})
+		</sql>
+
+		<sql name="getDataGroupby">
+			SELECT @{fields} FROM @{tablename} GROUP BY @{groupby};
+		</sql>
+	</dataSpace>
+
+</sqls>

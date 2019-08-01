@@ -1,0 +1,285 @@
+.client {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.main-header {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	left: 15%;
+	height: 60px;
+	z-index: 610;
+	background-color: #467abd;
+	color: #fff;
+}
+
+.left {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 15%;
+	bottom: 0px;
+	background-color: #222425; 
+}
+
+.content {
+	position: absolute;
+	left: 15%;
+	right: 0px;
+	bottom: 0px;
+	top: 60px;
+}
+.switch {
+	position: absolute;
+	left: 95%;
+	top: 60px;
+	width: 5%;
+	bottom: 0px;
+	background-color: #22242500; 
+	z-index: 3;
+}
+
+.left_close .header,
+.left_close .main-header,
+.left_close .content {
+	left: 60px;
+}
+
+.left_close .left {
+	
+}
+
+.left .logoArea .logoText .close_logo {
+	display: none;
+}
+
+.left_close .left .logoArea .logoText .close_logo {
+	display: block;
+	text-align: center;
+	width: 60px;
+}
+
+.left .logoArea .logoText .open_logo {
+	display: block;
+}
+
+.left_close .left .logoArea .logoText .open_logo {
+	display: none;
+}  
+
+@media (max-height: 571.43px) {
+  .content {
+    top: 40px;
+  }
+}
+
+.indicator {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 0px;
+	height: 22px;
+	border-bottom: solid #a9c9e2 1px;
+	background-color: #fff;
+	color: #284c61;
+	font-family: 微软雅黑;
+	font-size: 14px;
+}
+
+.content-body {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 22px;
+	bottom: 0px;
+}
+
+.logoArea {
+	position: absolute;
+	left: 0px;
+	width: 100%;
+	height: 60px;
+	padding-top: 15px;
+	background-color: #467abd;
+}
+
+.but_toggle {
+	position: relative;
+	float: left;
+	height: 100%;
+	width: 42px;
+	background-size: 50%;
+}
+
+.logoText {
+	font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+	font-size: 20px;
+	font-weight: 300;
+	color: #fff;
+	text-align: center;
+	height: 100%;	
+}
+
+.topMenu {
+	position: relative;
+	float: left;
+	margin-left: 100px;
+	height: 100%;
+	font-size: 12px;
+	/* color: white;
+	z-index: 0px; */
+}
+
+.topMenu_item {
+	position: relative;
+	float: left;
+	width: 95px;
+	height: 100%;
+	cursor: pointer;
+}
+
+.topMenu_text {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	height: 40%;
+	text-align: center;
+}
+
+.topMenu_img {
+	margin-top: 8%;
+}
+
+.bar_system {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	width: 160px;
+	height: 100%;
+	color: white;
+}
+
+.bar_system :HOVER {
+	background-color: #9495c4;
+}
+
+.but_toggle :HOVER {
+	background-color: #9495c4 !important;
+}
+
+.bar_btn {
+	color: #fff;
+	position: absolute;
+	bottom: 0px;
+	top: 0px;
+	cursor: pointer;
+	text-align: center;
+	padding-top: 15px;
+}
+
+.navbar {
+	width: 100%;
+	height: 100%;
+	list-style-image: none;
+	list-style-type: none;
+}
+
+.navbar-item {
+	float: left;
+	height: 100%;
+	display: block;
+}
+
+.photo-preview {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.my-account {
+	display: none;
+	position: absolute;
+	right: 45px;
+	width: 280px;
+	height: 283px;
+	border: white solid 1px;
+	z-index: 1100;
+}
+
+.alert-num {
+	position: absolute;
+	width: 20px;
+	height: 20px;
+	line-height: 20px;
+	right: 5px;
+	bottom: 5px;
+	border-radius: 50%;
+	background: #e45050;
+	color: white;
+	font-size: 12px;
+}
+
+.my-panel {
+	position: absolute;
+	right: 0px;
+	width: 230px;
+	bottom: 0px;
+	display: none;
+	background-color: #222d32;
+	color: white;
+	padding: 5px;
+	font-size: 13px;
+	z-index: 1100;
+}
+
+.pnl-header {
+	height: 32px;
+	margin: 0px 3px;
+	border-bottom: 1px solid white;
+	line-height: 32px;
+}
+
+.leftMenu {
+	position: absolute;
+	width: 100%;
+	top: 60px;
+	bottom: 0px;
+	color: white;
+	overflow: auto;
+	font-size: 14px; 
+}
+
+.periodPanel {
+	position: relative;
+	float: left;
+	margin-left: 100px;
+	height: 40px;
+	line-height: 40px;
+	margin-top: 10px;
+	font-size: 16px;
+	font-family: 微软雅黑;
+	color: #e9f5ff;
+	padding: 0px 20px;
+	border: 1px solid #a7c7f1;
+	border-radius: 20px;
+}
+
+.sendCheck {
+	position: relative;
+	float: left;
+	margin-left: 50px;	 
+	height: 40px;
+	line-height: 40px;
+	margin-top: 10px;
+	font-size: 16px;
+	font-family: 微软雅黑;
+	color: #e9f5ff;
+}
+

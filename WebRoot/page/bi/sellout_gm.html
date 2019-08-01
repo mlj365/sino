@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>sellout达成</title>
+		<link href="../../css/sales_gm.css" rel="stylesheet">
+		<link href="../../css/jquery-ui.min.css" rel="stylesheet">
+		<link href="../../css/jquery.multiselect.css" rel="stylesheet">
+
+		<script type="text/javascript" src="../../js/jquery1.8.min.js" ></script>
+		<script type="text/javascript" src="../../js/jquery-ui-1.10.4.js" ></script>
+		<script type="text/javascript" src="../../js/jquery.multiselect.js" ></script>
+		<script type="text/javascript" src="../../js/foundation-2.0.js" ></script>
+		<script type="text/javascript" src="../../js/control.js" ></script>
+		<script type="text/javascript" src="../../js/echarts.min.3.8.5.js" ></script>
+		<script type="text/javascript" src="../../js/random.js" ></script>
+		<script type="text/javascript" src="../../data/report.js" ></script>
+		<script type="text/javascript" src="../../option/sellout_gm.js" ></script>
+	</head>
+	
+	<script>
+
+		var saleachieveOption = clone(middleOption);
+	    var areaOption = clone(barlineoption);
+	    var productlineOption = clone(productlineoption);
+
+        function chartRefresh() {
+            for(var i = 0; i <topicMap.length; i++) {
+                var one = topicMap[i];
+                resetChartData(one);
+            }
+        }
+
+		function resetProductLinesOption(type) {
+            var instance = echarts.getInstanceByDom(document.getElementById("salehistory"));
+            var option = instance.getOption();
+            var one = topicMap[1];
+			one.type = type;
+
+
+            if ("Roxolid" == type) {
+                //one.fields = "Amount;roxolidtarget;roxolidachieve;roxolidygrowth;region;";
+                //one.filter = " and ProductType like '%Roxolid%'";
+                option.yAxis[0].name = "颗数";
+                option.yAxis[0].axisLabel.formatter = "{value}";
+                option.tooltip.formatter = function(params,) {
+
+                    var res = params[0].name;
+                    console.info(params)
+                    for (var i = 0, l = params.length; i < l; i++) {
+                        if (params[i].seriesType === 'line') {
+                            res += '<br/>' + params[i].seriesName + ' : ' + (params[i].value ? params[i].value : '-') + '%';
+                        } else {
+                            res += '<br/>' + params[i].seriesName + ' : ' + (params[i].value ? params[i].value : '-') + '';
+                        }
+                    }
+                    return res;
+
+                };
+            } else {
+                //one.fields = "Amount;target;achieve;ygrowth;region";
+                //one.filter = undefined;
+                option.yAxis[0].name = "销售额(k)";
+                option.yAxis[0].axisLabel.formatter = "{value}k";
+                option.tooltip.formatter = function(params,) {
+
+                    var res = params[0].name;
+                    console.info(params)
+                    for (var i = 0, l = params.length; i < l; i++) {
+                        if (params[i].seriesType === 'line') {
+                            res += '<br/>' + params[i].seriesName + ' : ' + (params[i].value ? params[i].value : '-') + '%';
+                        } else {
+                            res += '<br/>' + params[i].seriesName + ' : ' + (params[i].value ? params[i].value : '-') + 'k';
+                        }
+                    }
+                    return res;
+
+                };
+            }
+            instance.setOption(option);
+
+            resetChartData(one);
+        }
+
+        function resetProductTypeOption(type) {
+            var one = topicMap[3];
+
+            one.filter = " and b.CompanyType = '" + type + "'";
+            var instance = echarts.getInstanceByDom(document.getElementById("distributorRank"));
+            var option = instance.getOption();
+
+            option.legend[0].data = [type, "L" + type];
+            option.series[0].name = type;
+            option.series[1].name = "L"+type;
+
+            instance.setOption(option);
+            resetChartData(one);
+		}
+	    
+        $(document).ready(function(){
+			var saleachieveChart = echarts.init(document.getElementById("saleachieve"));
+       	 	saleachieveChart.setOption(saleachieveOption);
+       	 	
+       	 	var middletopChart = echarts.init(document.getElementById("salehistory"));
+        	middletopChart.setOption(areaOption);
+        	
+        	var middlebottomChart = echarts.init(document.getElementById("distributorRank"));
+       	 	middlebottomChart.setOption(distributorOption);
+       	 	middlebottomChart.on("legendselectchanged", function(params){
+       	 		var option = middlebottomChart.getOption();
+       	 		if("公立" == params.name || "LYTD公立" == params.name) {
+                    option.legend.selected = {'公立': true, 'LYTD公立': true,};
+       	 			option.xAxis.data =  myXdata
+       	 		}
+       	 		else if("民营" == params.name || "LYTD民营" == params.name) {
+                    option.legend.selected = {'民营': true, 'LYTD民营': true,};
+       	 			option.xAxis.data =  glXdata
+       	 		}
+       	 		middlebottomChart.setOption(option);
+       	 	});
+       	 	var halfrightbottomChart = echarts.init(document.getElementById("provincceRank"));
+        	halfrightbottomChart.setOption(provienceOption);
+        	
+        	var halfrightbottomChart = echarts.init(document.getElementById("productlineSale"));
+        	halfrightbottomChart.setOption(productlineOption);
+        	
+        	var dsoChart = echarts.init(document.getElementById("dsosale"));
+        	dsoChart.setOption(dsoOption);
+
+
+
+			$("#productType").multiselect({
+                click:function(event, ui){
+                    var type = ui.value;
+                    resetProductTypeOption(type);
+                }
+            });
+
+            $("#productlines").multiselect({
+                click:function(event, ui){
+                    var type = ui.value;
+                    resetProductLinesOption(type);
+                }
+            });
+
+        	$(window).bind('resize',resizeChart);
+
+        	initCommonMutiSelect();
+
+        	initPeroidMonth();
+
+
+		});
+	</script>
+	
+	<body style="margin: 0;">
+		 <!-- onclick="changetab('../bi/sellout_gm.html')" -->
+		<div class="left-top">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="title">SellOut Ach</div>
+				<div class="subtitle" style="">Target：<b id="saletarget">65648.49</b>k</div>
+				<div class="subtitle" style="top: 22%;">YTD：<b id="salereal">91727.68</b>k</div>
+				<div class="middle-cricle" >
+					<div id="saleachieve" style="height: 100%;width: 100%;"></div>
+				</div>
+						
+			</div>
+		</div>
+		
+		<div class="middle-top">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="report-title">SellOut By Region</div>
+				<div class = "periodselectdiv" style="left:70%">
+					<select id="productlines" class="periodselect" >
+						<option value="Total">总销售额</option>
+						<option value="Roxolid">Roxolid</option>
+					</select>
+
+				</div>
+				<div id="salehistory" class="report-body"></div>
+			</div>
+		</div>
+		
+		<div class="right-top">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="report-title">SellOut By Brand</div>
+
+				<div id="productlineSale" class="report-body"></div>
+			</div>
+		</div>
+		<!-- onclick="changetab('../bi/sellin_gm.html')" -->
+		<div class="left-bottom">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="title">终端销售额</div>
+				<div class = "periodselectdiv" style="left:55%">
+					<select id="productType"  class="periodselect" >
+						<option value="民营">民营</option>
+						<option value="公立">公立</option>
+					</select>
+
+				</div>
+				<div id="distributorRank" class="report-body"></div>
+			</div>
+		</div>
+		<div class="middle-bottom">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="title">连锁DSO统计</div>
+				<div id="dsosale" class="report-body"></div>
+			</div>
+		</div>
+		
+		<div class="right-bottom">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="report-title">Abutment/Implant Ratio</div>
+				<div id="provincceRank" class="report-body"></div>
+			</div>
+		</div>	
+		
+		<div class = "periodselectdiv ">
+			<div style="float: left;">年：
+				<select id="year" class="periodselect">
+					<option>2017</option>
+					<option selected="selected">2018</option>
+					<option>2019</option>
+					<option>2020</option>
+				</select>
+				</div>
+				<div style="float: left;">季度：
+				<select id="quarter" class="periodselect">
+
+					<option value="1">Q1</option>
+					<option value="2">Q2</option>
+					<option value="3">Q3</option>
+					<option value="4">Q4</option>
+				</select>
+				</div>
+					<div style="float: left;">月份：
+				<select id="month" class="periodselect">
+
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+					<option value="4">4</option>
+					<option value="5">5</option>
+					<option value="6">6</option>
+					<option value="7">7</option>
+					<option value="8">8</option>
+					<option value="9">9</option>
+					<option value="10">10</option>
+					<option value="11">11</option>
+					<option value="12">12</option>
+				</select>
+				</div>
+				<div style="float: left;">Brand：
+					<select id="brand"  class="periodselect" >
+						<option value="Straumann">士卓曼</option>
+						<option value="Anthogyr">安卓健</option>
+						<option value="Tplus">T-plus</option>
+					</select>
+				</div>
+			</div>	
+	</body>
+	
+</html>

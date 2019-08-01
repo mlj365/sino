@@ -1,0 +1,1054 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="getDistributorKPICharts">
+		<sql name="getDistributorTotalKPICharts">
+			<![CDATA[
+				SELECT  DistributorCode,
+				        Region,
+				        Category,
+				        CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+				        CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+				        RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+				        Convert(decimal(18,2),MonthTarget/1000) MonthTarget,brand
+				FROM    ( 
+				          SELECT    S.DistributorCode,
+				                    H.Region,
+				                    '销售额' Category,
+				                    [Year],
+				                    [Quarter],
+				                    [Month],
+				                    ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+				                    P.brand
+				          FROM     dbo.DataP S
+	                      LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = S.DistributorCode
+	                      LEFT JOIN [dbo].[VIEW_DistributorTargets] T ON S.DistributorCode = T.DistributorCode
+	                                             AND [YEAR] = YEAR([BizDate])
+	                                             AND [Quarter] = DATENAME(QUARTER,[BizDate])
+	                                             AND [Month] = MONTH([BizDate]) and  T.brand = '@{brand}'
+	                      LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+				          WHERE    T.Category = '总销售额'
+				          GROUP BY  S.DistributorCode,
+				                    H.Region,
+				                    [Year],
+				                    [Quarter],
+				                    [Month],
+				                    P.brand
+				                    
+				          UNION ALL
+				          
+				          SELECT    S.DistributorCode,
+				                    H.Region,
+				                    '销售额' Category,
+				                    [Year],
+				                    [Quarter],
+				                    [Month],
+				                    ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+				                    P.brand
+				                    
+				          FROM     dbo.DDIDaily_P S
+	                      LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = S.DistributorCode
+	                      LEFT JOIN [dbo].[VIEW_DistributorTargets] T ON S.DistributorCode = T.DistributorCode
+	                                             AND [YEAR] = YEAR([BizDate])
+	                                             AND [Quarter] = DATENAME(QUARTER,[BizDate])
+	                                             AND [Month] = MONTH([BizDate]) and  T.brand = '@{brand}'
+	                     LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode          
+				          WHERE     T.Category = '总销售额'  and S.VendorName = '士卓曼'
+				          GROUP BY  S.DistributorCode,
+				                    H.Region,
+				                    [Year],
+				                    [Quarter],
+				                    [Month],
+				                    P.brand
+				        ) T
+				where  @{filter} and @{distributor} and  brand = '@{brand}'
+			]]>
+		</sql>
+		<sql name="getDistributorKPI4RoxolidCharts">
+			<![CDATA[
+			SELECT  DistributorCode,
+			        Region,
+			        Category,
+			        CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+			        CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+			        RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+			        Convert(decimal(18,2),MonthTarget) MonthTarget,brand
+			FROM    ( 
+			          SELECT    T.DistributorCode,
+			                    H.Region,
+			                    '销售数量' Category,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    ISNULL(SUM(CASE WHEN PH.[Category] = '@{productName}'
+												THEN CONVERT(INT, ISNULL(Quantity, 0))
+												ELSE 0 END), 0) MonthTarget,P.brand
+			          FROM      dbo.DataP T
+			                    LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = T.DistributorCode
+			                    LEFT JOIN [dbo].[VIEW_DistributorTargets] S ON S.DistributorCode = T.DistributorCode
+			                                             AND [YEAR] = YEAR([BizDate])
+			                                             AND [Quarter] = DATENAME(QUARTER,[BizDate])
+			                                             AND [Month] = MONTH([BizDate]) and  s.brand = '@{brand}' 
+			                    LEFT  JOIN dbo.Product P ON P.ProductCode = T.ProductCode
+			                    LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			                    WHERE     S.Category = '@{productName}' and T.VendorName = '士卓曼'
+			          GROUP BY  T.DistributorCode,
+			                    H.Region,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    P.brand
+			                    
+			          UNION ALL
+			          
+			          SELECT    T.DistributorCode,
+			                    H.Region,
+			                    '销售数量' Category,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    ISNULL(SUM(CASE WHEN PH.[Category] = '@{productName}'
+			                                    THEN ISNULL(Quantity, 0)
+			                                    ELSE 0 END), 0) MonthTarget,
+			                                    P.brand
+			          FROM      dbo.DDIDaily_P T
+			                    LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = T.DistributorCode
+			                    LEFT JOIN [dbo].[VIEW_DistributorTargets] S ON S.DistributorCode = T.DistributorCode
+			                                                  AND [YEAR] = YEAR([BizDate])
+			                                                  AND [Quarter] = DATENAME(QUARTER,[BizDate])
+			                                                  AND [Month] = MONTH([BizDate]) and  s.brand = '@{brand}'
+			                    LEFT  JOIN dbo.Product P ON P.ProductCode = T.ProductCode
+			                    LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			                    WHERE     S.Category = '@{productName}' and T.VendorName = '士卓曼'
+			          GROUP BY  T.DistributorCode,
+			                    H.Region,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    P.brand
+			        ) T
+					where  @{filter} and @{distributor} and  brand = '@{brand}'
+			]]>
+		</sql>
+		
+		<sql name="getDistributorKPI4A_PXKPICharts">
+			<![CDATA[
+				SELECT  DistributorCode,
+						Region,
+						Category,
+						CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+						CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+						RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+						Convert(decimal(18,2),MonthTarget) MonthTarget,
+						brand
+				FROM  (
+					   SELECT     S.DistributorCode,
+								  H.Region,
+								  'PX数量' Category,
+								  YEAR([BizDate]) [Year],
+								  DATENAME(QUARTER,[BizDate]) [Quarter],
+								  MONTH([BizDate]) [Month],
+								  ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+								  brand
+						FROM      dbo.DataP S 									  
+						LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = S.DistributorCode         
+						LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+						WHERE   P.producttype = 'Anthogyr implant-PX'   
+						GROUP BY  s.DistributorCode,
+								  H.Region,
+								  YEAR([BizDate]),
+								  DATENAME(QUARTER,[BizDate]),
+								  MONTH([BizDate]),
+								  brand
+								  
+						UNION ALL 
+
+					   SELECT     S.DistributorCode,
+								  H.Region,
+								  'PX数量' Category,
+								  YEAR([BizDate]) [Year],
+								  DATENAME(QUARTER,[BizDate]) [Quarter],
+								  MONTH([BizDate]) [Month],
+								  ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+								  brand
+						FROM      dbo.DDIDaily_P S 									  
+						LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = S.DistributorCode         
+						LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+						WHERE   P.producttype = 'Anthogyr implant-PX' and S.VendorName = '士卓曼'  
+						GROUP BY  s.DistributorCode,
+								  H.Region,
+								  YEAR([BizDate]),
+								  DATENAME(QUARTER,[BizDate]),
+								  MONTH([BizDate]),
+								  brand
+								  
+						UNION ALL 
+
+						SELECT    S.DistributorCode,
+								  H.Region,
+								  'implant数量' Category,
+								  YEAR([BizDate]) [Year],
+								  DATENAME(QUARTER,[BizDate]) [Quarter],
+								  MONTH([BizDate]) [Month],
+								  ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+								  brand
+						FROM      dbo.DataP S 									  
+						LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = S.DistributorCode         
+						LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+						WHERE   P.producttype = 'Anthogyr implant-PX'  OR  P.producttype = 'Anthogry implant-Reg'
+						GROUP BY  s.DistributorCode,
+								  H.Region,
+								  YEAR([BizDate]),
+								  DATENAME(QUARTER,[BizDate]),
+								  MONTH([BizDate]),
+								  brand
+
+						UNION ALL 
+
+						SELECT    S.DistributorCode,
+								  H.Region,
+								  'implant数量' Category,
+								  YEAR([BizDate]) [Year],
+								  DATENAME(QUARTER,[BizDate]) [Quarter],
+								  MONTH([BizDate]) [Month],
+								  ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+								  brand
+						FROM      dbo.DDIDaily_P S 									  
+						LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = S.DistributorCode         
+						LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+						WHERE   P.producttype = 'Anthogyr implant-PX'  OR  P.producttype = 'Anthogry implant-Reg'  and S.VendorName = '士卓曼' 
+						GROUP BY  s.DistributorCode,
+								  H.Region,
+								  YEAR([BizDate]),
+								  DATENAME(QUARTER,[BizDate]),
+								  MONTH([BizDate]),
+								  brand) T
+					where  @{filter} and @{distributor} and  brand = '@{brand}'
+			]]>
+		</sql>
+		
+		<sql name="getDistributorKPI4abutmentCharts">
+			<![CDATA[
+			SELECT      DistributorCode,
+				        Region,
+				        Category,
+				        CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+				        CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+				        RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+				        Convert(decimal(18,2),MonthTarget) MonthTarget
+		   FROM    		( SELECT    S.DistributorCode,
+				                    H.Region,
+				                    '销售数量' Category,
+				                    YEAR([BizDate]) [Year],
+				                    DATENAME(QUARTER, [BizDate]) [Quarter],
+				                    MONTH([BizDate]) [Month],
+				                    ISNULL(SUM(CASE WHEN PH.[Category] = '@{productName}'
+			                                    THEN ISNULL(Amount, 0)
+			                                    ELSE 0 END), 0) MonthTarget
+				          FROM      dbo.DataS S
+				                    LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = S.DistributorCode
+				                    LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+				                    LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+				          WHERE     PH.Category = '@{productName}'
+				          GROUP BY  S.DistributorCode,
+				                    H.Region,
+				                    YEAR([BizDate]),
+				                    DATENAME(QUARTER, [BizDate]),
+				                    MONTH([BizDate])
+				                    
+				          UNION ALL
+				          
+				          SELECT    S.DistributorCode,
+				                    H.Region,
+				                    '销售数量' Category,
+				                    YEAR([BizDate]) [Year],
+				                    DATENAME(QUARTER, [BizDate]) [Quarter],
+				                    MONTH([BizDate]) [Month],
+				                    ISNULL(SUM(CASE WHEN PH.[Category] = '@{productName}'
+			                                    THEN ISNULL(Amount, 0)
+			                                    ELSE 0 END), 0) MonthTarget
+				          FROM      dbo.DDIDaily_S S
+				                    LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = S.DistributorCode
+				                    LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+				                    LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+				          WHERE     PH.Category = '@{productName}'
+				          GROUP BY  S.DistributorCode,
+				                    H.Region,
+				                    YEAR([BizDate]),
+				                    DATENAME(QUARTER, [BizDate]),
+				                    MONTH([BizDate])
+				        ) T
+				where  @{filter} and @{distributor}
+			]]>
+		</sql>
+		<sql name="getDistributorKPI4RatioCharts">
+			<![CDATA[
+			SELECT DistributorCode,
+			       Category,
+			       CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+			       CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+			       RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+			       Convert(decimal(18,2),MonthTarget) MonthTarget
+			FROM   ( SELECT    T.DistributorCode,
+			                   '基台' Category,
+			                   [Year],
+			                   [Quarter],
+			                   [Month],
+			                   ISNULL(SUM(CASE WHEN PH.[Category] = 'Abutment'
+			                                   THEN ISNULL(Quantity, 0)
+			                                   ELSE 0
+			                              END), 0) MonthTarget
+			         FROM      dbo.VIEW_DistributorTargets T
+			                   LEFT JOIN dbo.DataS S ON S.DistributorCode = T.DistributorCode
+			                                            AND [YEAR] = YEAR([BizDate])
+			                                            AND [Quarter] = DATENAME(QUARTER,[BizDate])
+			                                            AND [Month] = MONTH([BizDate])
+			                   LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+			                   LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			         WHERE     T.[Category] = '总销售额'
+			         GROUP BY  T.DistributorCode,
+			                   [Year],
+			                   [Quarter],
+			                   [Month]
+			         UNION ALL
+			         SELECT    T.DistributorCode,
+			                   '种植体' Category,
+			                   [Year],
+			                   [Quarter],
+			                   [Month],
+			                   ISNULL(SUM(CASE WHEN PH.[Category] = 'Implant'
+			                                   THEN ISNULL(Quantity, 0)
+			                                   ELSE 0
+			                              END), 0) MonthTarget
+			         FROM      dbo.VIEW_DistributorTargets T
+			                   LEFT JOIN dbo.DataS S ON S.DistributorCode = T.DistributorCode
+			                                            AND [YEAR] = YEAR([BizDate])
+			                                            AND [Quarter] = DATENAME(QUARTER,[BizDate])
+			                                            AND [Month] = MONTH([BizDate])
+			                   LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+			                   LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			         WHERE     T.[Category] = '总销售额'
+			         GROUP BY  T.DistributorCode,
+			                   [Year],
+			                   [Quarter],
+			                   [Month]
+			         UNION ALL
+			         SELECT    T.DistributorCode,
+			                   '基台' Category,
+			                   [Year],
+			                   [Quarter],
+			                   [Month],
+			                   ISNULL(SUM(CASE WHEN PH.[Category] = 'Abutment'
+			                                   THEN ISNULL(Quantity, 0)
+			                                   ELSE 0
+			                              END), 0) MonthTarget
+			         FROM      dbo.VIEW_DistributorTargets T
+			                   LEFT JOIN dbo.DDIDaily_S S ON S.DistributorCode = T.DistributorCode
+			                                                 AND [YEAR] = YEAR([BizDate])
+			                                                 AND [Quarter] = DATENAME(QUARTER,[BizDate])
+			                                                 AND [Month] = MONTH([BizDate])
+			                   LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+			                   LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			         WHERE     T.[Category] = '总销售额'
+			         GROUP BY  T.DistributorCode,
+			                   [Year],
+			                   [Quarter],
+			                   [Month]
+			         UNION ALL
+			         SELECT    T.DistributorCode,
+			                   '种植体' Category,
+			                   [Year],
+			                   [Quarter],
+			                   [Month],
+			                   ISNULL(SUM(CASE WHEN PH.[Category] = 'Implant'
+			                                   THEN ISNULL(Quantity, 0)
+			                                   ELSE 0
+			                              END), 0) MonthTarget
+			         FROM      dbo.VIEW_DistributorTargets T
+			                   LEFT JOIN dbo.DDIDaily_S S ON S.DistributorCode = T.DistributorCode
+			                                                 AND [YEAR] = YEAR([BizDate])
+			                                                 AND [Quarter] = DATENAME(QUARTER,[BizDate])
+			                                                 AND [Month] = MONTH([BizDate])
+			                   LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+			                   LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			         WHERE     T.[Category] = '总销售额'
+			         GROUP BY  T.DistributorCode,
+			                   [Year],
+			                   [Quarter],
+			                   [Month]
+			       ) Z
+			where  @{filter} and @{distributor}
+			]]>
+		</sql>
+		</dataSpace>
+		
+		<dataSpace name="getSalesKPICharts">
+			<sql name="getSalesTotalKPICharts">
+			<![CDATA[
+					SELECT	clientcode,
+							Category,
+							CONVERT (NVARCHAR(10), [Year]) + '年' [Year],
+							CONVERT (NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+							RIGHT ('00' + CONVERT (NVARCHAR(10), [Month]),2) + '月' [Month],
+							CONVERT (DECIMAL (18, 2),MonthTarget / 1000) MonthTarget,
+							brand
+					FROM
+						(
+							SELECT	CustomerCode as clientcode,
+									'销售额' Category,
+									DATENAME(YEAR, [BizDate]) [Year],
+									DATENAME(QUARTER, [BizDate]) [Quarter],
+									DATENAME(MONTH, [BizDate]) [Month],
+									ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+									P.brand
+									
+							FROM  dbo.DataS S 
+							LEFT JOIN product P ON P.productcode = S.productcode
+							WHERE  EXISTS (SELECT 1 FROM SaleHierarchy T WHERE S.CustomerCode = T.ClientCode AND @{filter} and EXISTS (SELECT 1 FROM VIEW_SaleTargets ST WHERE T.CSF = ST.SaleCode) AND @{supervisr})
+							GROUP BY DATENAME(YEAR, [BizDate]),
+									 CustomerCode,
+									 DATENAME(QUARTER, [BizDate]),
+									 DATENAME(MONTH, [BizDate]),
+									 P.brand
+									 
+							UNION ALL
+							
+							SELECT	 CustomerCode clientcode,
+									 '销售额' Category,
+									 DATENAME(YEAR, [BizDate]) [Year],
+									 DATENAME(QUARTER, [BizDate]) [Quarter],
+									 DATENAME(MONTH, [BizDate]) [Month],
+									 ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+									 P.brand
+								FROM dbo.DDIDaily_S S 
+								LEFT JOIN product P ON P.productcode = S.productcode
+								WHERE  EXISTS (SELECT 1 FROM SaleHierarchy T WHERE S.CustomerCode = T.ClientCode AND @{filter} and EXISTS (SELECT 1 FROM VIEW_SaleTargets ST WHERE T.CSF = ST.SaleCode) AND @{supervisr})
+								GROUP BY CustomerCode,
+										 DATENAME(YEAR, [BizDate]),
+										 DATENAME(QUARTER, [BizDate]),
+										 DATENAME(MONTH, [BizDate]),
+										 P.brand
+							) T
+							where @{yearFilter} and  @{saleCode} and brand = '@{brand}'
+						]]>
+		</sql>
+		<sql name="getSalesKPI4RoxolidCharts">
+			<![CDATA[
+			SELECT	clientcode,
+					Category,
+					CONVERT (NVARCHAR(10), [Year]) + '年' [Year],
+					CONVERT (NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+					RIGHT ('00' + CONVERT (NVARCHAR(10), [Month]),2) + '月' [Month],
+					CONVERT (DECIMAL(18, 2), MonthTarget) MonthTarget
+			FROM
+				(
+					SELECT	CustomerCode clientcode,
+							'销售数量' Category,
+							YEAR ([BizDate]) [Year],
+							DATENAME(QUARTER, [BizDate]) [Quarter],                  
+							MONTH ([BizDate]) [Month],
+							ISNULL(
+							SUM (CASE
+										WHEN PH.[Category] = 'Roxolid' THEN
+											 CONVERT (INT, ISNULL(Quantity, 0))
+										ELSE 0 END),0) MonthTarget ,P.brand
+					FROM dbo.DataS S 
+					LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+					LEFT JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+					WHERE 	PH.Category = 'Roxolid' and EXISTS (SELECT 1 FROM SaleHierarchy T WHERE S.CustomerCode = T.ClientCode AND @{filter} and EXISTS (SELECT 1 FROM VIEW_SaleTargets ST WHERE T.CSF = ST.SaleCode) AND @{supervisr})
+					GROUP BY CustomerCode,
+							YEAR ([BizDate]),
+							DATENAME(QUARTER, [BizDate]),
+							MONTH ([BizDate]),P.brand
+			
+					UNION ALL
+			
+					SELECT
+							CustomerCode  clientcode,
+							'销售数量' Category,
+							YEAR ([BizDate]) [Year],
+							DATENAME(QUARTER, [BizDate]) [Quarter],                  
+							MONTH ([BizDate])[Month],
+							ISNULL(
+							SUM (
+								CASE
+								WHEN PH.[Category] = 'Roxolid' THEN
+									CONVERT (INT, ISNULL(Quantity, 0))
+								ELSE 0 END ), 0) MonthTarget,P.brand
+					FROM  dbo.DDIDaily_S S 
+					LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+					LEFT JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+					WHERE PH.Category = 'Roxolid' AND EXISTS (SELECT 1 FROM SaleHierarchy T WHERE S.CustomerCode = T.ClientCode AND @{filter} and EXISTS (SELECT 1 FROM VIEW_SaleTargets ST WHERE T.CSF = ST.SaleCode) AND @{supervisr})
+					GROUP BY CustomerCode,
+							YEAR ([BizDate]),
+							DATENAME(QUARTER, [BizDate]),
+							MONTH ([BizDate]),P.brand
+				) T
+					where  @{yearFilter} and @{saleCode} and brand = '@{brand}'
+			
+
+			]]>
+		</sql>	
+		
+		<sql name="getSalesKPI4A_PXKPICharts">
+			<![CDATA[
+				SELECT		clientcode,
+							Category,
+							CONVERT (NVARCHAR(10), [Year]) + '年' [Year],
+							CONVERT (NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+							RIGHT ('00' + CONVERT (NVARCHAR(10), [Month]),2) + '月' [Month],
+							CONVERT (DECIMAL (18, 2),MonthTarget) MonthTarget,
+							brand
+
+					FROM
+						(
+							SELECT	CustomerCode as clientcode,
+											'PX数量' Category,
+											DATENAME(YEAR, [BizDate]) [Year],
+											DATENAME(QUARTER, [BizDate]) [Quarter],
+											DATENAME(MONTH, [BizDate]) [Month],
+											ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+											P.brand
+
+							FROM  dbo.DataS S 
+							LEFT JOIN product P ON P.productcode = S.productcode
+							WHERE  EXISTS (SELECT 1 FROM SaleHierarchy T WHERE S.CustomerCode = T.ClientCode AND @{filter} and EXISTS (SELECT 1 FROM VIEW_SaleTargets ST WHERE T.CSF = ST.SaleCode) AND @{supervisr})
+										 AND P.producttype = 'Anthogyr implant-PX'
+							GROUP BY DATENAME(YEAR, [BizDate]),
+											 CustomerCode,
+											 DATENAME(QUARTER, [BizDate]),
+											 DATENAME(MONTH, [BizDate]),
+											 P.brand
+									 
+							UNION ALL
+							
+							SELECT	 CustomerCode clientcode,
+											 'PX数量' Category,
+											 DATENAME(YEAR, [BizDate]) [Year],
+											 DATENAME(QUARTER, [BizDate]) [Quarter],
+											 DATENAME(MONTH, [BizDate]) [Month],
+											 ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+											 P.brand
+
+							FROM dbo.DDIDaily_S S 
+							LEFT JOIN product P ON P.productcode = S.productcode
+							WHERE  EXISTS (SELECT 1 FROM SaleHierarchy T WHERE S.CustomerCode = T.ClientCode AND @{filter} and EXISTS (SELECT 1 FROM VIEW_SaleTargets ST WHERE T.CSF = ST.SaleCode) AND @{supervisr})
+										 AND P.producttype = 'Anthogyr implant-PX'
+							GROUP BY CustomerCode,
+											 DATENAME(YEAR, [BizDate]),
+											 DATENAME(QUARTER, [BizDate]),
+											 DATENAME(MONTH, [BizDate]),
+											 P.brand
+
+							UNION ALL
+							
+							SELECT	CustomerCode as clientcode,
+											'implant数量' Category,
+											DATENAME(YEAR, [BizDate]) [Year],
+											DATENAME(QUARTER, [BizDate]) [Quarter],
+											DATENAME(MONTH, [BizDate]) [Month],
+											ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+											P.brand
+
+							FROM  dbo.DataS S 
+							LEFT JOIN product P ON P.productcode = S.productcode
+							WHERE  EXISTS (SELECT 1 FROM SaleHierarchy T WHERE S.CustomerCode = T.ClientCode AND @{filter} and EXISTS (SELECT 1 FROM VIEW_SaleTargets ST WHERE T.CSF = ST.SaleCode) AND @{supervisr})
+										 AND P.producttype = 'Anthogyr implant-PX'  OR  P.producttype = 'Anthogry implant-Reg'
+							GROUP BY DATENAME(YEAR, [BizDate]),
+											 CustomerCode,
+											 DATENAME(QUARTER, [BizDate]),
+											 DATENAME(MONTH, [BizDate]),
+											 P.brand
+									 
+							UNION ALL
+							
+							SELECT	 CustomerCode clientcode,
+											 'implant数量' Category,
+											 DATENAME(YEAR, [BizDate]) [Year],
+											 DATENAME(QUARTER, [BizDate]) [Quarter],
+											 DATENAME(MONTH, [BizDate]) [Month],
+											 ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+											 P.brand
+
+								FROM dbo.DDIDaily_S S 
+								LEFT JOIN product P ON P.productcode = S.productcode
+								WHERE  EXISTS (SELECT 1 FROM SaleHierarchy T WHERE S.CustomerCode = T.ClientCode AND @{filter} and EXISTS (SELECT 1 FROM VIEW_SaleTargets ST WHERE T.CSF = ST.SaleCode) AND @{supervisr})
+											 AND P.producttype = 'Anthogyr implant-PX'  OR  P.producttype = 'Anthogry implant-Reg'
+								GROUP BY CustomerCode,
+												 DATENAME(YEAR, [BizDate]),
+												 DATENAME(QUARTER, [BizDate]),
+												 DATENAME(MONTH, [BizDate]),
+												 P.brand
+
+							) T
+					where  @{yearFilter}  and  @{saleCode} and  brand = '@{brand}'
+			]]>
+		</sql>
+				
+		<sql name="getSalesKPI4RatioCharts">
+			<![CDATA[
+			 SELECT SaleCode,
+			        Category,
+			        CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+			        CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+			        RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+			        Convert(decimal(18,2),MonthTarget) MonthTarget
+			 FROM   ( SELECT    T.SaleCode,
+			                    '基台' Category,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    ISNULL(SUM(CASE WHEN PH.[Category] = 'Abutment'
+			                                    THEN ISNULL(Quantity, 0)
+			                                    ELSE 0
+			                               END), 0) MonthTarget
+			          FROM      [dbo].[VIEW_SaleTargets] T
+                      LEFT JOIN dbo.SaleHierarchy H ON H.CSF = T.SaleCode
+                      LEFT JOIN dbo.DataS S ON S.CustomerName = H.ClientName
+                                            AND [YEAR] = DATENAME(YEAR,[BizDate])
+                                            AND [Quarter] = DATENAME(QUARTER,[BizDate])
+                                            AND [Month] = DATENAME(MONTH,[BizDate])
+                      LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+                      LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			          WHERE     T.[Category] = '总销售额'
+			          GROUP BY  T.SaleCode,
+			                    [Year],
+			                    [Quarter],
+			                    [Month]
+			                    
+			          UNION ALL
+			          
+			          SELECT    T.SaleCode,
+			                    '种植体' Category,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    ISNULL(SUM(CASE WHEN PH.[Category] = 'Implant'
+			                                    THEN ISNULL(Quantity, 0)
+			                                    ELSE 0
+			                               END), 0) MonthTarget
+			          FROM      [dbo].[VIEW_SaleTargets] T
+                      LEFT JOIN dbo.SaleHierarchy H ON H.CSF = T.SaleCode
+                      LEFT JOIN dbo.DataS S ON S.CustomerName = H.ClientName
+                                             AND [YEAR] = DATENAME(YEAR,[BizDate])
+                                             AND [Quarter] = DATENAME(QUARTER,[BizDate])
+                                             AND [Month] = DATENAME(MONTH,[BizDate])
+                      LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+                      LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			          WHERE     T.[Category] = '总销售额'
+			          GROUP BY  T.SaleCode,
+			                    [Year],
+			                    [Quarter],
+			                    [Month]
+			                    
+			          UNION ALL
+			          
+			          SELECT    T.SaleCode,
+			                    '基台' Category,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    ISNULL(SUM(CASE WHEN PH.[Category] = 'Abutment'
+			                                    THEN ISNULL(Quantity, 0)
+			                                    ELSE 0
+			                               END), 0) MonthTarget
+			          FROM      [dbo].[VIEW_SaleTargets] T
+                      LEFT JOIN dbo.SaleHierarchy H ON H.CSF = T.SaleCode
+                      LEFT JOIN dbo.DDIDaily_S S ON S.CustomerName = H.ClientName
+                                                 AND [YEAR] = YEAR([BizDate])
+                                                 AND [Quarter] = DATENAME(QUARTER,[BizDate])
+                                                 AND [Month] = MONTH([BizDate])
+                      LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+                      LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			          WHERE     T.[Category] = '总销售额'
+			          GROUP BY  T.SaleCode,
+			                    [Year],
+			                    [Quarter],
+			                    [Month]
+			          UNION ALL
+			          SELECT    T.SaleCode,
+			                    '种植体' Category,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    ISNULL(SUM(CASE WHEN PH.[Category] = 'Implant'
+			                                    THEN ISNULL(Quantity, 0)
+			                                    ELSE 0 END), 0) MonthTarget
+			          FROM      [dbo].[VIEW_SaleTargets] T
+			                    LEFT JOIN dbo.SaleHierarchy H ON H.CSF = T.SaleCode
+			                    LEFT JOIN dbo.DDIDaily_S S ON S.CustomerName = H.ClientName
+			                                                  AND [YEAR] = YEAR([BizDate])
+			                                                  AND [Quarter] = DATENAME(QUARTER,[BizDate])
+			                                                  AND [Month] = MONTH([BizDate])
+			                    LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+			                    LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			          WHERE     T.[Category] = '总销售额'
+			          GROUP BY  T.SaleCode,
+			                    [Year],
+			                    [Quarter],
+			                    [Month]
+			        ) Z
+			 		where  @{filter} and @{saleCode}
+			]]>
+		</sql>			
+		</dataSpace>	
+		
+		
+		<dataSpace name="getBusinessKPICharts">
+		<sql name="getbusinessTotalKPICharts">
+			<![CDATA[
+					SELECT  Supervisor,
+					        RSM ,
+					        Category,
+					        CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+					        CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+					        RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+					        Convert(decimal(18,2),MonthTarget/1000) MonthTarget,
+							Distributorcode,brand
+					FROM    ( 
+					          SELECT    H.Supervisor,
+					                    H.RSM,
+					                    '销售额' Category,
+					                    [Year],
+					                    [Quarter],
+					                    [Month],	
+					                    ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+										H.Distributorcode,
+										P.brand
+					          FROM   dbo.DataP T 
+		                      LEFT JOIN dbo.DistributorHierarchy H ON T.DistributorCode = H.DistributorCode
+		                      LEFT JOIN [dbo].[VIEW_SupervisorTargets] S ON H.Supervisor = S.SupervisorID
+                                        AND [YEAR] = YEAR([BizDate])
+                                        AND [Quarter] = DATENAME(QUARTER,[BizDate])
+                                        AND [Month] = MONTH([BizDate]) and  s.brand = '@{brand}'
+		                      LEFT JOIN dbo.Product P ON P.ProductCode = T.ProductCode 
+					          WHERE     S.Category = '总销售额' and T.VendorName = '士卓曼'
+					          GROUP BY  H.Supervisor,
+					                    H.RSM,
+					                    [Year],
+					                    [Quarter],
+					                    [Month],
+										H.Distributorcode,
+										P.brand
+										
+					          UNION ALL
+					          
+					          SELECT    H.Supervisor,
+					                    H.RSM,
+					                    '销售额' Category,
+					                    [Year],
+					                    [Quarter],
+					                    [Month],
+					                    ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+										H.Distributorcode,
+										P.brand
+					           FROM   dbo.DDIDaily_P T 
+		                      LEFT JOIN dbo.DistributorHierarchy H ON T.DistributorCode = H.DistributorCode
+		                      LEFT JOIN [dbo].[VIEW_SupervisorTargets] S ON H.Supervisor = S.SupervisorID
+                                        AND [YEAR] = YEAR([BizDate])
+                                        AND [Quarter] = DATENAME(QUARTER,[BizDate])
+                                        AND [Month] = MONTH([BizDate]) and  s.brand = '@{brand}'
+		                      LEFT JOIN dbo.Product P ON P.ProductCode = T.ProductCode 
+					          WHERE     S.Category = '总销售额' and T.VendorName = '士卓曼'
+					          GROUP BY  H.Supervisor,
+					                    H.RSM,
+					                    [Year],
+					                    [Quarter],
+					                    [Month],
+										H.Distributorcode,
+										P.brand
+					        ) T
+							where  @{filter} AND @{distributor} and brand = '@{brand}'
+			]]>
+		</sql>
+		<sql name="getBusinessKPI4Roxolidcharts">
+			<![CDATA[
+			SELECT  Supervisor,
+			        RSM,
+			        Category,
+			        CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+			        CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+			        RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+			        Convert(decimal(18,2),MonthTarget) MonthTarget,
+					distributorcode,brand
+			FROM    ( 
+	          		 SELECT     H.Supervisor,
+	                            H.RSM,
+	                            '销售数量' Category,
+	                            [Year],
+	                            [Quarter],
+	                            [Month],
+	                            ISNULL(SUM(CASE WHEN PH.[Category] = '@{productName}'
+	                            THEN  CONVERT( INT,ISNULL(Quantity, 0)) ELSE 0 END), 0) MonthTarget,
+								H.distributorcode,P.brand
+			          FROM      dbo.DataP T
+			          LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = T.DistributorCode
+			          LEFT JOIN [dbo].[VIEW_SupervisorTargets] S ON S.SupervisorID = H.Supervisor
+                                               AND [YEAR] = YEAR([BizDate])
+                                               AND [Quarter] = DATENAME(QUARTER,[BizDate])
+                                               AND [Month] = MONTH([BizDate]) and  s.brand = '@{brand}'
+					 LEFT  JOIN dbo.Product P ON P.ProductCode = T.ProductCode
+			         LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			         WHERE      S.Category = '@{productName}' and T.VendorName = '士卓曼'
+			         GROUP BY   H.Supervisor,
+			                    H.RSM,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+								H.distributorcode,P.brand
+								
+			          UNION ALL
+			          
+			          SELECT    H.Supervisor,
+			                    H.RSM,
+			                    '销售数量' Category,
+			                    [Year],
+			                    [Quarter],
+			                    [Month],
+			                    ISNULL(SUM(CASE WHEN PH.[Category] = '@{productName}'
+			                    THEN  CONVERT( INT,ISNULL(Quantity, 0)) ELSE 0 END), 0) MonthTarget,
+								H.distributorcode,P.brand
+			          FROM      dbo.DDIDaily_P T
+			          LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = T.DistributorCode
+			          LEFT JOIN [dbo].[VIEW_SupervisorTargets] S ON S.SupervisorID = H.Supervisor
+	                                             AND [YEAR] = YEAR([BizDate])
+	                                             AND [Quarter] = DATENAME(QUARTER,[BizDate])
+	                                             AND [Month] = MONTH([BizDate]) and  s.brand = '@{brand}'
+				     LEFT  JOIN dbo.Product P ON P.ProductCode = T.ProductCode
+			         LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+			         WHERE     S.Category = '@{productName}' and T.VendorName = '士卓曼' 
+			         GROUP BY  H.Supervisor,
+			                   H.RSM,
+			                   [Year],
+			                   [Quarter],
+			                   [Month],
+							   H.distributorcode,P.brand
+			        ) T    
+					where  @{filter} AND @{distributor} and brand = '@{brand}'
+
+			]]>
+		</sql>	
+		
+		<sql name="getBusinessKPI4A_PXKPICharts">
+			<![CDATA[
+				SELECT  	Supervisor,
+							RSM ,
+							Category,
+							CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+							CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+							RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+							Convert(decimal(18,2),MonthTarget) MonthTarget,
+							Distributorcode,
+							brand
+					FROM    ( 
+					          SELECT    H.Supervisor,
+					                    H.RSM,
+					                    'PX数量' Category,
+					                    YEAR([BizDate]) [Year],
+					                    DATENAME(QUARTER,[BizDate]) [Quarter],
+					                    MONTH([BizDate]) [Month],	
+					                    ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+										H.Distributorcode,
+										P.brand
+					          FROM  dbo.DataP S    
+							  LEFT JOIN dbo.DistributorHierarchy H ON H.distributorcode = S.distributorcode
+							  LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode 
+					          WHERE     P.producttype = 'Anthogyr implant-PX' and S.VendorName = '士卓曼'
+					          GROUP BY  H.Supervisor,
+					                    H.RSM,
+					                    YEAR([BizDate]),
+					                    DATENAME(QUARTER,[BizDate]),
+					                    MONTH([BizDate]),
+										H.Distributorcode,
+										P.brand
+										
+					          UNION ALL
+					          
+					          SELECT    H.Supervisor,
+					                    H.RSM,
+					                    'PX数量' Category,
+					                    YEAR([BizDate]) [Year],
+					                    DATENAME(QUARTER,[BizDate]),
+					                    MONTH([BizDate]),
+					                    ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+										H.Distributorcode,
+										P.brand
+					          FROM  dbo.DDIDaily_P S
+							  LEFT JOIN dbo.DistributorHierarchy H ON H.distributorcode = S.distributorcode
+							  LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+					          WHERE     P.producttype = 'Anthogyr implant-PX' and S.VendorName = '士卓曼'
+					          GROUP BY  H.Supervisor,
+					                    H.RSM,
+					                    YEAR([BizDate]),
+					                    DATENAME(QUARTER,[BizDate]),
+					                    MONTH([BizDate]),
+										H.Distributorcode,
+										P.brand
+
+										UNION ALL
+
+										SELECT    H.Supervisor,
+					                    H.RSM,
+					                    'implant数量' Category,
+					                    YEAR([BizDate]) [Year],
+					                    DATENAME(QUARTER,[BizDate]) [Quarter],
+					                    MONTH([BizDate]) [Month],	
+					                    ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+										H.Distributorcode,
+										P.brand
+					          FROM  dbo.DataP S    
+							  LEFT JOIN dbo.DistributorHierarchy H ON H.distributorcode = S.distributorcode
+							  LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode 
+					          WHERE     P.producttype = 'Anthogyr implant-PX'  OR  P.producttype = 'Anthogry implant-Reg' and S.VendorName = '士卓曼'
+					          GROUP BY  H.Supervisor,
+					                    H.RSM,
+					                    YEAR([BizDate]),
+					                    DATENAME(QUARTER,[BizDate]),
+					                    MONTH([BizDate]),
+										H.Distributorcode,
+										P.brand
+										
+					          UNION ALL
+					          
+					          SELECT    H.Supervisor,
+					                    H.RSM,
+					                    'implant数量' Category,
+					                    YEAR([BizDate]) [Year],
+					                    DATENAME(QUARTER,[BizDate]),
+					                    MONTH([BizDate]),
+					                    ISNULL(SUM(ISNULL(quantity, 0)), 0) MonthTarget,
+										H.Distributorcode,
+										P.brand
+					          FROM  dbo.DDIDaily_P S
+							  LEFT JOIN dbo.DistributorHierarchy H ON H.distributorcode = S.distributorcode
+							  LEFT JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+					          WHERE     P.producttype = 'Anthogyr implant-PX'  OR  P.producttype = 'Anthogry implant-Reg' and S.VendorName = '士卓曼'
+					          GROUP BY  H.Supervisor,
+					                    H.RSM,
+					                    YEAR([BizDate]),
+					                    DATENAME(QUARTER,[BizDate]),
+					                    MONTH([BizDate]),
+										H.Distributorcode,
+										P.brand
+					        ) T
+					where  @{filter} AND @{distributor} and brand = '@{brand}'
+			]]>
+		</sql>
+				
+		<sql name="getBusinessKPI4AbuementCharts">
+			<![CDATA[
+			SELECT  Supervisor,
+					RSM,
+					Category,
+					CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+					CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+					RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+					Convert(decimal(18,2),MonthTarget) MonthTarget,
+					Distributorcode
+			FROM    ( 
+								SELECT  H.Supervisor,
+										H.RSM,
+										'销售数量' Category,
+										[Year],
+										[Quarter],
+										[Month],
+										ISNULL(SUM(CASE WHEN PH.[Category] = '@{productName}'
+										THEN  CONVERT( INT,ISNULL(Quantity, 0))ELSE 0 END), 0) MonthTarget,
+										H.Distributorcode
+								FROM    [dbo].[VIEW_SupervisorTargets] T
+								LEFT JOIN dbo.DistributorHierarchy H ON H.Supervisor = T.SupervisorID
+								LEFT JOIN dbo.DataP S ON S.DistributorCode = H.DistributorCode
+								AND [YEAR] = YEAR([BizDate])
+								AND [Quarter] = DATENAME(QUARTER,[BizDate])
+								AND [Month] = MONTH([BizDate])
+								LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+								LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+								WHERE T.Category = '@{productName}'  and S.VendorName = '士卓曼'
+								GROUP BY  H.Supervisor,
+										  H.RSM,
+										  [Year],
+										  [Quarter],
+										  [Month],
+										  H.Distributorcode
+										  
+								UNION ALL
+								
+								SELECT    H.Supervisor,
+										  H.RSM,
+										 '销售数量' Category,
+										 [Year],
+										 [Quarter],
+										 [Month],
+										 ISNULL(SUM(CASE WHEN PH.[Category] = '@{productName}'
+										 THEN  CONVERT( INT,ISNULL(Quantity, 0))ELSE 0 END), 0) MonthTarget,
+										 H.Distributorcode
+								FROM     [dbo].[VIEW_SupervisorTargets] T
+								LEFT JOIN dbo.DistributorHierarchy H ON H.Supervisor = T.SupervisorID
+								LEFT JOIN dbo.DDIDaily_P S ON S.DistributorCode = H.DistributorCode 
+																		       AND [YEAR] = YEAR([BizDate]) 
+																			   AND [Quarter] = DATENAME(QUARTER,[BizDate]) 
+																			   AND [Month] = MONTH([BizDate])
+								LEFT  JOIN  dbo.Product P ON P.ProductCode = S.ProductCode
+								LEFT  JOIN  [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+								WHERE       T.Category = '@{productName}' and S.VendorName = '士卓曼' 
+								GROUP BY  H.Supervisor,
+										  H.RSM,
+										  [Year],
+										  [Quarter],
+										  [Month],
+										  H.Distributorcode
+					) T  
+			where  @{filter} AND @{distributor}
+
+			]]>
+		</sql>									
+	</dataSpace>
+	<dataSpace name = "TerminalKPICharts">
+			<sql name="getTerminalKPICharts">
+			<![CDATA[
+					SELECT  CONVERT(NVARCHAR(10), [year]) + '年' [Year],
+							Region,
+							Category,
+							Rname,
+							RSM,
+							MonthTarget		
+					FROM   (
+							SELECT  [Yearno] [Year],
+							        [monthno] [month],
+									Region,
+									'YTD客户数量' AS Category,
+									Rname,
+									RSM,
+									num AS MonthTarget
+									
+							FROM    @{table}
+							
+							UNION ALL
+							
+							SELECT  [Yearno] [Year],
+							         [monthno] [month],
+									Region, 
+								    '新增客户数' AS Category,
+									Rname,
+									RSM,
+									new	AS 	MonthTarget
+							FROM    @{table}
+							
+							UNION ALL
+							
+							SELECT  [Yearno] [Year],
+							        [monthno] [month],
+									Region, 
+								    'overlap客户数' AS Category,
+									Rname,
+									RSM,
+									Isnull(overlap,0)	AS MonthTarget
+							FROM    @{table}
+					)tb
+					where  @{filter} AND @{rsmFilter} and [Year]= @{Year} and [Month]= @{Month} and Region is not null and Region <> '' 
+					ORDER BY RSM DESC
+			]]>
+		</sql>									
+	</dataSpace>
+</sqls>

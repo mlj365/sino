@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>终端管理</title>
+    <script type="text/javascript" src="../../js/jquery1.8.min.js"></script>
+    <script type="text/javascript" src="../../js/echarts.min.js"></script>
+    <script type="text/javascript" src="../../js/china.js"></script>
+    <script type="text/javascript" src="../../js/random.js"></script>
+    <style>
+        .halfleftbottom {
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 48%;
+            height: 43%;
+            left: 0;
+            bottom: 0;
+            padding: 5px;
+        }
+        .halfrightbottom{
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 48%;
+            height: 42%;
+            right: 0;
+            bottom: 0;
+            padding: 5px;
+        }
+        .halflefttop{
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 48%;
+            height: 46%;
+            left: 0;
+            top: 0;
+            padding: 5px;
+        }
+        .halfrighttop{
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 48%;
+            height: 48%;
+            right: 0;
+            top: 0;
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<script>
+    function randomData() {
+        return Math.round(Math.random()*2500);
+    }
+
+    function randomData1() {
+        return Math.round(Math.random()*200);
+    }
+
+    var data1 = [
+        {name: '北京',value: randomData() },
+        {name: '天津',value: randomData() },
+        {name: '上海',value: randomData() },
+        {name: '重庆',value: randomData() },
+        {name: '河北',value: randomData() },
+        {name: '河南',value: randomData() },
+        {name: '云南',value: randomData() },
+        {name: '辽宁',value: randomData() },
+        {name: '黑龙江',value: randomData() },
+        {name: '湖南',value: randomData() },
+        {name: '安徽',value: randomData() },
+        {name: '山东',value: randomData() },
+        {name: '新疆',value: randomData() },
+        {name: '江苏',value: randomData() },
+        {name: '浙江',value: randomData() },
+        {name: '江西',value: randomData() },
+        {name: '湖北',value: randomData() },
+        {name: '广西',value: randomData() },
+        {name: '甘肃',value: randomData() },
+        {name: '山西',value: randomData() },
+        {name: '内蒙古',value: randomData() },
+        {name: '陕西',value: randomData() },
+        {name: '吉林',value: randomData() },
+        {name: '福建',value: randomData() },
+        {name: '贵州',value: randomData() },
+        {name: '广东',value: randomData() },
+        {name: '青海',value: randomData() },
+        {name: '西藏',value: randomData() },
+        {name: '四川',value: randomData() },
+        {name: '宁夏',value: randomData() },
+        {name: '海南',value: randomData() },
+        {name: '台湾',value: randomData() },
+        {name: '香港',value: randomData() },
+        {name: '澳门',value: randomData() }
+    ];
+
+    var data2 = [
+        {name: '北京',value: randomData1() },
+        {name: '天津',value: randomData1() },
+        {name: '上海',value: randomData1() },
+        {name: '重庆',value: randomData1() },
+        {name: '河北',value: randomData1() },
+        {name: '河南',value: randomData1() },
+        {name: '云南',value: randomData1() },
+        {name: '辽宁',value: randomData1() },
+        {name: '黑龙江',value: randomData1() },
+        {name: '湖南',value: randomData1() },
+        {name: '安徽',value: randomData1() },
+        {name: '山东',value: randomData1() },
+        {name: '新疆',value: randomData1() },
+        {name: '江苏',value: randomData1() },
+        {name: '浙江',value: randomData1() },
+        {name: '江西',value: randomData1() },
+        {name: '湖北',value: randomData1() },
+        {name: '广西',value: randomData1() },
+        {name: '甘肃',value: randomData1() },
+        {name: '山西',value: randomData1() },
+        {name: '内蒙古',value: randomData1() },
+        {name: '陕西',value: randomData1() },
+        {name: '吉林',value: randomData1() },
+        {name: '福建',value: randomData1() },
+        {name: '贵州',value: randomData1() },
+        {name: '广东',value: randomData1() },
+        {name: '青海',value: randomData1() },
+        {name: '西藏',value: randomData1() },
+        {name: '四川',value: randomData1() },
+        {name: '宁夏',value: randomData1() },
+        {name: '海南',value: randomData1() },
+        {name: '台湾',value: randomData1() },
+        {name: '香港',value: randomData1() },
+        {name: '澳门',value: randomData1() }
+    ];
+    var mapoption = {
+        tooltip: {
+            trigger: 'item',
+
+        },
+        visualMap: {
+            textStyle:{
+                color:'#fff'
+            },
+            min: 0,
+            max: 2500,
+            left: 'left',
+            top: 'bottom',
+            text: ['高','低'],           // 文本，默认为数值文本
+            calculable: true
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left',
+            data: ['个数', '销售额'],
+            selectedMode: 'single',
+        },
+        grid: {
+            height: 200,
+            width: 8,
+            right: 80,
+            bottom: 10
+        },
+        xAxis: {
+            type: 'category',
+            data: [],
+            splitNumber: 1,
+            show: false
+        },
+        yAxis: {
+            position: 'right',
+            min: 0,
+            max: 20,
+            splitNumber: 20,
+            inverse: true,
+            axisLabel: {
+                show: true
+            },
+            axisLine: {
+                show: false
+            },
+            splitLine: {
+                show: false
+            },
+            axisTick: {
+                show: false
+            },
+            data: []
+        },
+       toolbox: {        show: true,        feature: {   myDownload: {
+                   show: true,
+                   title: '数据导出',
+                   icon: 'image://http://localhost:8080/smbi/image/excel.svg',
+                   onclick: function (){
+                       alert('暂不支持');
+                   }
+               },         saveAsImage: {}        }    },series: [
+            {
+                zlevel: 1,
+                name: '个数',
+                type: 'map',
+                mapType: 'china',
+
+                roam: true,
+                left: 0,
+                right: '15%',
+                label: {
+                    normal: {
+                        show: true
+                    },
+                    emphasis: {
+                        show: true
+                    }
+                },
+                data:[
+                    {name: '北京',value: randomData() },
+                    {name: '天津',value: randomData() },
+                    {name: '上海',value: randomData() },
+                    {name: '重庆',value: randomData() },
+                    {name: '河北',value: randomData() },
+                    {name: '河南',value: randomData() },
+                    {name: '云南',value: randomData() },
+                    {name: '辽宁',value: randomData() },
+                    {name: '黑龙江',value: randomData() },
+                    {name: '湖南',value: randomData() },
+                    {name: '安徽',value: randomData() },
+                    {name: '山东',value: randomData() },
+                    {name: '新疆',value: randomData() },
+                    {name: '江苏',value: randomData() },
+                    {name: '浙江',value: randomData() },
+                    {name: '江西',value: randomData() },
+                    {name: '湖北',value: randomData() },
+                    {name: '广西',value: randomData() },
+                    {name: '甘肃',value: randomData() },
+                    {name: '山西',value: randomData() },
+                    {name: '内蒙古',value: randomData() },
+                    {name: '陕西',value: randomData() },
+                    {name: '吉林',value: randomData() },
+                    {name: '福建',value: randomData() },
+                    {name: '贵州',value: randomData() },
+                    {name: '广东',value: randomData() },
+                    {name: '青海',value: randomData() },
+                    {name: '西藏',value: randomData() },
+                    {name: '四川',value: randomData() },
+                    {name: '宁夏',value: randomData() },
+                    {name: '海南',value: randomData() },
+                    {name: '台湾',value: randomData() },
+                    {name: '香港',value: randomData() },
+                    {name: '澳门',value: randomData() }
+                ]
+            },
+            {
+                zlevel: 1,
+                name: '销售额',
+                type: 'map',
+                mapType: 'china',
+
+                roam: true,
+                left: 0,
+                right: '15%',
+                label: {
+                    normal: {
+                        show: true
+                    },
+                    emphasis: {
+                        show: true
+                    }
+                },
+                data:[
+                    {name: '北京',value: randomData() },
+                    {name: '天津',value: randomData() },
+                    {name: '上海',value: randomData() },
+                    {name: '重庆',value: randomData() },
+                    {name: '河北',value: randomData() },
+                    {name: '河南',value: randomData() },
+                    {name: '云南',value: randomData() },
+                    {name: '辽宁',value: randomData() },
+                    {name: '黑龙江',value: randomData() },
+                    {name: '湖南',value: randomData() },
+                    {name: '安徽',value: randomData() },
+                    {name: '山东',value: randomData() },
+                    {name: '新疆',value: randomData() },
+                    {name: '江苏',value: randomData() },
+                    {name: '浙江',value: randomData() },
+                    {name: '江西',value: randomData() },
+                    {name: '湖北',value: randomData() },
+                    {name: '广西',value: randomData() },
+                    {name: '甘肃',value: randomData() },
+                    {name: '山西',value: randomData() },
+                    {name: '内蒙古',value: randomData() },
+                    {name: '陕西',value: randomData() },
+                    {name: '吉林',value: randomData() },
+                    {name: '福建',value: randomData() },
+                    {name: '贵州',value: randomData() },
+                    {name: '广东',value: randomData() },
+                    {name: '青海',value: randomData() },
+                    {name: '西藏',value: randomData() },
+                    {name: '四川',value: randomData() },
+                    {name: '宁夏',value: randomData() },
+                    {name: '海南',value: randomData() },
+                    {name: '台湾',value: randomData() },
+                    {name: '香港',value: randomData() },
+                    {name: '澳门',value: randomData() }
+                ]
+            }
+        ]
+    };
+//-----------------------------------------
+    var xData = function() {
+        var data = [];
+        for (var i = 1; i < 13; i++) {
+            data.push(i + "月份");
+        }
+        return data;
+    }();
+
+    var constituteoption = {
+        "title": {
+            "text": "月度终端构成分析",
+            x: "4%",
+
+            textStyle: {
+                color: '#222',
+                fontSize: '18'
+            },
+        },
+        "tooltip": {
+            "trigger": "axis",
+            "axisPointer": {
+                "type": "shadow",
+                textStyle: {
+                    color: "#222"
+                }
+
+            },
+        },
+        grid:{
+        	containLabel: true,
+             bottom:'15%',
+             left:10,
+             right:10
+        },
+        "legend": {
+        	right:'5%',
+            textStyle: {
+                color: '#90979c',
+            },
+            "data": ['普通', '非活跃','overlap','新增']
+        },
+
+
+        "calculable": true,
+        "xAxis": [{
+            "type": "category",
+            "axisLine": {
+                lineStyle: {
+                    color: '#90979c'
+                }
+            },
+            "splitLine": {
+                "show": false
+            },
+            "axisTick": {
+                "show": false
+            },
+            "splitArea": {
+                "show": false
+            },
+            "axisLabel": {
+                "interval": 0,
+
+            },
+            "data": xData,
+        }],
+        "yAxis": [{
+            "type": "value",
+            "splitLine": {
+                "show": false
+            },
+            "axisLine": {
+                lineStyle: {
+                    color: '#90979c'
+                }
+            },
+            "axisTick": {
+                "show": false
+            },
+            "axisLabel": {
+                "interval": 0,
+
+            },
+            "splitArea": {
+                "show": false
+            },
+
+        },
+            {
+                "type": "value",
+                "splitLine": {
+                    "show": false
+                },
+                "axisLine": {
+                    lineStyle: {
+                        color: '#90979c'
+                    }
+                },
+                "axisTick": {
+                    "show": false
+                },
+                "axisLabel": {
+                    "interval": 0,
+
+                },
+                "splitArea": {
+                    "show": false
+                },
+
+            }],
+        "dataZoom": [{
+            "show": true,
+            "height": 20,
+            "xAxisIndex": [
+                0
+            ],
+            bottom: 5,
+            "start": 10,
+            "end": 80,
+            handleIcon: 'path://M306.1,413c0,2.2-1.8,4-4,4h-59.8c-2.2,0-4-1.8-4-4V200.8c0-2.2,1.8-4,4-4h59.8c2.2,0,4,1.8,4,4V413z',
+            handleSize: '110%',
+            handleStyle:{
+                color:"#222",
+
+            },
+            textStyle:{
+                color:"#222"},
+            borderColor:"#90979c"
+
+
+        }, {
+            "type": "inside",
+            "show": true,
+            "height": 15,
+            "start": 1,
+            "end": 35
+        }],
+        "series": [{
+            "name": "普通",
+            "type": "bar",
+            "stack": "总量",
+            "barMaxWidth": 35,
+            "barGap": "10%",
+            "itemStyle": {
+                "normal": {
+                    "color": "rgba(255,144,128,1)",
+                    "label": {
+                        "show": true,
+                        "textStyle": {
+                            "color": "#222"
+                        },
+                        "position": "insideTop",
+                        formatter: function(p) {
+                            return p.value > 0 ? (p.value) : '';
+                        }
+                    }
+                }
+            },
+            "data": [
+                709,
+                1917,
+                2455,
+                2610,
+                1719,
+                1433,
+                1544,
+                3285,
+                5208,
+                3372,
+                2484,
+                4078
+            ],
+        },
+            {
+                "name": "非活跃",
+                "type": "bar",
+                "stack": "总量",
+                "itemStyle": {
+                    "normal": {
+                        "color": "rgba(140,11,13,1)",
+                        "barBorderRadius": 0,
+                        "label": {
+                            "show": true,
+                            "position": "insideTop",
+                            formatter: function(p) {
+                                return p.value > 0 ? (p.value) : '';
+                            }
+                        }
+                    }
+                },
+                "data": [
+                    327,
+                    1776,
+                    507,
+                    1200,
+                    800,
+                    482,
+                    204,
+                    1390,
+                    1001,
+                    951,
+                    381,
+                    220
+                ]
+            },
+            {
+                "name": "overlap",
+                "type": "bar",
+                "stack": "总量",
+                "itemStyle": {
+                    "normal": {
+                        "color": "rgba(0,191,183,1)",
+                        "barBorderRadius": 0,
+                        "label": {
+                            "show": true,
+                            "position": "insideTop",
+                            formatter: function(p) {
+                                return p.value > 0 ? (p.value) : '';
+                            }
+                        }
+                    }
+                },
+                "data": [
+                    327,
+                    1776,
+                    507,
+                    1200,
+                    800,
+                    482,
+                    204,
+                    1390,
+                    1001,
+                    951,
+                    381,
+                    220
+                ]
+            }, {
+                "name": "新增",
+                "type": "bar",
+                "stack": "总量",
+                "itemStyle": {
+                    "normal": {
+                        "color": "rgba(50,91,83,45)",
+                        "barBorderRadius": 0,
+                        "label": {
+                            "show": true,
+                            "position": "insideTop",
+                            formatter: function(p) {
+                                return p.value > 0 ? (p.value) : '';
+                            }
+                        }
+                    }
+                },
+                "data": [
+                    32,
+                    176,
+                    57,
+                    100,
+                    80,
+                    42,
+                    20,
+                    190,
+                    101,
+                    51,
+                    81,
+                    20
+                ]
+            }, {
+                "name": "增长率",
+                "type": "line",
+                yAxisIndex:1,
+                symbolSize:10,
+                symbol:'circle',
+                "itemStyle": {
+                    "normal": {
+                        "color": "rgba(252,230,48,1)",
+                        "barBorderRadius": 0,
+                        "label": {
+                            "show": true,
+                            "position": "top",
+                            formatter: function(p) {
+                                return p.value > 0 ? (p.value) : '';
+                            }
+                        }
+                    }
+                },
+                "data": [
+                    36,
+                    93,
+                    62,
+                    10,
+                    19,
+                    15,
+                    48,
+                    75,
+                    9,
+                    23,
+                    65,
+                    98
+                ]
+            },
+        ]
+    };
+//--------------------------------------
+
+//-----------------------------------
+
+    var waveOption = {
+        title: {
+            text: '终端波动率前五&后五',
+            textStyle: {
+                color: '#222'
+            }
+        },
+        tooltip:{
+            formatter: function (value) {
+                return value + "%";
+            }
+        },
+        xAxis: {
+            data: ['爱此口腔门诊', '济南静雅嘉业商贸有限公司', '三门峡中医院', '江阴美嘉欣口腔', '苏州市吴江区第二人民医院', '大庆市新村康美口腔门诊部', '成都现代牙科', '昌吉州人民医院', '解放军五一八医院', '东莞市塘厦人民医院'],
+            boundaryGap: true,
+            axisLine: { //坐标轴轴线相关设置。数学上的x轴
+                show: true,
+                lineStyle: {
+                    color: '#222'
+                },
+            },
+            axisLabel: { //坐标轴刻度标签的相关设置
+                textStyle: {
+                    color: '#222',
+                    margin: 15,
+                },
+            },
+            axisTick: {
+                show: false,
+            },
+
+        },
+        yAxis: {
+            left:'10%',
+            splitLine: {
+                show: false,
+                lineStyle: {
+                    color: '#0a3256'
+                }
+            },
+            axisLine: {
+                show: false,
+            },
+            axisLabel: {
+                margin: 20,
+                formatter: '{value}%',
+                textStyle: {
+                    color: '#222',
+                },
+            },
+            axisTick: {
+                show: false,
+            },
+        },
+       toolbox: {        show: true,        feature: {  myDownload: {
+                   show: true,
+                   title: '数据导出',
+                   icon: 'image://http://localhost:8080/smbi/image/excel.svg',
+                   onclick: function (){
+                       alert('暂不支持');
+                   }
+               },          saveAsImage: {}        }    },series: [{
+            type: 'bar',
+            itemStyle: {
+                normal: {
+                    color: function(params) {
+                        var colorList = ['#28ffb3', '#fb4f69'];
+                        return colorList[params.dataIndex < 5 ? 0 : 1]
+                    },
+                    barBorderRadius: 10,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{b}\n{c}%'
+                    },
+
+                }
+            },
+            markPoint: {
+                symbol: 'arrow',
+                symbolSize: '20',
+                symbolRotate: '1',
+                itemStyle: {
+                    normal: {
+                        color: '#1dfff1'
+
+
+                    }
+                },
+                data: [{
+                    type: 'max',
+                    name: '最大值'
+                }, {
+                    type: 'min',
+                    name: '最小值'
+                }]
+            },
+            data: [19312, 18635, 16613, 15968, 13072, -8772, -4296, -3843, -3004, -2519]
+        }]
+    };
+
+    //-----------------------------\
+
+
+    var productoption = {
+
+        // backgroundColor: "#000",
+        title: {
+            text: '产品库存天数分布',
+            left: '50%',
+            textAlign: 'center',
+            textStyle: {
+                color: "#222",
+                fontWeight: 'normal',
+            }
+        },
+        tooltip: {
+            formatter:function (param){
+                return param.data.name + ":"+ param.data.value + "天";
+            }
+        },
+       toolbox: {        show: true,        feature: {            saveAsImage: {}        }    },series: [{
+            type: 'treemap',
+            width: '100%',
+            height: '90%',
+            top: '10%',
+            roam: false, //是否开启拖拽漫游（移动和缩放）
+            nodeClick: false, //点击节点后的行为,false无反应
+            breadcrumb: {
+                show: false
+            },
+            label: { //描述了每个矩形中，文本标签的样式。
+                normal: {
+                    show: true,
+                    position: ['10%', '40%']
+                }
+            },
+            itemStyle: {
+                normal: {
+                    show: true,
+                    textStyle: {
+                        color: '#222',
+                        fontSize: 32,
+                    },
+                    borderWidth: 1,
+                    borderColor: '#222',
+                },
+
+                emphasis: {
+                    label: {
+                        show: true
+                    }
+                }
+            },
+            data: [{name: '保护帽及颌面螺丝', value:  104 },
+                {name: '非医疗器械', value:  51 },
+                {name: '基台', value:  32 },
+                {name: '棘轮扳手及配件', value:  8 },
+                {name: '棘轮扳手适配器', value:  7 },
+                {name: '螺丝刀', value:  6 },
+                {name: '螺丝起', value:  6 },
+                {name: '模拟基台', value:  5 },
+                {name: '球钻', value:  4 },
+                {name: '取模部件', value:  4 },
+                {name: '塑料临时基底', value:  3 },
+                {name: '人工牙种植体', value:  3 },
+                {name: '口腔种植体导板定位杆', value:  1 },]
+        }]
+
+    };
+
+    var provinceoption = {
+
+        // backgroundColor: "#000",
+        title: {
+            text: '省市库存天数分布',
+            left: '50%',
+            textAlign: 'center',
+            textStyle: {
+                color: "#222",
+                fontWeight: 'normal',
+            }
+        },
+        tooltip: {
+            formatter:function (param){
+                return param.data.name + ":"+ param.data.value + "天";
+            }
+        },
+       toolbox: {        show: true,        feature: {            saveAsImage: {}        }    },series: [{
+            type: 'treemap',
+            width: '100%',
+            height: '90%',
+            top: '10%',
+            roam: false, //是否开启拖拽漫游（移动和缩放）
+            nodeClick: false, //点击节点后的行为,false无反应
+            breadcrumb: {
+                show: false
+            },
+            label: { //描述了每个矩形中，文本标签的样式。
+                normal: {
+                    show: true,
+                    position: ['10%', '40%']
+                }
+            },
+            itemStyle: {
+                normal: {
+                    show: true,
+                    textStyle: {
+                        color: '#222',
+                        fontSize: 32,
+                    },
+                    borderWidth: 1,
+                    borderColor: '#222',
+                },
+
+                emphasis: {
+                    label: {
+                        show: true
+                    }
+                }
+            },
+            data: [{name: '河北', value:  14 },
+                {name: '安徽', value:  55 },
+                {name: '广东', value:  32 },
+                {name: '浙江', value:  68 },
+                {name: '江苏', value:  27 },
+                {name: '上海', value:  65 },
+                {name: '北京', value:  46 },
+                {name: '深圳', value:  50 },
+                {name: '河南', value:  4 },
+                {name: '福建', value:  4 },
+                {name: '江西', value:  3 },
+                {name: '黑龙江', value:  53 },
+                {name: '内蒙古', value:  13 },]
+        }]
+
+    };
+
+    $(document).ready(function () {
+
+        var constitutechart = echarts.init(document.getElementById("constitute"));
+        constitutechart.setOption(constituteoption);
+
+        var volatilitychart = echarts.init(document.getElementById("volatility"));
+        volatilitychart.setOption(waveOption);
+
+        var inventoryproductchart = echarts.init(document.getElementById("inventoryproduct"));
+        inventoryproductchart.setOption(productoption);
+
+        var inventoryprovincechart = echarts.init(document.getElementById("inventoryprovince"));
+        inventoryprovincechart.setOption(provinceoption);
+
+		$(window).bind('resize',resizeChart);initPeroidMonth();
+    });
+</script>
+
+<body style="margin: 0;background: #f9f9f9;">
+<div id="inventoryproduct" class="halflefttop"></div>
+<div id="inventoryprovince" class="halfleftbottom"></div>
+<div id="constitute" class="halfrightbottom"></div>
+<div id="volatility" class="halfrighttop"></div>
+</body>
+
+</html>

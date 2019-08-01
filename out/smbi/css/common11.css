@@ -1,0 +1,340 @@
+* {
+	font-size: 13px;
+	font-family: Helvetica, Arial, sans-serif;
+}
+
+.col-xs-12 {
+  width: 100%;
+}
+.col-xs-11 {
+  width: 91.66666667%;
+}
+.col-xs-10 {
+  width: 83.33333333%;
+}
+.col-xs-9 {
+  width: 75%;
+}
+.col-xs-8 {
+  width: 66.66666667%;
+}
+.col-xs-7 {
+  width: 58.33333333%;
+}
+.col-xs-6 {
+  width: 50%;
+}
+.col-xs-5 {
+  width: 41.66666667%;
+}
+.col-xs-4 {
+  width: 33.33333333%;
+}
+.col-xs-3 {
+  width: 25%;
+}
+.col-xs-2 {
+  width: 16.66666667%;
+}
+.col-xs-1 {
+  width: 8.33333333%;
+}
+
+* {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+	padding: 0;
+}
+
+.vertical-middle {
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
+}
+
+.hand {
+	cursor: pointer;
+}
+
+.btn {
+	min-width: 80px;
+	height: 23px;
+	line-height: 22px;
+	border: none;
+	border-radius: 13px;
+	color: #FFF;
+	font-family: 微软雅黑;
+	font-size: 15px;
+	cursor: pointer;
+	margin-left: 10px;
+	text-align: center;
+	display: inline-block;
+	padding: 0px 10px;
+}
+
+.btn-disabe {
+	background-color: #aaa !important;
+}
+
+.btn-green {
+	background-color: #368467;
+}
+
+.btn-blue {
+	background-color: #3c8dbc;
+}
+
+.btn-blue2 {
+	background-color: #4e4e88;
+}
+
+.btn-gules {
+	background-color: #bc3c3c;
+}
+
+.btn-green:hover {
+	background-color: #32ad7f;
+}
+
+.btn-blue:hover {
+	background-color: #66b4e1;
+}
+
+.btn-blue2:hover {
+	background-color: #6a6aaf;
+}
+
+.btn-gules:hover {
+	background-color: #f56969;
+}
+
+.btn-light-blue {
+	width: 54px;
+	height: 34px;
+	line-height: 34px;
+	text-align: center;
+	border: 1px solid #ddd;
+	cursor: pointer;
+}
+
+.btn-light-blue:hover, .btn-primary:FOCUS {
+    background-color: #e7e7e7;
+    border: 1px solid #adadad;
+}
+
+.query {
+	font-size: 12px;
+	height: 30px;
+	line-height: 30px;
+	margin: 2px 10px 7px 30px;
+}
+
+.lbl_query{
+	/* width:70px; */
+	text-align: right
+}
+
+.edt_query{
+	width: 100px
+}
+
+.btn_wrap {
+	width: 80px;
+	text-align: right
+}
+
+.btn_query {
+	width: 70px;
+	height: 23px;
+	line-height: 22px;
+	background: #008CBA;
+	border: none;
+	border-radius: 13px;
+	color: #FFF;
+	font-family: 微软雅黑;
+	font-size: 15px;
+	cursor: pointer;
+	margin-left: 10px;
+	text-align: center;
+}
+
+.btn_query:hover {
+	background: #00B0F0;
+}
+
+.query_img {
+	height: 18px; 
+	margin-top: 5px; 
+	float: left;
+}
+
+.header {
+	position: fixed;
+	height: 40px;
+	line-height: 40px;
+	left: 0px;
+	right: 0px;
+	top: 0px;
+	z-index: 100;
+}
+
+.right-header {
+	position: fixed;
+	height: 40px;
+	line-height: 40px;
+	right: 0px;
+	top: 0px;
+	text-align: right;
+	z-index: 100;
+	margin-right: 20px;
+}
+
+.footer {
+	position: fixed;
+	height: 40px;
+	line-height: 40px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	z-index: 100;
+}
+
+.right-footer {
+	position: fixed;
+	height: 40px;
+	line-height: 40px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	text-align: right;
+	z-index: 100;
+}
+
+
+.btn_free {
+	padding: 20px;
+	border: none;
+	border-radius: 13px;
+	color: #FFF;
+	font-family: 微软雅黑;
+	font-size: 15px;
+	cursor: pointer;
+	margin-left: 10px;
+	text-align: center;
+	display: inline-block;
+}
+
+.btn-hide {
+	display: none;
+}
+
+.iframe_right {
+	position: absolute;
+	top: 0px;
+	left: 100%;
+	width: 100%;
+	height: 100%;
+}
+
+.iframe_open {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 100%;
+	
+	animation: iframe_open 0.5s;
+	-moz-animation: iframe_open 0.5s;	/* Firefox */
+	-webkit-animation: iframe_open 0.5s;	/* Safari 和 Chrome */
+	-o-animation: iframe_open 0.5s;	/* Opera */
+}
+
+.iframe_right_close {
+	position: absolute;
+	top: 0px;
+	left: 100%;
+	width: 100%;
+	height: 100%;
+	
+	animation: iframe_right_close 0.5s;
+	-moz-animation: iframe_right_close 0.5s;	/* Firefox */
+	-webkit-animation: iframe_right_close 0.5s;	/* Safari 和 Chrome */
+	-o-animation: iframe_right_close 0.5s;	/* Opera */
+}
+
+@keyframes iframe_open
+{
+	from {left: 100%;} to {left: 0px;}
+}
+
+@-moz-keyframes iframe_open /* Firefox */
+{
+	from {left: 100%;} to {left: 0px;}
+}
+
+@-webkit-keyframes iframe_open /* Safari 和 Chrome */
+{
+	from {left: 100%;} to {left: 0px;}
+}
+
+@-o-keyframes iframe_open /* Opera */
+{
+	from {left: 100%;} to {left: 0px;}
+}
+
+
+@keyframes iframe_right_close
+{
+	from {left: 0px;} to {left: 100%;}
+}
+
+@-moz-keyframes iframe_right_close /* Firefox */
+{
+	from {left: 0px;} to {left: 100%;}
+}
+
+@-webkit-keyframes iframe_right_close /* Safari 和 Chrome */
+{
+	from {left: 0px;} to {left: 100%;}
+}
+
+@-o-keyframes iframe_right_close /* Opera */
+{
+	from {left: 0px;} to {left: 100%;}
+}
+
+.btn_downloadfile {
+	width: 30px;
+	height: 30px;
+	line-height: 32px;
+	background-image: url("root/image/download.png");
+	background-repeat: no-repeat;
+	background-size: 28px 28px;
+	/* display: inline-block; */
+	margin-left: 10px;
+}
+
+.btn_downloadfile:HOVER {
+	background-size: 32px 32px;
+	cursor: pointer;
+}
+
+.btn_upload {
+	width: 30px;
+	height: 30px;
+	line-height: 32px;
+	background-image: url("root/image/upload.png");
+	background-repeat: no-repeat;
+	background-size: 28px 28px;
+	/* display: inline-block; */
+	margin-left: 10px;
+}
+
+.btn_upload:HOVER {
+	background-size: 32px 32px;
+	cursor: pointer;
+}
+
+

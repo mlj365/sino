@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>distributor kpi</title>
+    <link href="../../css/common11.css" rel="stylesheet">
+    <link href="../../css/main.css" rel="stylesheet">
+    <link href="../../css/control.css" rel="stylesheet">
+    <link href="../../css/report.css" rel="stylesheet">
+    <link href="../../css/iconfont.css" rel="stylesheet">
+    <link href="../../css/grid.css" rel="stylesheet">
+
+    <script src="../../js/jquery1.8.min.js"></script>
+    <script src="../../js/jquery-ui-1.10.4.js"></script>
+    <script src="../../js/foundation-2.0.js"></script>
+    <script src="../../js/control.js"></script>
+    <script src="../../data/data.js"></script>
+    <script src="../../js/designer.js"></script>
+    <script src="../../js/echarts.min.js"></script>
+    <script src="../../js/grid.js"></script>
+    <script src="../../js/staticpaneldata.js"></script>
+
+    <script type="text/javascript">
+        var mainTool, chartTool, chartToolItems, reportPanel, gridPanel;
+        var chart, grid;
+        var olapFiltersHide = false; 
+        var option = {
+                "tooltip": {
+                    "trigger": "axis",
+                    "axisPointer": {
+                        "type": "shadow",
+                        textStyle: {
+                            color: "#fff"
+                        }
+
+                    },
+                },
+                "grid": {
+                    "borderWidth": 0,
+                    "top": 110,
+                    "bottom": 95,
+                    textStyle: {
+                        color: "#fff"
+                    }
+                },
+                "legend": {
+                    textStyle: {
+                        color: '#90979c',
+                    },
+                    "data": ['销售额', '指标', '达成率']
+                },
+                "calculable": true,
+                "xAxis": [{
+                    "type": "category",
+                    "axisLine": {
+                        lineStyle: {
+                            color: '#90979c'
+                        }
+                    },
+                    "data": ['1季度','2季度','3季度','4季度'],
+                }],
+                "yAxis": [{
+                    "type": "value",
+                    name:"金额(K)",
+                    "splitLine": {
+                        "show": false
+                    },
+                    "axisLine": {
+                        lineStyle: {
+                            color: '#87cefa'
+                        }
+                    },
+                    "axisTick": {
+                        "show": false
+                    },
+                    "axisLabel": {
+                        "interval": 0,
+
+                    },
+                    "splitArea": {
+                        "show": false
+                    },
+
+                },
+                    {
+                        "type": "value",
+                        name:"达成率",
+                        "splitLine": {
+                            "show": false
+                        },
+                        "axisLine": {
+                            lineStyle: {
+                                color: '#87cefa'
+                            }
+                        },
+                        "axisTick": {
+                            "show": false
+                        },
+                        "axisLabel": {
+                            "interval": 0,
+
+                        },
+                        "splitArea": {
+                            "show": false
+                        },
+
+                    }],
+                "series": [{
+                    "name": "销售额",
+                    "type": "bar",
+                    "barGap": "10%",
+                    "itemStyle": {
+                        "normal": {
+                            "color": "rgba(255,144,128,1)",
+                            "label": {
+                                "show": true,
+                                "position": "top",
+                                formatter: function(p) {
+                                    return p.value > 0 ? (p.value) : '';
+                                }
+                            }
+                        }
+                    },
+                    "data": [
+                        169185.71,
+                        198065.75,
+                        230265.53,
+                        247843.13
+
+                    ],
+                },
+
+                    {
+                        "name": "指标",
+                        "type": "bar",
+                        "itemStyle": {
+                            "normal": {
+                                "color": "rgba(0,191,183,1)",
+                                "barBorderRadius": 0,
+                                "label": {
+                                    "show": true,
+                                    "position": "top",
+                                    formatter: function(p) {
+                                        return p.value > 0 ? (p.value) : '';
+                                    }
+                                }
+                            }
+                        },
+                        "data": [
+                            166723.20,
+                            166723.20,
+                            180616.80,
+                            180616.80,
+                        ]
+                    }, {
+                        "name": "达成率",
+                        yAxisIndex:1,
+                        "type": "line",
+                        symbolSize:10,
+                        symbol:'circle',
+                        "itemStyle": {
+                            "normal": {
+                                "color": "rgba(252,20,148,1)",
+                                "barBorderRadius": 0,
+                                "label": {
+                                    "show": true,
+                                    "position": "top",
+                                    formatter: function(p) {
+                                        return p.value > 0 ? (p.value)+"%" : '0%';
+                                    }
+                                }
+                            }
+                        },
+                        "data": [
+                            101,
+                            118,
+                            127,
+                            137
+                        ]
+                    },
+                ]
+            };
+
+        var tabledata = [
+
+            {"no":1, "DistributorName":'合肥和奥医疗器械有限公司',"distributorcode": '56500049',"Region": 'East', "rsm":'U106058_01', "Month":3, "year":2018, "RSM":'Leo lv_暂管',"YTDAmount" :'1,934,922.00',"Q1Amount": '790,320.00',"Q2Amount": '1,144,602.00', "Q3Amount": '0.00',"Q4Amount":  '0.00',"LTDAmount": '351,628.00', "LTDRP":"", "Q1RP":35, "Q2RP":60, "Q3RP":87, "Q4RP":0, "Q2RP":0, "MRP":80, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":2, "DistributorName":'上海思创医疗器械有限公司',"distributorcode": '56501400',"Region": 'East', "rsm":'U106058', "Month":3, "year":2018, "RSM":'Leo Lv',"YTDAmount" :'46,563,040.00',"Q1Amount": '25,183,889.00',"Q2Amount": '21,379,151.00',"Q3Amount":  '0.00',"Q4Amount": '0.00', "LTDAmount":'7,216,271.00', "LTDRP":"", "Q1RP":43, "Q2RP":96, "Q3RP":82, "Q4RP":0, "Q2RP":0, "MRP":83, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":3, "DistributorName":'杭州昆德医疗器械有限公司',"distributorcode": '56501920',"Region": 'East', "rsm":'U106058', "Month":3, "year":2018, "RSM":'Leo Lv',"YTDAmount" :'32,088,726.00',"Q1Amount": '20,167,004.00',"Q2Amount": '11,921,722.00',"Q3Amount":  '0.00',"Q4Amount": '0.00', "LTDAmount":'7,784,301.00', "LTDRP":"", "Q1RP":40, "Q2RP":105, "Q3RP":62, "Q4RP":0, "Q2RP":0, "MRP":122, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":4, "DistributorName":'江苏美安医药股份有限公司',"distributorcode": '56501923',"Region": 'East', "rsm":'U106058_01', "Month":3, "year":2018, "RSM":'Leo lv_暂管',"YTDAmount" :'18,858,371.00',"Q1Amount": '8,979,853.00',"Q2Amount": '9,878,518.00', "Q3Amount": '0.00',"Q4Amount": '0.00', "LTDAmount":'4,682,416.00', "LTDRP":"", "Q1RP":41, "Q2RP":81, "Q3RP":89, "Q4RP":0, "Q2RP":0, "MRP":127, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":5, "DistributorName":'安徽明悦医疗科技有限公司',"distributorcode": '56502021',"Region": 'East', "rsm":'U106058_01', "Month":3, "year":2018, "RSM":'Leo lv_暂管',"YTDAmount" :'4,655,886.00',"Q1Amount": '2,585,487.00',"Q2Amount": '2,070,399.00',"Q3Amount":  '0.00', "Q4Amount":'0.00', "LTDAmount":'1,264,353.00', "LTDRP":"", "Q1RP":58, "Q2RP":135, "Q3RP":108, "Q4RP":0, "Q2RP":0, "MRP":198, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":6, "DistributorName":'宁波蓝野医疗器械有限公司',"distributorcode": '56504187',"Region": 'East', "rsm":'U106058', "Month":3, "year":2018, "RSM":'Leo Lv',"YTDAmount" :'536,693.00', "Q1Amount":'412,333.00',"Q2Amount": '124,360.00',"Q3Amount":  '0.00',"Q4Amount":  '0.00',"LTDAmount":'287,649.00', "LTDRP":"", "Q1RP":54, "Q2RP":172, "Q3RP":52, "Q4RP":0, "Q2RP":0, "MRP":360, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":7, "DistributorName":'山东瑞康德一医疗器械有限公司',"distributorcode": '56500041',"Region": 'North', "rsm":'U111626', "Month":3, "year":2018, "RSM":'Mike Luo',"YTDAmount" :'16,948,952.00',"Q1Amount": '10,138,715.00',"Q2Amount": '6,810,237.00', "Q3Amount": '0.00',"Q4Amount": '0.00', "LTDAmount":'2,976,560.00', "LTDRP":"", "Q1RP":51, "Q2RP":126, "Q3RP":85, "Q4RP":0, "Q2RP":0, "MRP":111, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":8, "DistributorName":'北京德诺联康科技发展有限公司',"distributorcode": '56500047',"Region": 'North', "rsm":'U111626', "Month":3, "year":2018, "RSM":'Mike Luo',"YTDAmount" :'9,549,910.00',"Q1Amount": '6,045,305.00',"Q2Amount": '3,504,605.00',"Q3Amount":  '0.00',"Q4Amount": '0.00', "LTDAmount":'1,440,219.00',"LTDRP": "", "LTDRP":"", "Q1RP":"", "Q2RP": "", "Q3RP":"", "Q4RP":"", "MRP":"", "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":9, "DistributorName":'北京奥锐勒商贸有限公司',"distributorcode": '56501013',"Region": 'North', "rsm":'U111626', "Month":3, "year":2018, "RSM":'Mike Luo',"YTDAmount" :'5,275,358.00',"Q1Amount": '2,813,438.00',"Q2Amount": '2,461,920.00', "Q3Amount": '0.00', "Q4Amount":'0.00', "LTDAmount":'1,568,441.00', "LTDRP":"", "Q1RP":41, "Q2RP":90, "Q3RP":79, "Q4RP":0, "Q2RP":0, "MRP":151, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+            {"no":10,"DistributorName": '北京医健通科技发展有限公司',"distributorcode": '56501460',"Region": 'North', "rsm":'U111626', "Month":3, "year":2018, "RSM":'Mike Luo',"YTDAmount" :'38,436,135.00',"Q1Amount": '18,534,755.00',"Q2Amount": '19,901,380.00',"Q3Amount":  '0.00',"Q4Amount": '0.00', "LTDAmount":'8,104,370.00', "LTDRP":"", "Q1RP":50, "Q2RP":100, "Q3RP":108, "Q4RP":0, "Q2RP":0, "MRP":132, "YOY":"", "Ratio":"", "Brand":'Straumann'},
+
+        ];
+        function getReportChartTypes(report) {
+            var charts = report.theme.chart;
+            var result = [];
+
+            for (var i = 0; i < charts.length; i++) {
+                var code = charts[i];
+                var btnOption = ButtonList[code];
+
+                result.push({
+                    "code": code,
+                    "img": btnOption.img
+                });
+            }
+            return result;
+        }
+
+        function resetPanelData(widget) {
+            OlapTab.init([
+                {code: "olap-filters", header: "olap-filters-header", body: "olap-filters"},
+                {code: "olap-fields", header: "olap-fields-header", body: "olap-fields"}
+            ]);
+
+            chartToolItems = getReportChartTypes(report);
+
+            mainTool = new Toolbar({
+                element: "#mainTool",
+                items: [
+                    {type: "spliter"},
+                     {
+                        text: "隐藏/显示", icon: "icon-yunduanxiazai", onClick: function () {
+                       		toggleleft();  	
+                        }
+                    },
+                    {
+                        text: "导出数据", icon: "icon-yunduanxiazai", onClick: function () {
+                            alert("导出数据");
+                        }
+                    },
+                    {
+                        text: "导出图表", icon: "icon-weizhigeshi", onClick: function () {
+                            alert("导出图表");
+                        }
+                    },
+                    {
+                        text: "数据列表", icon: "icon-liebiao2", onClick: function () {
+                            alert("数据列表");
+                        }
+                    },
+                    {type: "spliter"},
+                    {
+                        text: "报表设计", icon: "icon-ceshishenqing", onClick: function () {
+                            alert("报表设计");
+                        }
+                    },
+                    {type: "spliter"},
+                    {
+                        text: "报表说明", icon: "icon-huixingzhen", onClick: function () {
+                            alert("报表说明");
+                        }
+                    },
+                    {
+                        text: "操作手册", icon: "icon-icon_bangzhuwendang", onClick: function () {
+                            alert("操作手册");
+                        }
+                    }
+                ]
+            });
+
+            chartTool = new Toolbar({
+                element: "#chartTool",
+                showText: false,
+                autoSize: true,
+                items: chartToolItems,
+                imgPath: "../../img/charttype/",
+                btnTemplate: "<span><img id='img' class='tool-img'></span>",
+                onClick: function (code) {
+                    var series = option.series;
+                    for (var i = 0; i < series.length; i++) {
+                        series[i].type = code;
+                    }
+
+                    chart.setOption(option);
+                }
+            });
+
+            AxisArea.init({
+                element: "#area-axis",
+                axises: widget.axisList,
+                onFieldClick: function (name, option) {
+                    alert(name);
+                }
+            });
+
+            FieldArea.init({
+                element: "#olap-fields",
+                report: report,
+                groupIcon: "icon-liebiao",
+                onChangeFilterSetting: function (fieldOption, checked) {
+                    if (checked) {
+                        FilterArea.addFilter(fieldOption);
+                    }
+                    else {
+                        FilterArea.deleteFilter(fieldOption);
+                    }
+                }
+            });
+
+            FilterArea.init({
+                element: "#olap-filters",
+                items: FieldArea.items,
+                groupIcon: "icon-liebiao",
+                onChangeFilter: function () {
+
+                }
+            });
+
+            Spliter.init({
+                element: "#spliterbar",
+                left: "#area-olap",
+                right: "#area-content"
+            });
+
+            var gridOption = widget.gridOption;
+            if (gridOption != null) {
+                grid = new $.fm.Grid({
+                    element: "grid",
+                    limit: gridOption.page.pageSize,
+                    hasSubTitle: gridOption.hasTitle,
+                    columns:[
+                        {field: "no", caption: "no", width: 120},
+                        {field: "Brand", caption: "产品线", width: 120},
+                        {field: "DistributorName", caption: "经销商名称", width: 120},
+                        {field: "distributorcode", caption: "经销商编码", width: 120},
+                        {field: "year", caption: "年", width: 120},
+                        {field: "Month", caption: "月", width: 120},
+                        {field: "Region", caption: "大区", width: 120},
+                        {field: "rsm", caption: "RSM", width: 120},
+                        {field: "RSM", caption: "主管", width: 120},
+                        {field: "YTDAmount", caption: "YTD销售额", width: 120},
+                        {field: "Q1Amount", caption: "Q1销售额", width: 120},
+                        {field: "Q2Amount", caption: "Q2销售额", width: 120},
+                        {field: "Q3Amount", caption: "Q3销售额", width: 120},
+                        {field: "Q4Amount", caption: "Q4销售额", width: 120},
+                        {field: "MAmount", caption: "月销售额", width: 120},
+                        {field: "YRP", caption: "YTD达成率%", width: 120},
+                        {field: "Q1RP", caption: "Q1达成率%", width: 120},
+                        {field: "Q2RP", caption: "Q2达成率%", width: 120},
+                        {field: "Q3RP", caption: "Q3达成率%", width: 120},
+                        {field: "Q4RP", caption: "Q4达成率%", width: 120},
+                        {field: "MRP", caption: "月达成率%", width: 120},
+
+                    ]
+                });
+
+                grid.loadData(tabledata, 1);
+            }
+
+
+            chart.setOption(option);
+        }
+
+        $(document).ready(function () {
+            reportPanel = $("#reportPanel");
+            gridPanel = $("#gridPanel");
+
+            chart = echarts.init(document.getElementById('reportPanel'));
+
+            /*Server.getData("root/report/getWidget?id=001", function (widget) {
+                resetPanelData(widget);
+            })*/
+
+            resetPanelData(staticdatas.widget);
+            //$( ".selector" ).draggable( "option", "scope", "tasks" );
+        });
+
+    </script>
+</head>
+
+<body>
+<div id="mainTool" class="area-tool" style="position: fixed;"></div>
+
+<div id="area-olap" class="area-olap">
+    <div class="area-olap-header">
+        <div id="olap-filters-header" class="tab-header" onclick="OlapTab.changeActive('olap-filters')">
+            <span class="iconfont icon-chazhaobiaodanliebiao"></span>
+            过滤条件
+        </div>
+        <div id="olap-fields-header" class="tab-header" onclick="OlapTab.changeActive('olap-fields')">
+            <span class="iconfont icon-chanpin2"></span>
+            高级设置
+        </div>
+    </div>
+    <div class="area-olap-body">
+        <div class="tab-body-outer">
+            <div id="olap-filters" class="tab-body"></div>
+        </div>
+        <div id="olap-fields" class="tab-body" style="display: none;">
+            <div id="olap-fields-dimension" class="area-fields">
+            </div>
+            <div id="olap-fields-value" class="area-fields">
+            </div>
+        </div>
+    </div>
+    <div class="area-olap-tabbody"></div>
+</div>
+
+<div id="spliterbar" class="spliterbar"></div>
+
+<div id="area-content" class="area-content">
+    <!--<div id="area-axis" class="area-axis">
+        <div class="axis-lines">
+            <div class="axis-line">
+                <div id="y-segment1" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        Y轴-1
+                    </div>
+                    <div id="axisY-1" class="axis-body"></div>
+                </div>
+                <div id="y-segment2" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        Y轴-2
+                    </div>
+                    <div id="axisY-2" class="axis-body"></div>
+                </div>
+            </div>
+
+            <div class="axis-line">
+                <div id="x-segment1" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        X轴-1
+                    </div>
+                    <div id="axisX-1" class="axis-body"></div>
+                </div>
+                <div id="x-segment2" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        X轴-2
+                    </div>
+                    <div id="axisX-2" class="axis-body"></div>
+                </div>
+            </div>
+
+            <div class="axis-change">
+                <span class="iconfont icon-shuaxin" style="font-size: 14px"></span>
+            </div>
+        </div>
+        <div class="axis-tools">
+            <div class="axis-tool-line">
+                <div id="axisY-add" class="axis-btn iconfont">
+                    +
+                </div>
+                <div id="axisY-delete" class="axis-btn iconfont">
+                    -
+                </div>
+            </div>
+            <div class="axis-tool-line">
+                <div id="axisX-add" class="axis-btn">
+                    +
+                </div>
+                <div id="axisX-delete" class="axis-btn">
+                    -
+                </div>
+            </div>
+        </div>
+    </div>-->
+
+    <div class="area-report">
+        <div class="reportBand">
+            <div id="reportPanel" class="reportPanel">
+
+            </div>
+            <div id="chartTool" class="chartTool" align="center"></div>
+        </div>
+        <div class="gridPanel">
+            <div id="grid"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

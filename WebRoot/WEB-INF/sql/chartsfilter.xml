@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="getDistributorKPICharts">
+		 <sql name="getCheckboxfilter">
+			<![CDATA[
+				SELECT 'all' AS boxcode, '@{boxname}' AS boxname
+				UNION ALL
+				SELECT  distinct loginname,EnglishName from [dbo].[organization]  where @{filter}
+			]]>
+		</sql> 
+		 <sql name="getCheckboxfilter4DistributorKPI">
+			<![CDATA[
+				SELECT 'all' AS boxcode, '@{boxname}' AS boxname
+				UNION ALL
+				SELECT  distinct DistributorCode,DistributorName from [dbo].[DistributorHierarchy] where @{filter}
+			]]>
+		</sql> 
+		 <sql name="getkpichartfilterregion">
+			<![CDATA[
+						
+						SELECT 'all' AS [boxcode],'所有区域' AS boxname
+						UNION ALL
+						SELECT DISTINCT Region, [Region] AS boxname
+						FROM
+							(SELECT DISTINCT Region,Region AS boxname
+							FROM [dbo].[DistributorHierarchy] 
+							) TB
+						where Region is not null and @{filter}
+			]]>
+		</sql> 
+		
+		<sql name="getkpichartfilterdistributor">
+			<![CDATA[
+			    	SELECT 'all' AS boxcode, '@{boxname}' AS boxname
+					UNION ALL
+					SELECT  distinct  distributorcode,distributorname
+					FROM    ( SELECT DistributorCode,
+									 distributorname,
+									 Region
+							 FROM [dbo].[DistributorHierarchy] 
+							) T
+				  where distributorname is not null  and @{filter}
+			]]>
+		</sql> 
+		<sql name="getkpichartfiltercsf">
+			<![CDATA[
+					SELECT 'all' as CSF,'所有销售' as CChinaName,'2011' as YEAR,'all' AS Supervisor,'所有主管' AS schinaname
+					UNION ALL
+					SELECT distinct [SaleCode] as CSF,C.[EnglishName],YEAR,Supervisor,R.[EnglishName]
+					FROM    ( 
+							SELECT    T.SaleCode ,YEAR,Supervisor
+							FROM      [dbo].[VIEW_SaleTargets] T
+							LEFT JOIN [dbo].[SaleHierarchy] H ON H.CSF = T.SaleCode
+										 ) tb
+				  LEFT JOIN  [dbo].[usr] C ON C.LoginName = [CSF]
+				  LEFT JOIN  [dbo].[usr] R ON R.LoginName = Supervisor
+				  where C.[EnglishName] is not null  and @{filter} 
+			]]>
+		</sql> 
+	<sql name="getkpichartfilterrsm">
+			<![CDATA[
+				SELECT 'all' AS RSM, '所有大区经理' AS rname,'2011' AS YEAR
+				UNION ALL
+				SELECT    DISTINCT RSM,R.[EnglishName],YEAR
+				FROM (
+				SELECT    DISTINCT H.RSM,YEAR
+				FROM      [dbo].[VIEW_SupervisorTargets] T
+				LEFT JOIN dbo.DistributorHierarchy H ON H.Supervisor = T.SupervisorID
+											) tb
+			 LEFT JOIN  [dbo].[usr] R ON  R.LoginName=RSM
+			 WHERE R.[EnglishName] is not null and @{filter} 
+			]]>
+		</sql> 
+		<sql name="getkpichartfiltermanger4salekpi">
+			<![CDATA[
+					SELECT   'all' AS Supervisor,'所有主管' AS schinaname,'2011' AS YEAR
+					UNION ALL
+					SELECT DISTINCT Supervisor ,C.[EnglishName],YEAR
+					from(
+					SELECT  Supervisor,YEAR     
+					FROM    [dbo].[VIEW_SaleTargets] T
+					LEFT JOIN dbo.SaleHierarchy H ON H.CSF = T.SaleCode
+					 ) tb
+					LEFT JOIN  [dbo].[usr] C ON C.LoginName = Supervisor
+					WHERE C.[EnglishName] IS NOT NULL and @{filter}
+			]]>
+		</sql> 
+		<sql name="getkpichartfiltermanger4bussinesskpi">
+			<![CDATA[
+					SELECT 'all' as Supervisor,'所有主管' AS schinaname, 'all' AS RSM, '所有大区经理' AS rname,'2011' AS YEAR
+					UNION ALL
+					SELECT  DISTINCT Supervisor,C.[EnglishName], RSM,R.[EnglishName],YEAR
+					FROM( SELECT  DISTINCT RSM,YEAR,Supervisor
+						  FROM      [dbo].[VIEW_SupervisorTargets] T
+						  LEFT JOIN dbo.DistributorHierarchy H ON H.Supervisor = T.SupervisorID
+										) tb
+				   LEFT JOIN  [dbo].[usr] R ON  R.LoginName=RSM
+				   LEFT JOIN  [dbo].[usr] C	ON  C.LoginName = Supervisor
+				   WHERE C.[EnglishName] is not null and @{filter}
+			]]>
+		</sql> 
+	</dataSpace>
+</sqls>

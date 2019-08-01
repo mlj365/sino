@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="getList">
+		<sql name="brandbak">
+			SELECT *,
+			(achieve - preachieve) * 100/ CASE WHEN preachieve = 0 THEN 1 ELSE preachieve END  as growth
+
+			from (
+			SELECT
+			a01.Brand,
+			SUM (monthsum) AS sumdata,
+			SUM (monthTarget) AS target,
+			SUM (presum) AS presumdata,
+			SUM (pretarget) AS pretarget,
+			(
+			ISNULL(SUM(monthsum), 0) * 100 / ISNULL(SUM(monthTarget), 1)
+			) AS achieve,
+			(
+			ISNULL(SUM(presum), 0) * 100 / ISNULL(SUM(pretarget), 1)
+			) AS preachieve
+
+			from(
+			SELECT
+			Brand, m.@{datatypecode}, p.monthno, monthsum, monthTarget
+			from @{tableName} m
+			LEFT JOIN md_peroid p on p.id = m.peroid
+			where @{filter}
+			)a01
+			LEFT JOIN
+			(
+			SELECT　@{datatypecode},monthno, monthsum as presum　, monthTarget as pretarget  from @{tableName} m
+			LEFT JOIN md_peroid p on p.id = m.peroid
+			)a02 on a01.@{datatypecode} = a02.@{datatypecode} and a01.monthno = a02.monthno + 12
+			GROUP BY a01.Brand
+			) total
+
+		</sql>
+
+		<sql name="getBrandAchievebak">
+			SELECT a01.Brand, a01.sumdata, a02.presumdata, a01.target ,a01.achieve ,
+			(sumdata - presumdata) * 100/ CASE WHEN presumdata = 0 THEN 1 ELSE presumdata END  as growth
+			from (
+			SELECT
+			Brand,
+			p.year,
+			SUM (monthsum) AS sumdata,
+			SUM (monthTarget) AS target,
+			(ISNULL(SUM(monthsum), 0) * 100 / ISNULL(SUM(monthTarget), 1)
+			) AS achieve
+			FROM
+			@{tableName} m
+			LEFT JOIN md_peroid p ON p.id = m.peroid
+			WHERE
+			@{filter}
+			GROUP BY brand, [year]
+			)a01
+			LEFT JOIN
+			(
+			SELECT
+			Brand,
+
+			p.year,
+			SUM (monthsum) AS presumdata,
+			SUM (monthTarget) AS pretarget,
+			(
+			ISNULL(SUM(monthsum), 0) * 100 / ISNULL(SUM(monthTarget), 1)
+			) AS preachieve
+			FROM
+			@{tableName} m
+			LEFT JOIN md_peroid p ON p.id = m.peroid
+
+			GROUP BY brand, [year]
+			) a02
+			on a01.Brand = a02.Brand  and a01.year = a02.year + 1
+
+		</sql>
+
+		<sql name="getAreaAchieveBak">
+			SELECT * , (achieve - preachieve) * 100/ CASE WHEN preachieve = 0 THEN 1 ELSE preachieve END  as growth from (
+			SELECT
+			Region,
+			sum(monthsum) as sumdata,
+			sum(monthTarget) as target ,
+			sum(presum) as presumdata,
+			sum(pretarget) as pretarget ,
+			(ISNULL(sum(monthsum), 0) * 100/ ISNULL(sum(monthTarget), 1)) as achieve,
+			(ISNULL(sum(presum), 0) * 100/ ISNULL(sum(pretarget), 1)) as preachieve
+			from (
+
+			SELECT
+			r.Region, m.@{datatypecode}, p.id,monthsum,monthTarget,p.monthno
+			from RSMRegion r
+			@{organizationJoin}
+
+			LEFT JOIN md_peroid p on m.peroid = p.id
+
+			WHERE  @{filter} and r.Region is not null and p.id is not null
+			)a01
+			LEFT JOIN
+			(
+			SELECT monthsum as presum,monthTarget as pretarget,p.monthno as premonthno, m.@{datatypecode} as @{datatypecode}
+			from @{tableName} m
+			LEFT JOIN md_peroid p on m.peroid = p.id
+			) a02 on a01.@{datatypecode} = a02.@{datatypecode} and a01.monthno = a02.premonthno + 12
+			group by Region
+			) alldata
+		</sql>
+
+		<sql name="getaibak">
+			SELECT a01.Region, Quantity, preQuantity,
+			ISNULL(Quantity, 0) / ISNULL(preQuantity, 1) as rate
+			from(
+			SELECT
+			Region, sum(Quantity) AS Quantity
+			from agg_@{dataType}_d_pe_pr agg
+			LEFT JOIN DistributorHierarchy h on h.DistributorCode = agg.DistributorCode
+			LEFT JOIN md_peroid p on p.id = agg.peroid
+			WHERE aggcode = 'DistributorCode-peroid-productType'
+			and ProductType like '%Abutment%'
+			and Region is not null
+			and @{filter}
+			GROUP BY Region
+			)a01
+			LEFT JOIN
+			(
+			SELECT
+			Region,sum(Quantity) AS preQuantity
+			from agg_@{dataType}_d_pe_pr agg
+			LEFT JOIN DistributorHierarchy h on h.DistributorCode = agg.DistributorCode
+			LEFT JOIN md_peroid p on p.id = agg.peroid
+			WHERE aggcode = 'DistributorCode-peroid-productType'
+			and ProductType like '%implant%'
+			and Region is not null
+			and @{filter}
+			GROUP BY Region
+			)
+			a02 on a01.Region = a02.Region
+
+		</sql>
+
+		<sql name="getTeamAchievebak">
+
+			SELECT
+			sum(monthsum) as sumdata, SUM(monthTarget) as target,
+			sum(monthsum) * 100/ SUM(monthTarget) as achieve
+			from(
+			SELECT * from
+			organization WHERE ParentLoginName = '@{userid}'
+			)a0
+			LEFT JOIN VIEW_@{dataType}_Month_Total m on (@{dataTypeSegment})
+			LEFT JOIN md_peroid p on p.id = m.peroid
+			WHERE @{filter} and monthTarget is not null
+
+		</sql>
+
+		<sql name="getTeamAchieveDetailbak">
+
+			SELECT
+			usr.EnglishName as name,
+			sum(monthsum) as sumdata,
+			SUM(monthTarget) as target,
+			sum(monthsum) * 100/ SUM(monthTarget) as achieve
+			from(
+			SELECT * from
+			organization o WHERE @{orgchildren}
+			)a0
+
+			LEFT JOIN VIEW_@{dataType}_Month_Total m on (@{dataTypeSegment})
+			LEFT JOIN md_peroid p on p.id = m.peroid
+			LEFT JOIN usr on usr.LoginName = a0.loginName
+			WHERE @{filter} and monthTarget is not null
+			group by usr.EnglishName
+		</sql>
+
+	</dataSpace>
+</sqls>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>终端管理</title>
+    <link href="../../css/terminal.css" rel="stylesheet">
+    <link href="../../css/grid.css" rel="stylesheet">
+    <link href="../../css/jquery-ui.min.css" rel="stylesheet">
+    <link href="../../css/jquery.multiselect.css" rel="stylesheet">
+    <script type="text/javascript" src="../../js/jquery1.8.min.js"></script>
+    <script type="text/javascript" src="../../js/jquery-ui-1.10.4.js"></script>
+    <script type="text/javascript" src="../../js/jquery.multiselect.js"></script>
+    <script type="text/javascript" src="../../js/foundation-2.0.js"></script>
+    <script type="text/javascript" src="../../js/control.js"></script>
+    <script type="text/javascript" src="../../js/echarts.min.3.8.5.js"></script>
+    <script type="text/javascript" src="../../js/china.js"></script>
+    <script type="text/javascript" src="../../js/random.js"></script>
+    <script type="text/javascript" src="../../data/terminal.js"></script>
+    <script type="text/javascript" src="../../option/terminal.js"></script>
+
+</head>
+
+<script>
+    var companyType,region;
+    var numMax = 0,saleMax = 0;
+
+    function resetMapMax() {
+        var mapTopic = topicMap[1];
+
+        var mapChartInstance = echarts.getInstanceByDom(document.getElementById(mapTopic.id));
+        var option = mapChartInstance.getOption();
+
+        option.series[0].data.forEach(function (one, index) {
+            if(one.value > numMax) {
+                numMax = one.value;
+            }
+        });
+        option.series[1].data.forEach(function (one, index) {
+            if(one.value > saleMax) {
+                saleMax = one.value;
+            }
+        });
+
+        mapChartInstance.on('legendselectchanged', function(params) {
+            var option = mapChartInstance.getOption();
+            if(params.name == "终端个数") {
+                option.visualMap[0].max = numMax;
+            }else {
+                option.visualMap[0].max = saleMax;
+            }
+            mapChartInstance.setOption(option);
+
+            if(params.name == "终端个数") {
+                mapChartInstance.dispatchAction({
+                    type: 'selectDataRange',
+                    selected: [0, numMax]
+                })
+            }else {
+                mapChartInstance.dispatchAction({
+                    type: 'selectDataRange',
+                    selected: [0, saleMax]
+                })
+            }
+
+
+        });
+
+    }
+
+    function chartRefresh() {
+        for(var i = 0; i <topicMap.length; i++) {
+            var one = topicMap[i];
+            resetChartData(one);
+        }
+
+        //resetMapMax();
+    }
+
+
+    function initRegionData() {
+        var user = getLocalData("user");
+        var params = "userType="+user.type + "&userId=" + user.name;
+        Server.getData("root/data/procedure/getRegionByPosition/getDataSet", params, function (regions) {
+            if (regions) {
+                var area = $("#area");
+                area.empty();
+                var opt = $('<option />', {
+                    value: "ALL",
+                    text: "ALL"
+                });
+                opt.appendTo(area);
+
+                regions.forEach(function (one) {
+                    var region = one.region;
+                    var opt = $('<option />', {
+                        value: region,
+                        text: region
+                    });
+                    opt.appendTo(area);
+                });
+                area.multiselect("refresh");
+            }
+        });
+    }
+
+    $(document).ready(
+        function () {
+            var middleChart = echarts.init(document.getElementById("map"));
+            middleChart.setOption(mapoption);
+
+            var constitutechart = echarts.init(document.getElementById("accounts"));
+            constitutechart.setOption(accountsoption);
+            constitutechart.on('mouseover', function (params) {
+                // 控制台打印数据的名称
+                if ('Straumann' == params.name || 'Anthogyr' == params.name) {
+                    constitutechart.dispatchAction({
+                        type: 'highlight',
+                        name: "overlap"
+                    });
+                }
+
+            });
+
+            constitutechart.on('mouseout', function (params) {
+                // 控制台打印数据的名称
+                if ('Straumann' == params.name || 'Anthogyr' == params.name) {
+                    constitutechart.dispatchAction({
+                        type: 'downplay',
+                        name: "overlap"
+                    });
+                }
+            });
+            var volatilitychart = echarts.init(document.getElementById("volatility"));
+            volatilitychart.setOption(accountOption);
+
+            initCommonMutiSelect();
+
+            $("#customertype").multiselect({
+                minWidth: 80,
+                click:function (event, ui) {
+                    var type = ui.value;
+                    var one = topicMap[0];
+                    if (type.trim().toLowerCase() == "all") {
+                        one.filter = undefined;
+                    }else {
+                        companyType = type;
+                        one.filter = " and  companyTypefilter =  c.CompanyType = '" + type + "'";
+                        if (region) {
+                            one.filter += " and regionfilter = region = '" + region + "'"
+                        }
+                    }
+                    resetChartData(one);
+                }
+            });
+            $("#area").multiselect({minWidth: 80,
+                click:function (event, ui) {
+                    var area = ui.value;
+                    var one = topicMap[0];
+                    if (area.trim().toLowerCase() == "all") {
+                        one.filter = undefined;
+                    }else {
+                        region = area;
+                        one.filter = " and  companyTypefilter = region = '" + area + "'";
+                        if (companyType) {
+                            one.filter += " and regionfilter = c.CompanyType = '" + companyType + "'";
+                        }
+                    }
+                    resetChartData(one);
+                }
+            });
+
+            $(window).bind('resize', resizeChart);
+
+            initCommonMutiSelect();
+
+            initPeroidMonth();
+
+            var user = getLocalData("user");
+            if (user && user.type.toLowerCase() != "superadmin") {
+                initRegionData();
+            }
+        });
+</script>
+
+<body style="margin: 0;background: #f9f9f9;">
+<div class="left">
+    <div class="panel-inner">
+        <div class="title-img">
+            <img src="../../image/report-color.png" width="24">
+        </div>
+        <div class="report-title">客户管理——省份</div>
+        <div id="map" class="report-body"></div>
+    </div>
+</div>
+
+<div class="halfrightbottom">
+    <div class="panel-inner">
+        <div class="title-img">
+            <img src="../../image/report-color.png" width="24">
+        </div>
+        <div class="report-title">区域客户数量</div>
+        <div id="volatility" class="report-body"></div>
+    </div>
+</div>
+
+
+<div class="halfrighttop">
+    <div class="panel-inner">
+        <div class="title-img">
+            <img src="../../image/report-color.png" width="24">
+        </div>
+        <div class="report-title">客户数量By Brand</div>
+        <div class="periodselectdiv" style="left:50%">
+
+            <div style="float: left;">Region：
+                <select id="area" class="periodselect" style="width:80px;">
+                    <option selected="selected">All</option>
+                    <option>east</option>
+                    <option>south</option>
+                    <option>west</option>
+                    <option>north</option>
+                    <option>northeast</option>
+                </select>
+            </div>
+            <div style="float: left;">客户类型：
+                <select id="customertype" class="periodselect" style="width:80px;">
+                    <option selected="selected">All</option>
+                    <option>公立</option>
+                    <option>民营</option>
+                    <option>连锁诊所</option>
+                    <option>技工加工所</option>
+                    <option>二级分销商</option>
+                </select>
+            </div>
+        </div>
+        <div id="accounts" class="report-body" style="bottom:38px"></div>
+    </div>
+</div>
+<div class="periodselectdiv ">
+    <div style="float: left;">年：
+        <select id="year" class="periodselect">
+            <option>2017</option>
+            <option selected="selected">2018</option>
+            <option>2019</option>
+            <option>2020</option>
+        </select>
+    </div>
+    <div style="float: left;">季度：
+        <select id="quarter" class="periodselect">
+
+            <option value="1">Q1</option>
+            <option value="2">Q2</option>
+            <option value="3">Q3</option>
+            <option value="4">Q4</option>
+        </select>
+    </div>
+    <div style="float: left;">月份：
+        <select id="month" class="periodselect">
+
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+        </select>
+    </div>
+    <div style="float: left;">Brand：
+        <select id="brand"  class="periodselect" >
+            <option value="Straumann">士卓曼</option>
+            <option value="Anthogyr">安卓健</option>
+            <option value="Tplus">T-plus</option>
+        </select>
+    </div>
+</div>
+</body>
+
+</html>

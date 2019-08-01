@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>终端销售汇总</title>
+    <link href="../../css/common11.css" rel="stylesheet">
+    <link href="../../css/control.css" rel="stylesheet">
+    <link href="../../css/detail.css" rel="stylesheet">
+    <link href="../../css/iconfont.css" rel="stylesheet">
+    <link href="../../css/grid.css" rel="stylesheet">
+    <script src="../../js/jquery1.8.min.js"></script>
+    <script src="../../js/jquery-ui-1.10.4.js"></script>
+    <script src="../../js/foundation-2.0.js"></script>
+    <script src="../../js/control.js"></script>
+    <script src="../../data/data.js"></script>
+    <script src="../../js/designer.js"></script>
+    <script src="../../js/grid.js"></script>
+    <script src="../../js/staticpaneldata.js"></script>
+   <script src="../../data/totalsales.js"></script>
+    <script type="text/javascript">
+        var mainTool, chartTool, chartToolItems, reportPanel, gridPanel;
+        var chart, grid;
+		var olapFiltersHide = false; 
+        
+        function resetPanelData(widget) {
+            OlapTab.init([
+                {code: "olap-filters", header: "olap-filters-header", body: "olap-filters"}
+            ]);
+
+            mainTool = new Toolbar({
+                element: "#mainTool",
+                items: [
+                    {type: "spliter"},
+                    {
+                        text: "隐藏/显示", icon: "icon-yunduanxiazai", onClick: function () {
+                       		toggleleft();  	
+                        }
+                    },
+                    {
+                        text: "显示设置", icon: "icon-yunduanxiazai", onClick: function () {
+                            alert("导出数据");
+                        }
+                    },
+                    {
+                        text: "导出数据", icon: "icon-weizhigeshi", onClick: function () {
+                            alert("导出图表");
+                        }
+                    },
+                    {type: "spliter"},
+                    {
+                        text: "报表说明", icon: "icon-huixingzhen", onClick: function () {
+                            alert("报表说明");
+                        }
+                    },
+                    {
+                        text: "操作手册", icon: "icon-icon_bangzhuwendang", onClick: function () {
+                            alert("操作手册");
+                        }
+                    }
+                ]
+            });
+			
+			FieldArea.init({
+                element: "#olap-fields",
+                report: report,
+                groupIcon: "icon-liebiao",
+                onChangeFilterSetting: function (fieldOption, checked) {
+                }
+            });
+	
+            FilterArea.init({
+                element: "#olap-filters",
+                items: toFieldArray(totalSalesFields),
+                groupIcon: "icon-liebiao",
+                onChangeFilter: function () {
+
+                }
+            });
+
+            Spliter.init({
+                element: "#spliterbar",
+                left: "#area-olap",
+                right: "#area-content"
+            });
+
+            var gridOption = widget.gridOption;
+            if (gridOption != null) {
+                grid = new $.fm.Grid({
+                    element: "grid",
+                    limit: 20,
+                    showPage:true,
+                    hasSubTitle: gridOption.hasTitle,
+                    columns:[
+                    	{"field": "brand", "caption": "产品线", "width": 100,"align": "left"},
+						{"field": "region", "caption": "区域", "width": 100,"align": "left"},
+						{"field": "province", "caption": "省份", "width": 100,"align": "center"},
+						{"field": "city", "caption": "市", "width": 100,"align": "center"},
+						{"field": "rname", "caption": "区域经理", "width": 100,"align": "left"},
+						{"field": "sname", "caption": "主管", "width": 100,"align": "left"},
+						{"field": "salecode", "caption": "负责销售", "width": 100,"align": "center"},
+						{"field": "cname", "caption": "销售姓名", "width": 100,"align": "left"},
+						{"field": "month", "caption": "月份", "width": 60,"align": "center"},
+						{"field": "year", "caption": "年份", "width": 60,"align": "center"},
+						{"field": "clientcode", "caption": "终端客户代码", "width": 100,"align": "center"},
+						{"field": "customername", "caption": "终端客户名称", "width": 200,"align": "left"},
+						{"field": "family", "caption": "客户母公司", "width": 200,"align": "left"},	
+						{"field": "customertype", "caption": "终端类型", "width": 100,"align": "center"},
+						{"field": "producttype", "caption": "产品类型", "width": 100,"align": "left"},
+						{"field": "productcode", "caption": "产品代码", "width": 100,"align": "right"},
+						{"field": "productname", "caption": "产品名称", "width": 250,"align": "left"},
+						{"field": "quantity", "caption": "产品数量", "width": 100,"align": "right"},
+						{"field": "unitname", "caption": "单位", "width": 100,"align": "center"},					
+						{"field": "purchaseprice", "caption": "NDP采购单价（不含税）", "width": 100,"align": "right"},
+						{"field": "ndpsales", "caption": "NDP销售额", "width": 100,"align": "right"},
+						{"field": "companysubtype", "caption": "终端分类", "width": 100,"align": "left"},
+						{"field": "terminallevel", "caption": "诊所授牌级别", "width": 100,"align": "left"},
+						{"field": "distributorcode", "caption": "经销商代码", "width": 100,"align": "center"},
+						{"field": "distributorname", "caption": "经销商名称", "width": 200,"align": "left"},
+						{"field": "distributorlevel", "caption": "经销商级别", "width": 100,"align": "center"},
+						{"field": "prh4", "caption": "PRH4", "width": 80,"align": "center"},
+						{"field": "prh5", "caption": "PRH5", "width": 80,"align": "center"},
+						{"field": "updatetime", "caption": "更新时间", "width": 150,"align":"center"}
+                    ]
+                });
+
+                grid.loadData(tabledata, page);
+            }
+        }
+
+        $(document).ready(function () {
+            gridPanel = $("#gridPanel");
+            resetPanelData(staticdatas.widget);
+        });
+
+    </script>
+</head>
+
+<body>
+
+<div class="report-title">
+	<div class="title-icon">
+		<img src="../../image/report-color.png" width="24">
+	</div>
+	<div class="title-text">
+		<label>《终端销售汇总》&nbsp;&nbsp;</label>
+		<label>数据日期：2019-01-05: 13:45:00</label>
+	</div>
+</div>
+
+<div id="area-olap" class="area-olap">
+    <div class="area-olap-header">
+        <div id="olap-filters-header" class="tab-header" onclick="OlapTab.changeActive('olap-filters')">
+            <span class="iconfont icon-chazhaobiaodanliebiao"></span>
+			过滤条件
+        </div>
+    </div>
+    <div class="area-olap-body">
+        <div class="tab-body-outer">
+            <div id="olap-filters" class="tab-body"></div>
+        </div>
+        <div id="olap-fields" class="tab-body" style="display: none;">
+            <div id="olap-fields-dimension" class="area-fields">
+            </div>
+            <div id="olap-fields-value" class="area-fields">
+            </div>
+        </div>
+    </div>
+    <div class="area-olap-tabbody"></div>
+</div>
+
+<div id="spliterbar" class="spliterbar"></div>
+
+<div id="area-content" class="area-content">
+	<div id="mainTool" class="area-tool"></div>
+	
+    <div class="area-report">
+        <div class="reportBand">
+            <div id="grid"></div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

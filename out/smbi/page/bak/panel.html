@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="Generator" content="EditPlus®">
+    <meta name="Author" content="">
+    <meta name="Keywords" content="">
+    <meta name="Description" content="">
+    <title>panel</title>
+
+    <link rel="stylesheet" href="../css/normalize.css">
+    <link rel="stylesheet" href="../css/jquery.gridster.css">
+
+    <script src="../js/jquery1.8.min.js"></script>
+    <script src="../js/jquery.gridster.js"></script>
+</head>
+<script type="text/javascript">
+    var gridster;
+    var winWidth =  window.screen.availWidth;
+    var winHeight =  window.screen.availHeight;
+    var maxCols = 20;
+
+    alert(winWidth + "---" + winHeight);
+
+
+    // same object than generated with gridster.serialize() method
+    var gridsterJson = [
+        {'col': 1, "row": 1, "size_x": 2, "size_y": 1, "id": "GangOfficers"},
+        {"col": 3, "row": 1, "size_x": 2, "size_y": 1, "id": "RunStatus"},
+        {"col": 5, "row": 1, "size_x": 2, "size_y": 1, "id": "TodayWeather"},
+        {"col": 7, "row": 1, "size_x": 4, "size_y": 3, "id": "TasksFull"},
+        {"col": 1, "row": 2, "size_x": 6, "size_y": 2, "id": "ReservoirWaterLevel"},
+        {"col": 1, "row": 4, "size_x": 6, "size_y": 2, "id": "ElectricityGeneration"},
+        {"col": 7, "row": 4, "size_x": 4, "size_y": 2, "id": "InspectionTasks"}
+    ];
+
+    var template = '<li ><p>' + '</p></li>';
+    $("panelarea").width(winWidth);
+    var serialization = gridsterJson;
+    serialization = Gridster.sort_by_row_and_col_asc(serialization);
+    $(document).ready(function () {
+        var panelWidth = $("#panel").width();
+        var panelHeight = $("#panel").height();
+        var oneWidegetSize = [parseInt(panelWidth/maxCols), parseInt(winHeight/maxCols)];
+        alert(oneWidegetSize);
+        gridster = $(".gridster ul").gridster({
+            widget_margins: [5, 5], // 上下， 左右
+            max_cols: maxCols,
+            autogrow_cols: false,
+            widget_base_dimensions: oneWidegetSize, // 基本单元宽高
+            shift_larger_widgets_down: false,
+            resize: {
+                enabled: true,
+                max_size_x: 20,
+                stop: function (e, ui, $widget) {
+                    //saveDynamicConfiguraionModule();
+                }
+            },
+            draggable: {
+                stop: function (event, ui) {
+                    //saveDynamicConfiguraionModule();
+                }
+            }
+        }).data('gridster');
+        gridster.remove_all_widgets();
+        $.each(serialization, function () {
+            gridster.add_widget('<li ><p>' + this.id + '</p><a href="www.baidu.com">ee</a> </li>', this.size_x, this.size_y, this.col, this.row, "", "", "", this.id);
+
+        });
+        $('.gridster li').dblclick(function () {
+            gridster.remove_widget(this, function () {
+                saveDynamicConfiguraionModule();
+            })
+        });
+        $('.gridster-list li').dblclick(function () {
+            var id = $(this).attr("data-id");
+            gridster.add_widget(template, this.size_x, this.size_y, this.col, this.row, "", "", "", id);
+            saveDynamicConfiguraionModule();
+            $('.gridster li').dblclick(function () {
+                gridster.remove_widget(this, function (e) {
+                })
+            });
+        });
+
+
+    });
+
+    function saveDynamicConfiguraionModule() {
+        var s = gridster.serialize();
+        s = JSON.stringify(s);
+        s = s.replace(/"+/g, "'");
+        $.ajax({
+            url: "<c:url value='/management/org/DynamicConfiguraionModule/save'/>",
+            type: 'post',
+            dataType: 'JSON',
+            data: {
+                id: "${gridsterUser.id}",
+                json: s,
+                userId: "${userId}"
+            },
+            success: function (data) {
+                if (data.status != "success") {
+                    alert("保存失败！");
+                }
+            },
+            error: function () {
+            }
+        });
+    }
+</script>
+
+</head>
+<body>
+<div id="panel" class="gridster">
+    <ul>
+
+    </ul>
+</div>
+<!--<div class="gridster-list">
+    <ul>
+        <li data-size_x="1" data-size_y="1" data-col="1" data-row="1" data-id="GangOfficers"><p>到岗人员</p></li>
+        <li data-size_x="1" data-size_y="1" data-col="1" data-row="1" data-id="RunStatus"><p>运行状态</p></li>
+        <li data-size_x="1" data-size_y="1" data-col="1" data-row="1" data-id="TodayWeather"><p>今日天气</p></li>
+        <li data-size_x="1" data-size_y="1" data-col="1" data-row="1" data-id="TasksFull"><p>个人任务</p></li>
+        <li data-size_x="1" data-size_y="1" data-col="1" data-row="1" data-id="ReservoirWaterLevel"><p>库容水位</p></li>
+        <li data-size_x="1" data-size_y="1" data-col="1" data-row="1" data-id="ElectricityGeneration"><p>电站发电量</p></li>
+        <li data-size_x="1" data-size_y="1" data-col="1" data-row="1" data-id="InspectionTasks"><p>巡查任务</p></li>
+    </ul>
+</div>-->
+</body>
+</html>

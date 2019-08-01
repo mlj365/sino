@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>SmartBI平台</title>
+    <link href="../css/common11.css" rel="stylesheet">
+    <link href="../css/main.css" rel="stylesheet">
+    <link href="../css/control.css" rel="stylesheet">
+    <link href="../css/report.css" rel="stylesheet">
+    <link href="../css/iconfont.css" rel="stylesheet">
+    <link href="../css/grid.css" rel="stylesheet">
+
+    <script src="../js/jquery1.8.min.js"></script>
+    <script src="../js/jquery-ui-1.10.4.js"></script>
+    <script src="../js/foundation-2.0.js"></script>
+    <script src="../js/control.js"></script>
+    <script src="../data/data.js"></script>
+    <script src="../js/designer.js"></script>
+    <script src="../js/echarts.min.js"></script>
+    <script src="../js/grid.js"></script>
+
+    <script type="text/javascript">
+        var mainTool, chartTool, chartToolItems, reportPanel, gridPanel;
+        var chart, grid;
+
+        function getReportChartTypes(report) {
+            var charts = report.theme.chart;
+            var result = [];
+
+            for (var i = 0; i < charts.length; i++) {
+                var code = charts[i];
+                var btnOption = ButtonList[code];
+
+                result.push({
+                    "code": code,
+                    "img": btnOption.img
+                });
+            }
+            return result;
+        }
+
+        $(document).ready(function () {
+            reportPanel = $("#reportPanel");
+            gridPanel = $("#gridPanel");
+
+            chart = echarts.init(document.getElementById('reportPanel'));
+
+            Server.getData("root/report/getWidget?id=001", function (widget) {
+                OlapTab.init([
+                    {code: "olap-filters", header: "olap-filters-header", body: "olap-filters"},
+                    {code: "olap-fields", header: "olap-fields-header", body: "olap-fields"}
+                ]);
+
+                chartToolItems = getReportChartTypes(report);
+
+                mainTool = new Toolbar({
+                    element: "#mainTool",
+                    items: [
+                        {type: "spliter"},
+                        {
+                            text: "导出数据", icon: "icon-yunduanxiazai", onClick: function () {
+                                alert("导出数据");
+                            }
+                        },
+                        {
+                            text: "导出图表", icon: "icon-weizhigeshi", onClick: function () {
+                                alert("导出图表");
+                            }
+                        },
+                        {
+                            text: "数据列表", icon: "icon-liebiao2", onClick: function () {
+                                alert("数据列表");
+                            }
+                        },
+                        {type: "spliter"},
+                        {
+                            text: "报表设计", icon: "icon-ceshishenqing", onClick: function () {
+                                alert("报表设计");
+                            }
+                        },
+                        {type: "spliter"},
+                        {
+                            text: "报表说明", icon: "icon-huixingzhen", onClick: function () {
+                                alert("报表说明");
+                            }
+                        },
+                        {
+                            text: "操作手册", icon: "icon-icon_bangzhuwendang", onClick: function () {
+                                alert("操作手册");
+                            }
+                        }
+                    ]
+                });
+
+                chartTool = new Toolbar({
+                    element: "#chartTool",
+                    showText: false,
+                    autoSize: true,
+                    items: chartToolItems,
+                    imgPath: "../img/charttype/",
+                    btnTemplate: "<span><img id='img' class='tool-img'></span>",
+                    onClick: function (code) {
+                        var option = widget.chartoption.option;
+                        var series = option.series;
+                        for (var i = 0; i < series.length; i++) {
+                            series[i].type = code;
+                        }
+
+                        chart.setOption(widget.chartoption.option);
+                    }
+                });
+
+                AxisArea.init({
+                    element: "#area-axis",
+                    axises: widget.axisList,
+                    onFieldClick: function (name, option) {
+                        alert(name);
+                    }
+                });
+
+                FieldArea.init({
+                    element: "#olap-fields",
+                    report: report,
+                    groupIcon: "icon-liebiao",
+                    onChangeFilterSetting: function (fieldOption, checked) {
+                        if (checked) {
+                            FilterArea.addFilter(fieldOption);
+                        }
+                        else {
+                            FilterArea.deleteFilter(fieldOption);
+                        }
+                    }
+                });
+
+                FilterArea.init({
+                    element: "#olap-filters",
+                    items: FieldArea.items,
+                    groupIcon: "icon-liebiao",
+                    onChangeFilter: function () {
+
+                    }
+                });
+
+                Spliter.init({
+                    element: "#spliterbar",
+                    left: "#area-olap",
+                    right: "#area-content"
+                });
+
+                var gridOption = widget.gridOption;
+                if (gridOption != null) {
+                    grid = new $.fm.Grid({
+                        element: "grid",
+                        limit: gridOption.page.pageSize,
+                        hasSubTitle: gridOption.hasTitle,
+                        columns: gridOption.fieldList
+                    });
+
+                    grid.loadData(gridOption.data, gridOption.page);
+                }
+
+
+                chart.setOption(widget.chartoption.option);
+            })
+
+
+            //$( ".selector" ).draggable( "option", "scope", "tasks" );
+        });
+
+    </script>
+</head>
+
+<body>
+<div id="mainTool" class="area-tool" style="position: fixed;"></div>
+
+<div id="area-olap" class="area-olap">
+    <div class="area-olap-header">
+        <div id="olap-filters-header" class="tab-header" onclick="OlapTab.changeActive('olap-filters')">
+            <span class="iconfont icon-chazhaobiaodanliebiao"></span>
+            过滤条件
+        </div>
+        <div id="olap-fields-header" class="tab-header" onclick="OlapTab.changeActive('olap-fields')">
+            <span class="iconfont icon-chanpin2"></span>
+            高级设置
+        </div>
+    </div>
+    <div class="area-olap-body">
+        <div class="tab-body-outer">
+            <div id="olap-filters" class="tab-body"></div>
+        </div>
+        <div id="olap-fields" class="tab-body" style="display: none;">
+            <div id="olap-fields-dimension" class="area-fields">
+            </div>
+            <div id="olap-fields-value" class="area-fields">
+            </div>
+        </div>
+    </div>
+    <div class="area-olap-tabbody"></div>
+</div>
+
+<div id="spliterbar" class="spliterbar"></div>
+
+<div id="area-content" class="area-content">
+    <div id="area-axis" class="area-axis">
+        <div class="axis-lines">
+            <div class="axis-line">
+                <div id="y-segment1" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        Y轴-1
+                    </div>
+                    <div id="axisY-1" class="axis-body"></div>
+                </div>
+                <div id="y-segment2" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        Y轴-2
+                    </div>
+                    <div id="axisY-2" class="axis-body"></div>
+                </div>
+            </div>
+
+            <div class="axis-line">
+                <div id="x-segment1" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        X轴-1
+                    </div>
+                    <div id="axisX-1" class="axis-body"></div>
+                </div>
+                <div id="x-segment2" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        X轴-2
+                    </div>
+                    <div id="axisX-2" class="axis-body"></div>
+                </div>
+            </div>
+
+            <div class="axis-change">
+                <span class="iconfont icon-shuaxin" style="font-size: 14px"></span>
+            </div>
+        </div>
+        <div class="axis-tools">
+            <div class="axis-tool-line">
+                <div id="axisY-add" class="axis-btn iconfont">
+                    +
+                </div>
+                <div id="axisY-delete" class="axis-btn iconfont">
+                    -
+                </div>
+            </div>
+            <div class="axis-tool-line">
+                <div id="axisX-add" class="axis-btn">
+                    +
+                </div>
+                <div id="axisX-delete" class="axis-btn">
+                    -
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="area-report">
+        <div class="reportBand">
+            <div id="reportPanel" class="reportPanel">
+
+            </div>
+            <div id="chartTool" class="chartTool" align="center"></div>
+        </div>
+        <div class="gridPanel">
+            <div id="grid"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

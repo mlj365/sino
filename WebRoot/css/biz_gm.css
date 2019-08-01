@@ -1,0 +1,202 @@
+.left-top {
+	position: absolute;
+	top: 30px;
+	left: 0;
+	right: 70%;
+	bottom: 50%;
+}
+
+.panel-inner {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	bottom: 2px;
+	right: 2px;
+	border: 1px solid #efd9d9;
+}
+.panel-outter {
+	position: absolute;
+	top: 2px;
+	left: 0px;
+	bottom: 2px;
+	right: 80px;
+	border: 1px solid #efd9d9;
+}
+
+.left-bottom {
+	position: absolute;
+	top: 50%;
+	left: 2px;
+	right: 70%;
+	bottom: 2px;
+}
+
+.middle-bottom {
+	position: absolute;
+	top: 50%;
+	left: 30%;
+	right: 40%;
+	bottom: 2px;
+}
+
+.middle-top {
+	position: absolute;
+	top: 30px;
+	left: 30%;
+	width: 45%;
+	bottom: 50%;
+}
+
+.right-top {
+	position: absolute;
+	top: 30px;
+	left: 75%;
+	right: 0;
+	bottom: 50%;
+}
+
+.right-bottom {
+	position: absolute;
+	top: 50%;
+	right: 0;
+	left: 60%;
+	bottom: 2px;
+}
+.bottom {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	left: 0;
+	width: 100%;
+	height: 45%;
+}
+.title-img {
+	position: absolute;
+	top: 10px;
+	left: 12px;
+	height: 26px;
+	width: 26px;
+}
+
+.title {
+	position: absolute;
+	top: 10px;
+	left: 42px;
+	height: 30px;
+	width: 35%;
+	line-height: 1.7rem;
+	border-bottom: 1px solid #96cfec;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #96cfec;
+	font-style: italic;
+}
+
+.subtitle {
+	position: absolute;
+    top: 14%;
+    left: 50px;
+    height: 1rem;
+    width: 300px;
+    font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+    font-size: 1rem;
+    color: #37a2da;
+    margin-top: 5px;
+}
+
+.firstsubtitle {
+	position: absolute;
+	left: 10%;
+	height: 25px;
+	width: 300px;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #37a2da;
+	margin-top: 5px;
+}
+
+.secondsubtitle {
+	position: absolute;
+	top: 30px;
+	left: 10%;
+	height: 25px;
+	width: 100%;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #37a2da;
+	margin-top: 5px;
+}
+
+.thirdsubtitle {
+	position: absolute;
+	left: 10%;
+	height: 30px;
+	width: 100%;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #37a2da;
+	bottom: 5%;
+}
+
+.detailtitle {
+	color: #37a2da;
+	
+}
+
+.middle-cricle {
+	position: absolute;
+	left:0;
+	right:0;
+	top: 35%;
+	height: 70%;
+}
+
+.report-title {
+	position: absolute;
+	left: 50px;
+	width: 60%;
+	top: 10px;
+	height: 1.7rem;
+	border-bottom: 1px solid #96cfec;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #96cfec;
+	font-style: italic;	
+}
+
+.report-body {
+	position: absolute;
+	left: 1px;
+    right: 0px;
+	top: 50px;
+	bottom: 0px;
+}
+.periodselectdiv{
+	position: absolute;
+    top: 2px;
+    left: 30px;
+    line-height: 1.7rem;
+    border-bottom: 1px solid #a5e0ff;
+    font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+    font-size: 0.1rem;
+    color: #467abd;
+    font-style: italic;
+}
+.periodselect {
+	float: left;
+    margin-left: 20px;
+    margin-top: 4px;
+    margin-right: 20px;
+    width: 120px;
+    height: 20px;
+    font-size: 0.8rem;
+}
+.option{
+	position: absolute;
+	left: 26%;
+	height: 20px;
+	bottom: 20px;
+	font-size: 1rem;
+	color: #467abd;
+	
+}

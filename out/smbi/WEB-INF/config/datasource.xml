@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE datasource PUBLIC "datasource" "datasource.dtd" >
+
+<datasource>
+	<defination 
+		driverName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    	url="jdbc:sqlserver://localhost;DatabaseName=STRInterface"
+        username="sa"
+        password="MLJ520ph"
+        characterEncoding="utf-8"
+        maxActive="20" 
+        initialSize="1" 
+        maxWait="60000" 
+        minIdle="1" 
+        timeBetweenEvictionRunsMillis="3000" 
+        minEvictableIdleTimeMillis="300000" 
+        validationQuery="SELECT 'x' " 
+        testWhileIdle="true" 
+        testOnBorrow="false" 
+        testOnReturn="false" 
+	/>
+
+</datasource>

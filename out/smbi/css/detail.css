@@ -1,0 +1,453 @@
+.report-title {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 0px;
+	height: 30px;
+	border-top: 1px solid #c0c0df;
+	border-bottom: 1px solid #c0c0df;
+}
+
+.title-icon {
+	position: absolute;
+	left: 25px;
+	top: 3px;
+	width: 20px;
+	height: 20px;
+}
+
+.title-text {
+	position: absolute;
+	left: 45px;
+	top: 0px;
+	width: 400px;
+	height: 24px;
+	font-size: 20px;
+	font-weight: bold;
+	line-height: 24px;
+	color: #003273;
+}
+
+.area-olap {
+	position: absolute;
+	left: 0;
+	width: 300px;
+	top: 32px;
+	bottom: 0px;
+	border-right: 1px #d4d4e0 solid;
+	overflow-y:scroll; 
+	overflow-x:hidden; 
+}
+
+.area-fields {
+	border-bottom: 1px #d4d4e0 solid;
+}
+
+.area-content {
+	position: absolute;
+	left: 304px;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	overflow: hidden;
+}
+
+.spliterbar {
+	position: absolute;
+	left: 300px;
+	width: 4px;
+	top: 32px;
+	bottom: 0px;
+}
+
+.spliterbar:HOVER {
+	background-color: #cdc0c0;
+	cursor: e-resize;
+}
+
+.area-report {
+	position: absolute;
+	top: 29px;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
+	overflow-y: hidden;
+	overflow-x: hidden;
+}
+
+.area-tool {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	height: 30px;
+}
+
+.tool-img {
+	width: 32px;
+	cursor: pointer;
+}
+
+.tool-img:HOVER {
+	background-color: #dad8d8;
+}
+
+.tool-btn {
+	position: relative;
+	float: left;
+	height: 28px;
+	width: 104px;
+	font-family: 微软雅黑;
+	border-left: 1px solid white;
+	border-right: 1px solid white;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.tool-btn-autoSize {
+	float: none;
+	display: inline;
+}
+
+.tool-btn-spliter {
+	position: relative;
+	float: left;
+	height: 28px;
+	line-height: 28px;
+	width: 5px;
+	font-size: 20px;
+	color: #cbcbcb;
+}
+
+.tool-btn:HOVER  {
+	border-left: 1px solid #d4d4e0;
+	border-right: 1px solid #d4d4e0;
+	background-color: #f9f5f5;
+}
+
+.tool-btn-selected {
+	background-color: #eeecf9;
+}
+
+.tool-btn-img {
+	width: 32px;
+	margin-top: -2px;
+	margin-left: 4px;
+}
+
+.tool-btn-icon {
+	margin-left: 10px;
+	height: 28px;
+	line-height: 28px;
+	color: #333360;
+}
+
+.tool-btn-text {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	width: 68px;
+	height: 100%;
+	line-height: 29px;
+	text-align: left;
+	border: none;
+}
+
+.area-olap-header {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 3px;
+	height: 24px;
+	line-height: 24px;
+	border-bottom: 1px solid #d4d4e0;
+}
+
+.area-olap-body {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 27px;
+	bottom: 0px;
+}
+
+.tab-header {
+	float: left;
+	height: 100%;
+	width: 120px;
+	background-color: #eeecf9;
+	text-align: center;
+	margin-left: 5px;
+	cursor: pointer;
+}
+
+.tab-avtiveHeader {
+	background-color: #dad2d2;
+}
+
+.tab-body-outer {
+	position: absolute;
+	left: 0px;
+	width: 100%;
+	top: 0px;
+	height: 100%;
+	background-color: #fbfbfb;
+}
+
+.tab-body {
+	position: absolute;
+	left: 5px;
+	top: 0px;
+	right: 5px;
+	bottom: 5px;
+	background-color: white;
+	padding-top: 2px;
+}
+
+.filter-line {
+	position: relative;
+	height: 36px;
+}
+
+.filter-label {
+	position: absolute;
+	left: 10px;
+	width: 80px;
+	height: 100%;
+	line-height: 36px;
+	text-align: right;
+	cursor: pointer;
+	text-overflow: ellipsis;
+    white-space: nowrap;
+	overflow: hidden;
+}
+
+.filter-label:HOVER {
+	background-color: #efe9e9;
+	font-weight: bold;
+	border: 1px solid #d4d4e0;
+}
+
+.filter-edit {
+	position: absolute;
+	left: 98px;
+	right: 15px;	
+	height: 100%;
+	line-height: 36px;
+}
+
+.select_ {
+	position: absolute;
+    left: 15%;
+    right: 10%;    
+    line-height: 36px;
+}
+
+.fields-group-header {
+	height: 29px;
+	line-height: 26px;
+	border-bottom: 1px dashed #e6dfdf;
+	margin: 5px 10px 0px 10px;
+}
+
+.groupText {
+	margin-left: 5px;
+}
+
+.fields-item {
+	height: 26px;
+	line-height: 26px;
+	margin: 3px 10px 0px 10px;
+	padding-left: 30px;
+	cursor: pointer;
+}
+
+.fields-item:HOVER {
+	background-color: #f5f2f2;
+}
+
+.field-check {
+	float: right;
+	height: 100%;
+	width: 50px;
+	text-align: center;
+}
+
+.chartTool {
+	position: absolute;
+	top: 0px;
+	bottom: 0px;
+	right: 1px;
+	width: 30px;
+	padding-top: 100px;
+	border-left: 1px solid #d4d4e0;
+}
+
+.reportBand {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	bottom: 0px;
+	border-bottom: 1px #c0c0df solid;
+}
+
+.reportPanel {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 32px;
+	bottom: 0px;
+}
+
+.gridPanel {
+	position: absolute;
+	left: 0px;
+	bottom: 0px;
+	height: 130px;
+	width: 100%;
+}
+
+.area-axis {
+	position: relative;
+	margin-top: 2px;
+	height: 61px;
+	border-bottom: 1px #d4d4e0 solid;
+}
+
+.axis-lines {
+	position: absolute;
+	left: 0px;
+	right: 50px;
+	top: 0px;
+	bottom: 0px;
+	border: 0px;
+	margin: 0px;
+	padding: 0px;
+}
+
+.axis-tools {
+	position: absolute;
+	width: 50px;
+	right: 0px;
+	top: 0px;
+	bottom: 0px;
+	border: 0px;
+	margin: 0px;
+	padding: 0px;
+}
+
+.axis-tool-line {
+	position: relative;
+	margin-right: 20%;
+	height: 50%;
+	border: 0px;
+	padding: 0px;
+}
+
+.axis-btn {
+	position: relative;
+	float: left;
+	width: 50%;
+	height: 20px;
+	border: 0px;
+	padding: 0px;
+	line-height: 20px;
+	text-align: center;
+	margin-top: 5px;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.axis-btn:hover{
+	background: #A3C0E8;
+	color: white;
+}
+
+.axis-line {
+	position: relative;
+	height: 26px;
+	margin-top: 3px;
+}
+
+.axis-line-segment {
+	position: relative;
+	float: left;
+	height: 100%;
+	border: none;
+	margin: 0px;
+	padding: 0px;
+}
+
+.axis-header {
+	position: absolute;
+	left: 10px;
+	height: 100%;
+	line-height: 26px;
+	width: 70px;
+	text-align: center;
+}
+
+.axis-body {
+	position: absolute;
+	left: 80px;
+	height: 100%;
+	line-height: 26px;
+	right: 5px;
+	border: 1px solid #d4d4e0;
+}
+
+.axis-body:HOVER {
+	background: #f5f2f2;
+}
+
+.axis-hotBody {
+	border: 2px solid #87befd;
+}
+
+.axis-change {
+	position: absolute;
+	left: 14px;
+	top: 20px;
+	height: 16px;
+	width: 16px;
+	color: blue;
+	cursor: pointer;
+}
+
+.axis-change:HOVER {
+	background-color: #f9f5f5;
+}
+
+.axix-field {
+	position: relative;
+	float: left;
+	height: 20px;
+	line-height: 20px;
+	margin-top: 2px;
+	margin-left: 5px;
+	padding-left: 5px;
+	width: 110px;
+	background: #d7ddfd;
+	border: 1px solid #c4ccf7;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.axix-field:HOVER {
+	background: #c4ccf7;
+}
+
+.axix-field-close {
+	position: absolute;
+	right: 3px;
+	top: 0px;
+	font-size: 12px;
+	font-weight: bold;
+	color: #4e4e88;
+	cursor: pointer;
+}
+
+.axix-field-close:hover {
+	color: white;
+}

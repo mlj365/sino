@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="getIncreasingRate">
+		<sql name="getBusinessTotalKPICharts4increasingrate">
+			<![CDATA[
+				SELECT      Supervisor,
+					        RSM,
+					        Category,
+					        CONVERT(NVARCHAR(10), [Year]) + '年' [Year],
+					        CONVERT(NVARCHAR(10), [Quarter]) + '季度' [Quarter],
+					        RIGHT('00' + CONVERT(NVARCHAR(10), [Month]), 2) + '月' [Month],
+					        Convert(decimal(18,2),MonthTarget/1000) MonthTarget,
+							Distributorcode,
+							brand
+					FROM    ( 
+					          SELECT    H.Supervisor,
+					                    H.RSM,
+					                    '销售额' Category,
+					                    [Year],
+					                    [Quarter],
+					                    [Month],	
+					                    ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+										H.Distributorcode,P.brand
+					          FROM    dbo.DataP T  
+		                      LEFT JOIN dbo.DistributorHierarchy H ON T.DistributorCode = H.DistributorCode
+		                      LEFT JOIN [dbo].[VIEW_SupervisorTargets] S ON H.Supervisor = S.SupervisorID
+		                                                 AND [YEAR] = YEAR([BizDate])
+		                                                 AND [Quarter] = DATENAME(QUARTER,[BizDate])
+		                                                 AND [Month] = MONTH([BizDate]) AND S.brand = '@{brand}'
+					          LEFT JOIN dbo.product P ON P.productcode = T.productcode                                        
+					          WHERE     S.Category  = '总销售额' AND Year =@{Year} and T.VendorName = '士卓曼'
+					          GROUP BY  H.Supervisor,
+					                    H.RSM,
+					                    [Year],
+					                    [Quarter],
+					                    [Month],
+										H.Distributorcode,
+										P.brand
+
+					          UNION ALL
+
+					          SELECT    H.Supervisor,
+					                    H.RSM,
+					                    '销售额' Category,
+					                    [Year],
+					                    [Quarter],
+					                    [Month],
+					                    ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+										H.Distributorcode,
+										P.brand
+					          FROM    dbo.DDIDaily_P T  
+		                      LEFT JOIN dbo.DistributorHierarchy H ON T.DistributorCode = H.DistributorCode
+		                      LEFT JOIN [dbo].[VIEW_SupervisorTargets] S ON H.Supervisor = S.SupervisorID
+		                                                 AND [YEAR] = YEAR([BizDate])
+		                                                 AND [Quarter] = DATENAME(QUARTER,[BizDate])
+		                                                 AND [Month] = MONTH([BizDate]) AND S.brand = '@{brand}' 
+					          LEFT JOIN dbo.product P ON P.productcode = T.productcode                                        
+					          WHERE     S.Category  = '总销售额' AND Year =@{Year} and T.VendorName = '士卓曼'
+					          GROUP BY  H.Supervisor,
+					                    H.RSM,
+					                    [Year],
+					                    [Quarter],
+					                    [Month],
+										H.Distributorcode,
+										P.brand
+										
+							  UNION ALL
+
+					          SELECT
+									H.Supervisor,
+									H.RSM,
+									'上年销售额' Category,
+									[Year],
+									Quarter,
+									T.[Month],
+									ISNULL(SUM(ISNULL(LYTDTotalSales, 0)), 0),
+									T.Distributorcode,
+									brand
+							 FROM [dbo].[DistributorLYTD] T
+							 LEFT JOIN dbo.DistributorHierarchy H ON H.DistributorCode = T.DistributorCode
+							 LEFT JOIN [dbo].[QuarterToMonth] Q ON Q.[Month] = T.[Month]
+							 WHERE YEAR = @{Year}-1  
+							 GROUP BY  H.Supervisor,
+									   H.RSM,
+									   [Year],
+									   [Quarter],
+									   T.[Month],
+									   T.Distributorcode,
+									   brand
+					        ) T
+				where @{distributor} and brand = '@{brand}'
+			]]>
+		</sql>
+		
+			<sql name="getBusinessTotalKPICharts4increasingrate1">
+			<![CDATA[
+				SELECT      
+					        '总销售额' Category,
+					        [Year],
+					        [Quarter],
+					        Convert(decimal(18,2),MonthTarget/1000) MonthTarget,
+							Distributorcode,
+							brand
+						FROM    ( 
+					          SELECT    
+					                    [Year],
+										[Quarter],
+					                    ISNULL(SUM(ISNULL(LYTDTotalSales, 0)), 0) MonthTarget,
+										Distributorcode,brand
+					          FROM DistributorLYTD D
+							  LEFT JOIN QuarterToMonth Q ON Q.[Month] = D.[Month]
+					          WHERE [Year] = @{Year}-1 AND [Quarter] = '1'
+					          GROUP BY  
+										Distributorcode,
+										[Quarter],
+										[Year],
+										brand
+										
+							 UNION ALL 
+		
+							 SELECT    
+					                    YEAR([BizDate]) [Year],
+					                    DATENAME(QUARTER,[BizDate]) [Quarter],
+					                    ISNULL(SUM(ISNULL(Amount, 0)), 0) MonthTarget,
+										Distributorcode,
+										P.brand
+					         FROM dbo.DDIDaily_P S
+					         LEFT JOIN Product P ON P.ProductCode = S.ProductCode
+					         WHERE YEAR([BizDate]) = @{Year} AND DATENAME(QUARTER,[BizDate]) = '1' and S.VendorName = '士卓曼'
+					          GROUP BY  
+										Distributorcode,
+										DATENAME(QUARTER,[BizDate]),
+										YEAR([BizDate]),
+										P.brand
+										)tb
+				        where @{distributor} and brand = '@{brand}'
+			]]>
+		</sql>
+		
+		<sql name="getCategory4total">
+			<![CDATA[
+				SELECT DISTINCT Category as code, 
+								category as name 
+				FROM   TargetsCategory 
+				WHERE  Category ='总销售额' 
+			]]>
+		</sql>
+		
+		<sql name="getCategory">
+			<![CDATA[
+				SELECT DISTINCT Category as code, 
+								category as name 
+				FROM   TargetsCategory 
+				WHERE  Category <>'总销售额' 
+			]]>
+		</sql>
+		
+		<sql name="getType">
+			<![CDATA[
+				SELECT DISTINCT type AS code, 
+								type AS name
+				from usr
+				where type is not null 
+					  AND type <> 'distributor' 
+					  AND type <> 'admin' 
+					  AND type <> 'Salesperson'
+			]]>
+		</sql>
+		
+		<sql name="getRegion">
+			<![CDATA[
+				SELECT DISTINCT area AS code, 
+								area AS name
+				from usr 
+				where area != ''
+			]]>
+		</sql>
+		
+		<sql name="getRSMRegion">
+            <![CDATA[
+                SELECT DISTINCT REGION                                 
+                from RSMRegion
+                WHERE  @{filter}
+            ]]>
+        </sql>
+		
+		<sql name="getAwardinglevel">
+			<![CDATA[
+				SELECT DISTINCT awardinglevel AS code, 
+								awardinglevel AS name 
+				FROM AwardingLevel  
+			]]>
+		</sql>
+		
+		<sql name="getProductLine">
+			<![CDATA[
+					SELECT DISTINCT [brand] AS code, 
+									[brand] AS name 
+					FROM [dbo].[product]
+					WHERE   @{filter}
+			]]>
+		</sql>
+		
+		<sql name="getProvince">
+			<![CDATA[
+				SELECT DISTINCT CityName AS code, 
+								CityName AS name 
+				FROM Company 
+				where CityName is not null
+			]]>
+		</sql>
+		
+		<sql name="getCompanyType">
+			<![CDATA[
+				SELECT DISTINCT CompanyType AS code, 
+								CompanyType AS name 
+				FROM Company 
+				where CompanyType is not null
+			]]>
+		</sql>
+		
+		<sql name="getSelectDistributorLevel4Hierartory">
+			<![CDATA[
+				 	SELECT DISTINCT [DistributorLevel] AS code,
+				 					[DistributorLevel] AS name
+					FROM [dbo].[Distributor]
+					WHERE   DistributorLevel is not null
+			]]>
+		</sql>
+		
+		<sql name="getProvince4Client">
+			<![CDATA[
+				SELECT DISTINCT ProvinceName AS code, 
+								ProvinceName AS name 
+				FROM Company 
+				where ProvinceName is not null
+			]]>
+		</sql>
+		
+		<sql name="getProvinceName">
+			<![CDATA[
+				SELECT DISTINCT ProvinceName AS code, 
+								ProvinceName AS name 
+				FROM Distributor 
+				where ProvinceName is not null
+			]]>
+		</sql>
+		
+		<sql name="getCompanyName">
+			<![CDATA[
+			select 
+			  	ROW_NUMBER() OVER(order by [terminalcode] desc) as rownum, *
+			from (
+				SELECT DISTINCT CompanyCode AS terminalcode,
+								CompanyName AS terminalname,
+								ProvinceName AS district,
+								ProvinceName,
+								cityname
+				FROM Company 
+				where CompanyName is not null and @{filter}
+				) tb 
+			]]>
+		</sql>
+		
+		<sql name="getCompanyFamilyName">
+            <![CDATA[
+            select 
+                ROW_NUMBER() OVER(order by [terminalname] desc) as rownum, *
+            from (
+                SELECT DISTINCT Family as terminalname
+                                
+                FROM Company 
+                where Family is not null and @{filter}
+                ) tb 
+            ]]>
+        </sql>
+		
+		
+		<sql name="getOtherByCompanyName">
+			<![CDATA[
+					SELECT DISTINCT CompanyCode AS terminalcode,
+									CompanyName AS terminalname,
+									ProvinceName AS district
+					FROM Company
+					WHERE CompanyCode IS NOT NULL AND [CompanyName] = '@{terminalname}'
+			]]>
+		</sql>
+		
+		<sql name="getSaleCode">
+			<![CDATA[
+				SELECT DISTINCT LoginName AS code, 
+								LoginName AS name 
+				FROM usr
+				WHERE type = 'Salesperson' AND LoginName is not null 
+			]]>
+		</sql>
+		
+		<sql name="getEnglishName4Csf">
+			<![CDATA[
+				SELECT DISTINCT EnglishName AS code, 
+								EnglishName AS name 
+				FROM usr
+				WHERE type = 'Salesperson' AND EnglishName is not null 
+			]]>
+		</sql>
+		
+		<sql name="getEnglishName4Supervisor">
+			<![CDATA[
+				SELECT DISTINCT EnglishName AS code, 
+								EnglishName AS name 
+				FROM usr
+				WHERE type = 'Supervisor' AND EnglishName is not null
+			]]>
+		</sql>
+		
+		<sql name="getSupervisorCode">
+			<![CDATA[
+				SELECT DISTINCT LoginName AS code, 
+								LoginName AS name 
+				FROM usr
+				WHERE type = 'Supervisor' AND LoginName is not null 
+			]]>
+		</sql>
+		
+		<sql name="getDistributorcode4target">
+			<![CDATA[
+				SELECT DISTINCT DistributorCode AS code, 
+									DistributorCode AS name 
+				FROM Distributor
+				WHERE  DistributorCode is not null
+			]]>
+		</sql>
+				
+		<sql name="getDistributorName">
+			<![CDATA[
+				SELECT DISTINCT DistributorName AS code, 
+								DistributorName AS name 
+				FROM Distributor
+				WHERE  DistributorName is not null
+			]]>
+		</sql>
+		
+		<sql name="getRoleFromManager" > 
+			select type from usr where UserID = '@{id}'
+		</sql>
+		
+		<sql name="getParentFromManager" > 
+			select loginname from [dbo].[organization] O 
+			LEFT JOIN usr U ON U.userid = O.id
+			where parentid = '@{id}' and type = '@{role}'
+		</sql>
+		
+		<sql name="getSaleCodeFromManager" > 
+			select loginname from [dbo].[organization] O 
+			LEFT JOIN usr U ON U.userid = O.id
+		    where ParentLoginName = '@{id}' and type = '@{role}'
+		</sql>
+		
+		<sql name="getDistributorCodeFromHierartory" > 
+			select DistributorCode from DistributorHierarchy where Supervisor = '@{supervisorid}'
+		</sql>
+		<!--根据大区经理获取销售 -->
+		<sql name="getSalesByRSM" > 
+			select O.LoginName from organization O
+			LEFT 		JOIN usr U ON U.userid = O.id
+			where ParentLoginName in( select LoginName from organization where ParentLoginName = '@{username}') and O.type = 'Salesperson'
+		</sql>
+		<!--根据大区经理获取终端 -->
+		<sql name="getTerminalByRSM" > 
+			select DISTINCT ClientCode 
+			from SaleHierarchy
+			where CSF IN (select O.LoginName 
+						  from organization O
+						  LEFT JOIN usr U ON U.userid = O.id
+						  where ParentLoginName in( select LoginName from organization where ParentLoginName = '@{username}')  and O.type = 'Salesperson')
+		</sql>
+		
+		<!--根据主管获取终端 -->
+		<sql name="getTerminalBySupervisor" > 
+			select DISTINCT ClientCode 
+			from SaleHierarchy
+			where CSF IN (select O.LoginName 
+						  from organization O
+						  LEFT JOIN usr U ON U.userid = O.id
+						  where ParentLoginName  = '@{username}' )
+		</sql>
+		
+		<!--根据销售代表获取终端 -->
+		<sql name="getTerminalByCSF" > 
+			select ClientCode from SaleHierarchy
+			where CSF ='@{username}'
+		</sql>
+		<!--根据大区经理获取主管 -->
+		<sql name="getSupervisorByRSM" > 
+			select O.LoginName from organization O
+LEFT 		JOIN usr U ON U.userid = O.id
+			where ParentLoginName = @{username} and O.type = 'Supervisor'
+		</sql>
+		<!--根据登录名获取大区经理-->
+		<sql name="getRSMByLogninName" > 
+			select LoginName from usr
+			where @{RSMfilter} and type = 'RSM'
+		</sql>
+		<!--根据大区经理获取经销商 -->
+		<sql name="getDistributorByRSM" > 
+			select DistributorCode from DistributorHierarchy
+			where RSM = '@{username}' 
+		</sql>
+		<!--根据主管获取销售 -->
+		<sql name="getSalesBySupervisor" > 
+			select O.LoginName from organization O
+			LEFT JOIN usr U ON U.userid = O.id
+			where ParentLoginName = '@{username}' and O.type = 'Salesperson'
+		</sql>
+		<!--根据主管获取经销商 -->
+		<sql name="getDistributorBySupervisor" > 
+			select DistributorCode from DistributorHierarchy
+			where Supervisor = '@{username}' 
+		</sql>
+		
+		<sql name="getSupervisor">
+			<![CDATA[
+					SELECT EnglishName as code,EnglishName as name
+					from  [dbo].[organization] O
+LEFT 				JOIN usr U ON U.userid = O.id
+					WHERE  type = 'Supervisor' 
+			]]>
+		</sql>
+		
+		<sql name="getDistributorCode">
+			<![CDATA[
+					SELECT  DISTINCT  [DistributorName] as code,
+									  [DistributorName] as name
+					FROM    Distributor 
+			]]>
+		</sql>
+		
+		<sql name="getOtherByDistributorCode">
+			<![CDATA[
+			select 
+			  	ROW_NUMBER() OVER(order by distributorcode desc) as rownum, *
+			from (
+					SELECT  DISTINCT  [DistributorCode] as distributorcode,
+					        [DistributorName] as distributorname,
+					        [DistributorCode] as distributorloginname,
+					        [Provincename] as province,
+					        DistributorLevel
+					FROM    [dbo].[Distributor]
+					where @{filter} and DistributorLevel = '一级商' 
+					)tb
+			]]>
+		</sql>
+		<sql name="getOtherBySupervisor">
+			<![CDATA[
+			select 
+			  	ROW_NUMBER() OVER(order by supervisor desc) as rownum, *
+			from (
+					SELECT 	DISTINCT  D.[LoginName] as supervisor,
+					        D.[EnglishName] AS supervisorName,
+					        S.area as region,
+					        [ParentLoginName] as rsm,
+					        ParentName AS rsmname
+					FROM    [dbo].[organization] D 
+			    	LEFT  JOIN [dbo].[usr] S ON S.LoginName = D.LoginName
+					where @{filter} AND S.type = 'supervisor'
+					)tb
+			]]>
+		</sql>
+		
+		<sql name="getOtherBySupervisorTargets">
+			<![CDATA[
+			select 
+			  	ROW_NUMBER() OVER(order by supervisorid desc) as rownum, *
+			from (
+					SELECT 	DISTINCT LoginName as supervisorid,
+					                 [EnglishName] AS englishname
+					FROM [dbo].[usr] 
+					where  type = 'Supervisor' AND @{filter}
+					)tb
+			]]>
+		</sql>
+		
+		<sql name="getCompanyCode">
+			<![CDATA[
+					SELECT DISTINCT Companyname as name, Companyname as code
+					FROM Company
+					WHERE CompanyCode IS NOT NULL
+			]]>
+		</sql>
+		<sql name="getOtherByCompanyCode">
+			<![CDATA[
+			select 
+			  	ROW_NUMBER() OVER(order by clientcode desc) as rownum, *
+			from (
+					SELECT DISTINCT CompanyCode AS clientcode,
+									CompanyName AS clientname,
+									ProvinceName AS province, 
+									CityName AS city,
+									CompanyType AS clienttype,
+									CompanySubType AS terminaltype
+					FROM Company
+					WHERE CompanyCode IS NOT NULL AND @{filter}
+					)tb
+			]]>
+		</sql>
+		
+		<sql name="getCsf">
+			<![CDATA[
+					SELECT DISTINCT EnglishName AS code, EnglishName AS name
+					FROM usr 
+					WHERE EnglishName IS NOT NULL AND type = 'Salesperson' 
+			]]>
+		</sql>
+		
+		<sql name="getOtherByCsfName">
+			<![CDATA[
+			select 
+			  	ROW_NUMBER() OVER(order by [salecode] desc) as rownum, *
+			from (
+					SELECT DISTINCT EnglishName, LoginName AS salecode 
+					FROM usr 
+					WHERE @{filter} AND EnglishName IS NOT NULL AND type = 'Salesperson' 
+				)tb
+			]]>
+		</sql>
+		
+		
+		<sql name="getOtherByCsf">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by [CSF] desc) as rownum, *
+			from (
+					SELECT 	DISTINCT  H.[LoginName] as csf,
+									  H.EnglishName AS cchinaname,
+								      [ParentLoginName] AS supervisor,
+									  ParentName AS schinaname,
+					          		  R.[area] as region,
+					                  W.rsm as rsm,
+									  W.rsmname AS rname
+					FROM   [dbo].[organization] H
+					LEFT JOIN usr R ON R.LoginName = H.[LoginName]
+					LEFT JOIN (SELECT DISTINCT  D.[LoginName] as supervisor,
+					        D.[EnglishName] AS supervisorName,
+					        S.area as region,
+					        [ParentLoginName] as rsm,
+					        ParentName AS rsmname
+					FROM    [dbo].[organization] D 
+			    	LEFT  JOIN [dbo].[usr] S ON S.LoginName = D.LoginName) W ON W.supervisor = H.ParentLoginName
+					where  @{filter} AND R.TYPE = 'Salesperson'
+					)tb
+			]]>
+		</sql>
+		<sql name="getEmsg">
+			<![CDATA[
+					SELECT TOP 1 Msg FROM @{tablename} order by errortime DESC
+			]]>
+		</sql>
+		
+		<sql name="getSelectRegion">
+			<![CDATA[
+					SELECT DISTINCT Region
+					FROM DistributorHierarchy
+					WHERE   @{filter}  and Region is not null 
+			]]>
+		</sql>
+		
+		
+		<sql name="getSelectProvince">
+			<![CDATA[
+			 	SELECT DISTINCT Province
+				FROM DistributorHierarchy
+				WHERE   @{filter} and Province IS NOT NULL 
+			]]>
+		</sql>
+		
+		<sql name="getSelectRname">
+			<![CDATA[
+				 	SELECT DISTINCT R.[EnglishName] as rname
+					from (
+						  SELECT * FROM SaleHierarchy ) DATA
+					LEFT JOIN   [dbo].[usr] R ON  DATA.RSM = R.LoginName
+					LEFT JOIN   [dbo].[usr] S ON  DATA.Supervisor = S.LoginName
+					WHERE   @{filter} and R.EnglishName is not null 
+			]]>
+		</sql>
+		
+		
+		<sql name="getSelectSname">
+			<![CDATA[
+				SELECT DISTINCT S.EnglishName as sname
+				from (
+						SELECT * FROM SaleHierarchy ) DATA
+				LEFT JOIN   [dbo].[usr] R ON  DATA.RSM = R.LoginName
+				LEFT JOIN   [dbo].[usr] S ON  DATA.Supervisor = S.LoginName
+				WHERE   @{filter} and  S.EnglishName is NOT NULL
+			]]>
+		</sql>
+		
+		<sql name="getSelectCustomerType">
+			<![CDATA[
+			 	SELECT DISTINCT [CustomerType]
+				FROM VIEW_DataSales
+				WHERE   @{filter} and CustomerType is not null 
+			]]>
+		</sql>
+		
+		<sql name="getSelectPRH4">
+			<![CDATA[
+			 	SELECT DISTINCT [RH4] FROM PH4Category
+				WHERE   @{filter} and RH4 is not null 
+			]]>
+		</sql>
+		
+		<sql name="getSelectDistributorLevel">
+			<![CDATA[
+					SELECT DISTINCT [DistributorLevel]
+					FROM [dbo].[Distributor]
+					WHERE   @{filter} and DistributorLevel is not null
+			]]>
+		</sql>
+		
+		<sql name="getSelectProductLine">
+			<![CDATA[
+					SELECT DISTINCT [brand]
+					FROM [dbo].[product]
+					WHERE @{filter} and brand is not null
+			]]>
+		</sql>
+		
+		
+		<sql name="getkpichartfilteryear">
+			<![CDATA[
+				 	SELECT DISTINCT [year] as name,
+				 					[year] as code
+					FROM [dbo].[KPIyear]
+					order by year desc
+			]]>
+		</sql>
+		
+		<sql name="getTeam">
+            <![CDATA[
+                    SELECT DISTINCT teamname
+                    FROM [dbo].[teamlist]
+                    where teamname <> 'SuperAdmin'
+            ]]>
+        </sql>
+        
+        <sql name="getDSOType">
+            <![CDATA[
+                    SELECT DISTINCT dsotype as name,
+                                    dsotype as code
+                    FROM [dbo].[LargeDSOType]
+            ]]>
+        </sql>
+		
+		<sql name="getRSM4TerminalIndicator">
+			<![CDATA[
+			SELECT ROW_NUMBER() OVER(order by [rsm] desc) as rownum, * FROM (
+				   SELECT DISTINCT loginname as rsm, 
+								   englishname as rname
+				   FROM [dbo].[usr]
+				   WHERE type = 'RSM'and @{filter})tb
+			]]>
+		</sql>
+	</dataSpace>	
+</sqls>

@@ -1,0 +1,2667 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="Agg_DistributorKPI">
+ 		<!--聚合前先删除数据,此SQL根据年月删除数据 -->
+		<sql name="deleteAggTableByData">
+			<![CDATA[
+			delete from @{tablename} where yearno = @{year} and monthno = @{month} 
+			]]>
+		</sql>
+		<!--聚合前先删除数据,此SQL根据年删除数据 -->
+		<sql name="deleteAggTableByYear">
+			<![CDATA[
+			delete from @{tablename} where yearno = @{year}  
+			]]>
+		</sql>
+		<!--聚合前先删除数据,此SQL根据日期删除数据 -->
+		<sql name="deleteAggTableByDate">
+			<![CDATA[
+			delete from @{tablename} where BizDate = '@{date}'
+			]]>
+		</sql>
+		<!--聚合前先删除数据,此SQL执行全表删除 -->
+		<sql name="deleteAggTable">
+			<![CDATA[
+			delete from @{tablename} 
+			]]>
+		</sql>
+		
+		<!--经销商库存汇总  -->
+		<sql name="Agg_InventorySum">
+			<![CDATA[
+			INSERT INTO Agg_InventorySum 
+			SELECT    	BizDate,
+						[DistributorCode],
+						[DistributorName],
+						[DistributorLevel],
+						[Region],
+						[DistributorProvince],
+						[DistributorCity],
+						SUM([Inventoryamount]) [Inventoryamount],
+						SUM([Consignmentamount]) [Consignmentamount],
+						( 
+						SELECT    SUM(ISNULL(Quantity, 0) * S.Price) [Saleamount]
+			                      FROM      VIEW_DataSales S
+								  LEFT JOIN Product Pr ON Pr.ProductCode = S.ProductCode
+			                      WHERE     S.DistributorCode = V.DistributorCode AND Pr.brand =V.brand
+								  AND BizDate <= '@{date}'
+								  AND BizDate >= DATEADD(dd, -89, '@{date}')
+						GROUP BY Pr.Brand
+				        ) [Saleamount],
+						brand
+			FROM      [dbo].[VIEW_InventorySum] V
+			WHERE     BizDate = '@{date}'
+			GROUP BY  BizDate,
+					  [DistributorCode],
+					  [brand],
+					  [DistributorName],
+					  [DistributorLevel],
+					  [Region],
+					  [DistributorProvince],
+					  [DistributorCity]
+			]]>
+		</sql>
+		
+		
+        <sql name="PH4Category">
+            <![CDATA[
+            INSERT INTO PH4Category(Category,rh4)
+            SELECT DISTINCT  CASE WHEN ProductType LIKE '%Roxolid%'
+                                 THEN 'Roxolid'
+                                 ELSE ProductType
+                                 END AS ProductType,PRH4 
+            FROM Product
+            ]]>
+        </sql>
+		
+		<sql name="Agg_Distributor_Roxolid_Target">
+			<![CDATA[
+			insert into Agg_Distributor_Target (typecode, yearno, monthno, DistributorCode, YTarget, Q1Target, Q2Target, Q3Target, Q4Target, MTarget, LYTarget,brand)
+			select  'Roxolid', @{year}, @{month}, tblY.DistributorCode, tblY.YTarget, tb1Q.Q1Target,tb2Q.Q2Target,tb3Q.Q3Target,tb4Q.Q4Target, tblM.MTarget, null, tblY.brand from
+			(select V.DistributorCode, sum(MonthTarget) as YTarget, brand
+			 from VIEW_DistributorTargets V 
+			 LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Category = 'Roxolid'
+			group by V.DistributorCode, year, brand) tblY
+			
+			left join 
+			(select V.DistributorCode, sum(MonthTarget) as Q1Target, brand
+			from VIEW_DistributorTargets V
+			LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Quarter = 1 and Category = 'Roxolid'
+			group by V.DistributorCode, year, brand) tb1Q
+			on tblY.DistributorCode = tb1Q.DistributorCode and tblY.brand = tb1Q.brand
+			
+			left join 
+			(select V.DistributorCode, sum(MonthTarget) as Q2Target, brand
+			from VIEW_DistributorTargets V
+			LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Quarter = 2 and Category = 'Roxolid'
+			group by V.DistributorCode, year, brand) tb2Q
+			on tblY.DistributorCode = tb2Q.DistributorCode and tblY.brand = tb2Q.brand
+			
+			left join 
+			(select V.DistributorCode, sum(MonthTarget) as Q3Target, brand
+			from VIEW_DistributorTargets V
+			LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Quarter = 3 and Category = 'Roxolid'
+			group by V.DistributorCode, year, brand) tb3Q
+			on tblY.DistributorCode = tb3Q.DistributorCode and  tblY.brand = tb3Q.brand
+			
+			
+			left join 
+			(select V.DistributorCode, sum(MonthTarget) as Q4Target, brand
+			from VIEW_DistributorTargets V
+			LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Quarter = 4 and Category = 'Roxolid'
+			group by V.DistributorCode, year, brand) tb4Q
+			on tblY.DistributorCode = tb4Q.DistributorCode and tblY.brand = tb4Q.brand
+			
+			left join 
+			(select V.DistributorCode, sum(MonthTarget) as MTarget, brand
+			from VIEW_DistributorTargets V
+			LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and [Month] = @{month} and Category = 'Roxolid'
+			group by V.DistributorCode, year, brand) tblM
+			on tblY.DistributorCode = tblM.DistributorCode and tblY.brand = tblM.brand
+			
+			order by DistributorCode   
+			]]>
+		</sql>
+		
+		
+		
+		<sql name="Agg_Distributor_Target">
+			<![CDATA[
+			insert into Agg_Distributor_Target (typecode, yearno, monthno, DistributorCode, YTarget, Q1Target,Q2Target,Q3Target,Q4Target, MTarget, LYTarget,brand)
+			select '总销售额', @{year}, @{month}, tblY.DistributorCode, tblY.YTarget, tblQ.Q1Target,tb2Q.Q2Target,tb3Q.Q3Target,tb4Q.Q4Target, tblM.MTarget, null,tblY.brand from
+			(select V.DistributorCode, sum(MonthTarget) as YTarget,brand
+			 from VIEW_DistributorTargets V 
+			 LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Category = '总销售额'
+			group by V.DistributorCode, year,brand) tblY
+			
+			left join 
+			(select V.DistributorCode, ISNULL(sum(MonthTarget), 0) as Q1Target,brand
+			 from VIEW_DistributorTargets V 
+			 LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Quarter = '01' and Category = '总销售额'
+			group by V.DistributorCode, year,brand) tblQ
+			on tblY.DistributorCode = tblQ.DistributorCode and tblY.brand = tblQ.brand
+
+			left join 
+			(select V.DistributorCode, ISNULL(sum(MonthTarget), 0) as Q2Target,brand
+			 from VIEW_DistributorTargets V 
+			 LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Quarter = '02' and Category = '总销售额'
+			group by V.DistributorCode, year,brand) tb2Q
+			on tblY.DistributorCode = tb2Q.DistributorCode and tblY.brand = tb2Q.brand
+			left join 
+			(select V.DistributorCode, ISNULL(sum(MonthTarget), 0) as Q3Target,brand
+			 from VIEW_DistributorTargets V 
+			 LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			where year = @{year} and Quarter = '03' and Category = '总销售额'
+			group by V.DistributorCode, year,brand) tb3Q
+			on tblY.DistributorCode = tb3Q.DistributorCode and  tblY.brand = tb3Q.brand
+
+			left join 
+			(select V.DistributorCode, ISNULL(sum(MonthTarget), 0) as Q4Target,brand
+			 from VIEW_DistributorTargets V 
+			 LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			 where year = @{year} and Quarter = '04' and Category = '总销售额'
+			 group by V.DistributorCode, year,brand) tb4Q
+			 on tblY.DistributorCode = tb4Q.DistributorCode and tblY.brand = tb4Q.brand
+			
+			left join 
+			(select V.DistributorCode, sum(MonthTarget) as MTarget,brand
+			 from VIEW_DistributorTargets V
+			 LEFT JOIN DistributorHierarchy D ON D.DistributorCode = V.DistributorCode 
+			 where year = @{year} and [Month] = @{month} and Category = '总销售额'
+			 group by V.DistributorCode, year,brand) tblM
+			 on tblY.DistributorCode = tblM.DistributorCode and  tblY.brand = tblM.brand
+			 order by DistributorCode    
+			]]>
+		</sql>
+	</dataSpace>
+
+	<dataSpace name="SalesOutKPI">
+		<sql name="Agg_terminal_Roxolid_SellOut4kpi">
+			<![CDATA[
+                insert into Agg_Terminal_SellOut4kpi (typecode, yearno, monthno, CustomerCode, YTDSellOut, Q1TDSellOut, Q2TDSellOut, Q3TDSellOut, Q4TDSellOut, MTDSellOut, LYTDSellOut,brand)
+				select  'Roxolid', @{year}, @{month}, CustomerCode, YTDAmount, Q1Amount,Q2Amount,Q3Amount,Q4Amount, MAmount, LTDAmount,brand
+                from (
+                            SELECT  CustomerName,
+                                    O.CustomerCode,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(YTDAmount),0)), 1) AS YTDAmount,
+                                    ISNULL(SUM(W.LYTDTotalSales), 0) AS LTDAmount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q1Amount),0)), 1) AS Q1Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q2Amount),0)), 1) AS Q2Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q3Amount),0)), 1) AS Q3Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q4Amount),0)), 1) AS Q4Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(MAmount),0)), 1) AS MAmount,
+                                    O.brand
+                            FROM    ( 
+                                        SELECT      B.CustomerName,
+                                                    CustomerCode,
+                                                    SUM(CASE WHEN PH.Category = 'Roxolid'
+                                                             THEN ISNULL(Quantity, 0)
+                                                             ELSE 0
+                                                             END) AS YTDAmount,
+                                                    0 AS Q1Amount,
+                                                    0 AS Q2Amount,
+                                                    0 AS Q3Amount,
+                                                    0 AS Q4Amount,
+                                                    0 AS MAmount,
+                                                    B.brand
+                                        FROM        VIEW_SalesKPITableBase B
+                                        LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+                                        LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+                                        WHERE B.[Year] = @{year} AND B.[Month] <= DateName(month,GetDate())
+                                        GROUP BY  B.CustomerName,
+                                                  CustomerCode,
+                                                  B.brand
+                             
+	                      UNION ALL
+	
+	                      SELECT    B.CustomerName,
+	                                CustomerCode,
+	                                0 AS YTDAmount,
+	                                SUM(CASE WHEN PH.Category = 'Roxolid'
+	                                         THEN ISNULL(Quantity, 0)
+	                                         ELSE 0
+	                                         END)  AS Q1Amount,
+	                                0 AS Q2Amount,
+	                                0 AS Q3Amount,
+	                                0 AS Q4Amount,
+	                                0 AS MAmount, 
+	                                B.brand
+	                      FROM      VIEW_SalesKPITableBase B
+	                      LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+	                      LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+	                      WHERE     B.[Year] = @{year} AND B.[Quarter] = '1'
+	                      GROUP BY  B.CustomerName,
+	                                CustomerCode,
+	                                B.brand
+	
+	                     UNION ALL
+	
+	                      SELECT    B.CustomerName,
+	                                CustomerCode,
+	                                0 AS YTDAmount,
+	                                0 AS Q1Amount,
+	                                SUM(CASE WHEN PH.Category = 'Roxolid'
+	                                         THEN ISNULL(Quantity, 0)
+	                                         ELSE 0
+	                                         END) AS Q2Amount,
+	                                0 AS Q3Amount,
+	                                0 AS Q4Amount,
+	                                0 AS MAmount,
+	                                B.brand
+	                      FROM      VIEW_SalesKPITableBase B
+	                      LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+	                      LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+	                      WHERE     B.[Year] = @{year} AND B.[Quarter] = '2'
+	                      GROUP BY  B.CustomerName,
+	                                CustomerCode,
+	                                B.brand
+	
+	                      UNION ALL
+	
+	                      SELECT    B.CustomerName,
+	                                CustomerCode,
+	                                0 AS YTDAmount,
+	                                0 AS Q1Amount,
+	                                0 AS Q2Amount,
+	                                SUM(CASE WHEN PH.Category = 'Roxolid'
+	                                         THEN ISNULL(Quantity, 0)
+	                                         ELSE 0
+	                                         END)  Q3Amount,
+	                                0 AS Q4Amount,
+	                                0 AS MAmount,
+	                                B.brand
+	                      FROM      VIEW_SalesKPITableBase B
+	                      LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+	                      LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+	                      WHERE     B.[Year] = @{year} AND B.[Quarter] = '3'
+	                      GROUP BY  B.CustomerName,
+	                                CustomerCode,
+	                                B.brand
+	
+	                      UNION ALL
+	
+	                      SELECT    B.CustomerName,
+	                                CustomerCode,
+	                                0 AS YTDAmount,
+	                                0 AS Q1Amount,
+	                                0 AS Q2Amount,
+	                                0 AS Q3Amount,
+	                                SUM(CASE WHEN PH.Category = 'Roxolid'
+	                                         THEN ISNULL(Quantity, 0)
+	                                         ELSE 0
+	                                         END) AS Q4Amount,
+	                                0 AS MAmount,
+	                                B.brand
+	                      FROM      VIEW_SalesKPITableBase B
+	                      LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+	                      LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+	                      WHERE     B.[Year] = @{year} AND B.[Quarter] = '4'
+	                      GROUP BY  B.CustomerName,
+	                                CustomerCode,
+	                                B.brand
+	
+	                      UNION ALL
+	
+	                      SELECT    B.CustomerName,
+	                                CustomerCode,
+	                                0 AS YTDAmount,
+	                                0 AS Q1Amount,
+	                                0 AS Q2Amount,
+	                                0 AS Q3Amount,
+	                                0 AS Q4Amount,
+	                                SUM(CASE WHEN PH.Category = 'Roxolid'
+			                                 THEN ISNULL(Quantity, 0)
+			                                 ELSE 0
+			                                 END) AS MAmount,
+	                                B.brand
+	                      FROM      VIEW_SalesKPITableBase B
+	                      LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+	                      LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+	                      WHERE     B.[Year] = @{year} AND B.[Month] = @{month}
+	                      GROUP BY  B.CustomerName,
+	                                CustomerCode,
+	                                B.brand
+	                    ) O
+			LEFT JOIN (SELECT CustomerCode,
+			                  B.brand,
+			                  SUM(CASE WHEN PH.Category = 'Roxolid'
+		                               THEN ISNULL(Quantity, 0)
+		                               ELSE 0
+		                               END) AS LYTDTotalSales 
+	                   FROM VIEW_DataSales B
+	                   LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+	                   LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+                       WHERE DATEPART(year, BizDate) = @{year} AND DATEPART(month, BizDate) >=1  AND DATEPART(month, BizDate) <= DateName(month,GetDate())
+                       GROUP BY  CustomerCode,B.brand
+                    )w ON w.CustomerCode = o.CustomerCode 
+		   GROUP BY CustomerName,
+			        O.CustomerCode,
+			        O.brand )DATA
+			]]>
+		</sql>	
+		
+		<sql name="Agg_terminal_SellOut4kpi">
+			<![CDATA[
+					insert into Agg_Terminal_SellOut4kpi (typecode, yearno, monthno, CustomerCode, YTDSellOut, Q1TDSellOut, Q2TDSellOut, Q3TDSellOut, Q4TDSellOut, MTDSellOut, LYTDSellOut,brand)
+					select  '总销售额', @{year}, @{month}, CustomerCode, YTDAmount, Q1Amount,Q2Amount,Q3Amount,Q4Amount, MAmount, LTDAmount,brand
+					from (
+                            SELECT CustomerName,
+                                   O.CustomerCode,
+                                   [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(YTDAmount),0)), 1) AS YTDAmount,
+                                   ISNULL(SUM(W.LYTDTotalSales), 0) AS LTDAmount,
+                                   [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q1Amount),0)), 1) AS Q1Amount,
+                                   [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q2Amount),0)), 1) AS Q2Amount,
+                                   [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q3Amount),0)), 1) AS Q3Amount,
+                                   [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q4Amount),0)), 1) AS Q4Amount,
+                                   [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(MAmount),0)), 1) AS MAmount,
+                                   O.brand
+                           FROM    ( 
+                                       
+                                      SELECT      B.CustomerName,
+                                                  CustomerCode,
+                                                  SUM(Amount) AS YTDAmount,
+                                                  0 AS Q1Amount,
+                                                  0 AS Q2Amount,
+                                                  0 AS Q3Amount,
+                                                  0 AS Q4Amount,
+                                                  0 AS MAmount,
+                                                  B.brand
+                                      FROM        VIEW_SalesKPITableBase B
+                                      WHERE B.[Year] = @{year} AND B.[Month] <= DateName(month,GetDate())
+                                      GROUP BY  B.CustomerName,
+                                                CustomerCode,
+                                                B.brand
+                            
+				                     UNION ALL
+				
+				                     SELECT    B.CustomerName,
+				                               CustomerCode,
+				                               0 AS YTDAmount,
+				                               SUM(Amount) AS Q1Amount,
+                                               0 AS Q2Amount,
+                                               0 AS Q3Amount,
+                                               0 AS Q4Amount,
+				                               0 AS MAmount, 
+				                               B.brand
+				                     FROM      VIEW_SalesKPITableBase B
+				                     WHERE     B.[Year] = @{year} AND B.[Quarter] = '1'
+				                     GROUP BY  B.CustomerName,
+				                               CustomerCode,
+				                               B.brand
+				
+				                     UNION ALL
+				
+				                     SELECT    B.CustomerName,
+				                               CustomerCode,
+				                               0 AS YTDAmount,
+				                               0 AS Q1Amount,
+                                               SUM(Amount)  AS Q2Amount,
+                                               0 AS Q3Amount,
+                                               0 AS Q4Amount,
+				                               0 AS MAmount,
+				                               B.brand
+				                     FROM      VIEW_SalesKPITableBase B
+				                     WHERE     B.[Year] = @{year} AND B.[Quarter] = '2'
+				                     GROUP BY  B.CustomerName,
+				                               CustomerCode,
+				                               B.brand
+				
+				                     UNION ALL
+				
+				                     SELECT    B.CustomerName,
+				                               CustomerCode,
+				                               0 AS YTDAmount,
+				                               0 AS Q1Amount,
+                                               0 AS Q2Amount,
+                                               SUM(Amount) AS Q3Amount,
+                                               0 AS Q4Amount,
+				                               0 AS MAmount,
+				                               B.brand
+				                     FROM      VIEW_SalesKPITableBase B
+				                     WHERE     B.[Year] = @{year} AND B.[Quarter] = '3'
+				                     GROUP BY  B.CustomerName,
+				                               CustomerCode,
+				                               B.brand
+				
+				                     UNION ALL
+				
+				                     SELECT    B.CustomerName,
+				                               CustomerCode,
+				                               0 AS YTDAmount,
+				                               0 AS Q1Amount,
+                                               0 AS Q2Amount,
+                                               0 AS Q3Amount,
+                                               SUM(Amount) AS Q4Amount,
+                                               0 AS MAmount,
+				                               B.brand
+				                     FROM      VIEW_SalesKPITableBase B
+				                     WHERE     B.[Year] = @{year} AND B.[Quarter] = '4'
+				                     GROUP BY  B.CustomerName,
+				                               CustomerCode,
+				                               B.brand
+				
+				                     UNION ALL
+				
+				                     SELECT    B.CustomerName,
+				                               CustomerCode,
+				                               0 AS YTDAmount,
+                                               0 AS Q1Amount,
+                                               0 AS Q2Amount,
+                                               0 AS Q3Amount,
+				                               0 AS Q4Amount,
+				                               SUM(Amount) AS MAmount,
+				                               B.brand
+				                     FROM      VIEW_SalesKPITableBase B
+				                     WHERE     B.[Year] = @{year} AND B.[Month] = @{month}
+				                     GROUP BY  B.CustomerName,
+				                               CustomerCode,
+				                               B.brand
+				                   ) O
+					LEFT JOIN (SELECT CustomerCode,brand,SUM(Amount) LYTDTotalSales 
+		                       FROM VIEW_DataSales
+		                       WHERE DATEPART(year, BizDate) = @{year}-1 AND DATEPART(month, BizDate) >=1  AND DATEPART(month, BizDate) <= DateName(month,GetDate())
+		                       GROUP BY  CustomerCode,
+		                                 brand
+		                      )w ON w.CustomerCode = o.CustomerCode 
+					GROUP BY CustomerName,
+					         O.CustomerCode,
+					         O.brand )DATA
+
+			]]>
+		</sql>	
+		
+		<sql name="Agg_Sales_Roxolid_Target">
+			<![CDATA[
+			insert into Agg_Sales_Target (typecode, yearno, monthno, SaleCode, YTarget, Q1Target, Q2Target, Q3Target, Q4Target, MTarget, LYTarget,brand) 
+			select 'Roxolid', @{year}, @{month}, tblY.SaleCode, tblY.YTarget, tblQ.Q1Target, tb2Q.Q2Target, tb3Q.Q3Target, tb4Q.Q4Target, tblM.MTarget, null,tblY.brand from
+			(select SaleCode, sum(MonthTarget) as YTarget,brand from VIEW_SaleTargets
+			where year = @{year} and Category = 'Roxolid'
+			group by SaleCode, year,brand) tblY
+			left join 
+			(select SaleCode, sum(MonthTarget) as Q1Target,brand from VIEW_SaleTargets
+			where year = @{year} and Quarter = 1 and Category = 'Roxolid'
+			group by SaleCode, year, Quarter,brand) tblQ
+			on tblY.SaleCode = tblQ.SaleCode and tblY.brand = tblQ.brand
+			
+			left join 
+			(select SaleCode, sum(MonthTarget) as Q2Target,brand from VIEW_SaleTargets
+			where year = @{year} and Quarter = 2 and Category = 'Roxolid'
+			group by SaleCode, year, Quarter,brand) tb2Q
+			on tblY.SaleCode = tb2Q.SaleCode and  tblY.brand = tb2Q.brand
+			
+			left join 
+			(select SaleCode, sum(MonthTarget) as Q3Target,brand from VIEW_SaleTargets
+			where year = @{year} and Quarter = 3 and Category = 'Roxolid'
+			group by SaleCode, year, Quarter,brand) tb3Q
+			on tblY.SaleCode = tb3Q.SaleCode and tblY.brand = tb3Q.brand
+			
+			left join 
+			(select SaleCode, sum(MonthTarget) as Q4Target,brand from VIEW_SaleTargets
+			where year = @{year} and Quarter = 4 and Category = 'Roxolid'
+			group by SaleCode, year, Quarter,brand) tb4Q
+			on tblY.SaleCode = tb4Q.SaleCode and tblY.brand = tb4Q.brand
+			
+			
+			left join 
+			(select SaleCode, sum(MonthTarget) as MTarget,brand from VIEW_SaleTargets
+			where year = @{year} and [Month] = 1 and Category = 'Roxolid'
+			group by SaleCode, year, [Month],brand) tblM
+			on tblY.SaleCode = tblM.SaleCode and tblY.brand = tblM.brand
+			
+			order by SaleCode
+			]]>
+		</sql>
+		
+		<sql name="Agg_Sales_Target">
+			<![CDATA[
+			insert into Agg_Sales_Target ( typecode, yearno, monthno, SaleCode, YTarget, Q1Target, Q2Target, Q3Target, Q4Target,MTarget, LYTarget,brand) 
+			select '总销售额', @{year}, @{month}, tblY.SaleCode, tblY.YTarget, tblQ.Q1Target, tb2Q.Q2Target, tb3Q.Q3Target, tb4Q.Q4Target, tblM.MTarget, null,tblY.brand from
+			(select SaleCode, sum(MonthTarget) as YTarget,brand from VIEW_SaleTargets
+			where year = @{year} and Category = '总销售额'
+			group by SaleCode, year,brand) tblY
+			left join 
+			(select SaleCode, sum(MonthTarget) as Q1Target,brand from VIEW_SaleTargets
+			where year = @{year} and Quarter = 1 and Category = '总销售额'
+			group by SaleCode, year, Quarter,brand) tblQ
+			on tblY.SaleCode = tblQ.SaleCode and tblY.brand = tblQ.brand
+
+			left join 
+			(select SaleCode, sum(MonthTarget) as Q2Target,brand from VIEW_SaleTargets
+			where year = @{year} and Quarter = 2 and Category = '总销售额'
+			group by SaleCode, year, Quarter,brand) tb2Q
+			on tblY.SaleCode = tb2Q.SaleCode and  tblY.brand = tb2Q.brand
+
+			left join 
+			(select SaleCode, sum(MonthTarget) as Q3Target,brand from VIEW_SaleTargets
+			where year = @{year} and Quarter = 3 and Category = '总销售额'
+			group by SaleCode, year, Quarter,brand) tb3Q
+			on tblY.SaleCode = tb3Q.SaleCode and  tblY.brand = tb3Q.brand
+
+			left join 
+			(select SaleCode, sum(MonthTarget) as Q4Target,brand from VIEW_SaleTargets
+			where year = @{year} and Quarter = 4 and Category = '总销售额'
+			group by SaleCode, year, Quarter,brand) tb4Q
+			on tblY.SaleCode = tb4Q.SaleCode and tblY.brand = tb4Q.brand
+
+			left join 
+			(select SaleCode, sum(MonthTarget) as MTarget,brand from VIEW_SaleTargets
+			where year = @{year} and [Month] = @{month} and Category = '总销售额'
+			group by SaleCode, year, [Month],brand) tblM
+			on tblY.SaleCode = tblM.SaleCode and  tblY.brand = tblM.brand
+
+			order by SaleCode
+				
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace name="Agg_BusinessKPI">
+		<!-- 1.SellInKPI,Roxilid销售数量汇总 -->
+		<sql name="Agg_Distributor_Roxolid_SellIn">
+			<![CDATA[
+			insert into Agg_Distributor_SellIn (typecode, yearno, monthno, DistributorCode, YTDSellIn, Q1TDSellIn, Q2TDSellIn, Q3TDSellIn, Q4TDSellIn,MTDSellIn, LYTDSellIn,Brand) 
+
+
+			select 'Roxolid', @{year}, @{month}, tb.distributorcode, YTDAmount, Q1Amount,Q2Amount,Q3Amount,Q4Amount, MAmount, ISNULL(LYTDSellOut, 0),tb.Brand
+			from (
+
+                        SELECT      DistributorName,
+                                    Distributorcode,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(YTDQuantity),0)), 1) AS YTDAmount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q1Quantity),0)), 1) AS Q1Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q2Quantity),0)), 1) AS Q2Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q3Quantity),0)), 1) AS Q3Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q4Quantity),0)), 1) AS Q4Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(MQuantity),0)), 1) AS MAmount,
+                                    Brand
+                        FROM      ( SELECT  B.DistributorName,
+                                            B.Distributorcode,
+                                            SUM(CASE WHEN PH.Category = 'Roxolid'
+                                                     THEN ISNULL(Quantity, 0)
+                                                     ELSE 0
+                                                     END) AS YTDQuantity,
+                                            0 AS Q1Quantity,
+                                            0 AS Q2Quantity,
+                                            0 AS Q3Quantity,
+                                            0 AS Q4Quantity,
+                                            0 AS MQuantity,
+                                            B.Brand
+                        FROM    VIEW_BusinessKPITableBase B 
+                        LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+                        LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+                        WHERE   B.[Year] = @{year} AND B.[Month] <= DateName(month,GetDate())
+                        GROUP BY  B.DistributorName,
+                                  B.Distributorcode,  
+                                  B.Brand
+
+                        UNION ALL
+
+                        SELECT  B.DistributorName,
+                                B.Distributorcode,
+                                0 AS YTDQuantity,
+                                SUM(CASE WHEN PH.Category = 'Roxolid'
+                                         THEN ISNULL(Quantity, 0)
+                                         ELSE 0
+                                    END) AS Q1Quantity,
+                                0 AS Q2Quantity,
+                                0 AS Q3Quantity,
+                                0 AS Q4Quantity,
+                                0 AS MQuantity,
+                                B.Brand
+                            FROM    VIEW_BusinessKPITableBase B 
+                            LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+                            LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+                            WHERE   B.[Year] = @{year} AND B.[Quarter] ='1'
+                           GROUP BY B.DistributorName,
+                                    B.Distributorcode,
+                                    B.Brand
+
+UNION ALL
+
+                        SELECT  B.DistributorName,
+                                B.Distributorcode,
+                                0 AS YTDQuantity,
+                                0 AS Q1Quantity,
+                                SUM(CASE WHEN PH.Category = 'Roxolid'
+                                         THEN ISNULL(Quantity, 0)
+                                         ELSE 0
+                                    END) AS Q2Quantity,
+                                0 AS Q3Quantity,
+                                0 AS Q4Quantity,
+                                0 AS MQuantity,
+                                B.Brand
+                            FROM    VIEW_BusinessKPITableBase B 
+                            LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+                            LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+                            WHERE   B.[Year] = @{year} AND B.[Quarter] ='2'
+                           GROUP BY B.DistributorName,
+                                    B.Distributorcode,
+                                    B.Brand
+                                    
+                        UNION ALL
+
+                        SELECT  B.DistributorName,
+                                B.Distributorcode,
+                                0 AS YTDQuantity,
+                                0 AS Q1Quantity,
+                                0 AS Q2Quantity,
+                                SUM(CASE WHEN PH.Category = 'Roxolid'
+                                         THEN ISNULL(Quantity, 0)
+                                         ELSE 0
+                                    END) AS Q3Quantity,
+                                0 AS Q4Quantity,
+                                0 AS MQuantity,
+                                B.Brand
+                            FROM    VIEW_BusinessKPITableBase B 
+                            LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+                            LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+                            WHERE   B.[Year] = @{year}
+                                    AND B.[Quarter] ='3'
+                           GROUP BY B.DistributorName,
+                                    B.Distributorcode,
+                                    B.Brand
+                        UNION ALL
+
+                        SELECT  B.DistributorName,
+                                B.Distributorcode,
+                                0 AS YTDQuantity,
+                                0 AS Q1Quantity,
+                                0 AS Q2Quantity,
+                                0 AS Q3Quantity,
+                                SUM(CASE WHEN PH.Category = 'Roxolid'
+                                         THEN ISNULL(Quantity, 0)
+                                         ELSE 0
+                                    END) AS Q4Quantity,
+                                0 AS MQuantity,
+                                B.Brand
+                            FROM    VIEW_BusinessKPITableBase B 
+                            LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+                            LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+                            WHERE   B.[Year] = @{year}
+                                    AND B.[Quarter] ='4'
+                           GROUP BY B.DistributorName,
+                                    B.Distributorcode,
+                                    B.Brand
+
+                          UNION ALL
+
+                          SELECT    B.DistributorName,
+                                    B.Distributorcode,
+                                    0 AS YTDQuantity,
+                                    0 AS Q1Quantity,
+                                    0 AS Q2Quantity,
+                                    0 AS Q3Quantity,
+                                    0 AS Q4Quantity,
+                                    SUM(CASE WHEN PH.Category = 'Roxolid'
+                                             THEN ISNULL(Quantity, 0)
+                                             ELSE 0
+                                        END) AS MQuantity,
+                                    B.Brand
+                      FROM      VIEW_BusinessKPITableBase B 
+                      LEFT JOIN dbo.Product ON Product.ProductCode = B.ProductCode
+                      LEFT JOIN dbo.PH4Category PH ON PH.RH4 = Product.PRH4
+                      WHERE     B.[Year] = @{year} AND B.[Month] = @{month}
+                      GROUP BY  B.DistributorName,
+                                B.Distributorcode,
+                                B.Brand
+                    ) T
+          GROUP BY  DistributorName,
+                    Distributorcode,
+                    Brand) tb
+          LEFT JOIN (SELECT SUM(CASE WHEN PH.Category = 'Roxolid'
+                                                     THEN ISNULL(Quantity, 0)
+                                                     ELSE 0
+                                                     END) AS LYTDSellOut,
+                                    DP.DistributorCode,
+                                    DP.DistributorName, 
+                                    DP.brand 
+                     FROM VIEW_DataPurchase DP
+                     LEFT  JOIN dbo.Product P ON P.ProductCode = DP.ProductCode
+           LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+                     WHERE YEAR(BizDate) = @{year} -1 
+                                 AND MONTH(BizDate) <= DateName(month,GetDate()) 
+                    GROUP BY DP.DistributorCode,DP.DistributorName,DP.brand ) w 
+           ON tb.distributorcode = W.DistributorCode AND tb.brand = W.brand
+			]]>
+		</sql>
+	
+	
+		<sql name="Agg_Supervisor_Roxolid_Target">
+			<![CDATA[
+			insert into Agg_Supervisor_Target (typecode, yearno, monthno, SupervisorID, YTarget, Q1Target, Q2Target, Q3Target, Q4Target, MTarget, LYTarget,brand) 
+			
+			select 'Roxolid', @{year}, @{month}, tblY.SupervisorID, tblY.YTarget, tblQ.Q1Target, tb2Q.Q2Target, tb3Q.Q3Target, tb4Q.Q4Target,tblM.MTarget, null,tblY.brand from
+			(select SupervisorID, sum(MonthTarget) as YTarget,brand  from VIEW_SupervisorTargets
+			where year = @{year} and Category = 'Roxolid'
+			group by SupervisorID, year,brand) tblY
+
+			left join 
+			(select SupervisorID, sum(MonthTarget) as Q1Target,brand from VIEW_SupervisorTargets
+			where year = @{year} and Quarter = 1 and Category = 'Roxolid'
+			group by SupervisorID, year, Quarter,brand) tblQ
+			on tblY.SupervisorID = tblQ.SupervisorID and tblY.brand = tblQ.brand
+
+			left join 
+			(select SupervisorID, sum(MonthTarget) as Q2Target,brand from VIEW_SupervisorTargets
+			where year = @{year} and Quarter = 2 and Category = 'Roxolid'
+			group by SupervisorID, year, Quarter,brand) tb2Q
+			on tblY.SupervisorID = tb2Q.SupervisorID and tblY.brand = tb2Q.brand
+
+			left join 
+			(select SupervisorID, sum(MonthTarget) as Q3Target,brand from VIEW_SupervisorTargets
+			where year = @{year} and Quarter = 3 and Category = 'Roxolid'
+			group by SupervisorID, year, Quarter,brand) tb3Q
+			on tblY.SupervisorID = tb3Q.SupervisorID and tblY.brand = tb3Q.brand
+
+			left join 
+			(select SupervisorID, sum(MonthTarget) as Q4Target,brand from VIEW_SupervisorTargets
+			where year = @{year} and Quarter = 4 and Category = 'Roxolid'
+			group by SupervisorID, year, Quarter,brand) tb4Q
+			on tblY.SupervisorID = tb4Q.SupervisorID and tblY.brand = tb4Q.brand
+
+			left join 
+			(select SupervisorID, sum(MonthTarget) as MTarget,brand from VIEW_SupervisorTargets
+			where year = @{year} and [Month] = @{month} and Category = 'Roxolid'
+			group by SupervisorID, year, [Month],brand) tblM
+			on tblY.SupervisorID = tblM.SupervisorID and  tblY.brand = tblM.brand
+
+			order by supervisorId
+			]]>
+		</sql>
+		
+		<sql name="Agg_Distributor_SellIn">
+			<![CDATA[
+			insert into Agg_Distributor_SellIn (typecode, yearno, monthno, DistributorCode, YTDSellIn, Q1TDSellIn,Q2TDSellIn,Q3TDSellIn,Q4TDSellIn, MTDSellIn, LYTDSellIn,brand) 
+
+			select  '总销售额', @{year}, @{month}, tbl.distributorcode, YTDAmount, Q1Amount,Q2Amount,Q3Amount,Q4Amount, MAmount, ISNULL(LYTDSellOut, 0),tbl.brand
+            from (
+
+                          SELECT    DistributorName,
+                                    distributorcode,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(YTDAmount),0)), 1) AS YTDAmount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q1Amount),0)), 1) AS Q1Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q2Amount),0)), 1) AS Q2Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q3Amount),0)), 1) AS Q3Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(Q4Amount),0)), 1) AS Q4Amount,
+                                    [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT, ROUND(SUM(MAmount),0)), 1) AS MAmount,
+                                    brand
+                          FROM      ( SELECT    B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                SUM(Amount) AS YTDAmount,
+                                                0 AS Q1Amount,
+                                                0 AS Q2Amount,
+                                                0 AS Q3Amount,
+                                                0 AS Q4Amount,
+                                                0 AS MAmount,
+                                                B.brand
+                                      FROM      VIEW_BusinessKPITableBase B
+                                      WHERE     B.[Year] = @{year} AND B.[Month] <= DateName(month,GetDate())
+                                      GROUP BY  B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                B.brand
+
+                                      UNION ALL
+
+                                      SELECT    B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                0 AS YTDAmount,
+                                                SUM(Amount) AS Q1Amount,
+                                                0 AS Q2Amount,
+                                                0 AS Q3Amount,
+                                                0 AS Q4Amount,
+                                                0 AS MAmount,
+                                                B.brand
+                                      FROM      VIEW_BusinessKPITableBase B
+                                      WHERE     B.[Year] = @{year}
+                                                AND B.[Quarter] = '1'
+                                      GROUP BY  B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                B.brand
+
+                                      UNION ALL
+                                      
+                                      SELECT    B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                0 AS YTDAmount,
+                                                0 AS Q1Amount,
+                                                SUM(Amount) AS Q2Amount,
+                                                0 AS Q3Amount,
+                                                0 AS Q4Amount,
+                                                0 AS MAmount,
+                                                B.brand
+                                      FROM      VIEW_BusinessKPITableBase B
+                                      WHERE     B.[Year] = @{year} AND B.[Quarter] = '2'
+                                      GROUP BY  B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                B.brand
+
+                                      UNION ALL
+                                      
+                                      SELECT    B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                0 AS YTDAmount,
+                                                0 AS Q1Amount,
+                                                0 AS Q2Amount,
+                                                SUM(Amount) AS Q3Amount,
+                                                0 AS Q4Amount,
+                                                0 AS MAmount,
+                                                B.brand
+                                      FROM      VIEW_BusinessKPITableBase B
+                                      WHERE     B.[Year] = @{year} AND B.[Quarter] = '3'
+                                      GROUP BY  B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                B.brand
+
+                                      UNION ALL
+                                      
+                                      SELECT    B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                0 AS YTDAmount,
+                                                0 AS Q1Amount,
+                                                0 AS Q2Amount,
+                                                0 AS Q3Amount,
+                                                SUM(Amount) Q4Amount,
+                                                0 AS MAmount,
+                                                B.brand
+                                      FROM      VIEW_BusinessKPITableBase B
+                                      WHERE     B.[Year] = @{year} AND B.[Quarter] = '4'
+                                      GROUP BY  B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                B.brand
+
+                                      UNION ALL
+
+                                      SELECT    B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                0 AS YTDAmount,
+                                                0 AS Q1Amount,
+                                                0 AS Q2Amount,
+                                                0 AS Q3Amount,
+                                                0 AS Q4Amount,
+                                                SUM(Amount) AS MAmount,
+                                                B.brand
+                                      FROM      VIEW_BusinessKPITableBase B         
+                                      WHERE     B.[Year] = @{year} AND B.[Month] = @{month}
+                                      GROUP BY  B.DistributorName,
+                                                B.distributorcode,
+                                                B.[Year],
+                                                B.[Month],
+                                                B.[Quarter],
+                                                B.brand
+                                    ) T
+                          GROUP BY  DistributorName,
+                                    distributorcode,
+                                    brand
+                )tbl
+                LEFT JOIN (SELECT SUM(amount) AS LYTDSellOut,DistributorCode,DistributorName, brand 
+                           FROM VIEW_DataPurchase 
+                           WHERE YEAR(BizDate) = @{year} -1 AND MONTH(BizDate) <= DateName(month,GetDate())
+                           GROUP BY DistributorCode,DistributorName,brand) w 
+                ON tbl.distributorcode = W.DistributorCode AND tbl.brand = W.brand
+			]]>
+		</sql>
+		
+		<sql name="Agg_Supervisor_Target">
+			<![CDATA[
+				insert into Agg_Supervisor_Target (typecode, yearno, monthno, SupervisorID, YTarget, Q1Target, Q2Target, Q3Target, Q4Target, MTarget, LYTarget,brand)
+				 
+				select '总销售额', @{year}, @{month}, tblY.SupervisorID, tblY.YTarget, tblQ.Q1Target, tb2Q.Q2Target, tb3Q.Q3Target, tb4Q.Q4Target, tblM.MTarget, null,tblY.brand from
+				(select SupervisorID, sum(MonthTarget) as YTarget,brand  from VIEW_SupervisorTargets
+				where year =  @{year} and Category = '总销售额'
+				group by SupervisorID, year,brand) tblY
+				left join 
+				(select SupervisorID, sum(MonthTarget) as Q1Target,brand from VIEW_SupervisorTargets
+				where year =  @{year} and Quarter = 1 and Category = '总销售额'
+				group by SupervisorID, year, Quarter,brand) tblQ
+				on tblY.SupervisorID = tblQ.SupervisorID and tblY.brand = tblQ.brand
+
+				left join 
+				(select SupervisorID, sum(MonthTarget) as Q2Target,brand from VIEW_SupervisorTargets
+				where year =  @{year} and Quarter = 2 and Category = '总销售额'
+				group by SupervisorID, year, Quarter,brand) tb2Q
+				on tblY.SupervisorID = tb2Q.SupervisorID and tblY.brand = tb2Q.brand
+
+				left join 
+				(select SupervisorID, sum(MonthTarget) as Q3Target,brand from VIEW_SupervisorTargets
+				where year =  @{year} and Quarter = 3 and Category = '总销售额'
+				group by SupervisorID, year, Quarter,brand) tb3Q
+				on tblY.SupervisorID = tb3Q.SupervisorID and tblY.brand = tb3Q.brand
+
+				left join 
+				(select SupervisorID, sum(MonthTarget) as Q4Target,brand from VIEW_SupervisorTargets
+				where year =  @{year} and Quarter = 4 and Category = '总销售额'
+				group by SupervisorID, year, Quarter,brand) tb4Q
+				on tblY.SupervisorID = tb4Q.SupervisorID and tblY.brand = tb4Q.brand
+
+				left join 
+				(select SupervisorID, sum(MonthTarget) as MTarget,brand from VIEW_SupervisorTargets
+				where year = @{year} and [Month] = @{month} and Category = '总销售额'
+				group by SupervisorID, year, [Month],brand) tblM
+				on tblY.SupervisorID = tblM.SupervisorID and tblY.brand = tblM.brand
+
+				order by supervisorId
+			]]>
+		</sql>	
+	</dataSpace>
+	<!-- 此SQL无日期 -->
+	<dataSpace name="Agg_Statistic_report">
+		<sql name="Agg_VolatilityReport">
+			<![CDATA[
+			INSERT INTO Agg_VolatilityReport (DistributorCode,DistributorName,DistributorLevel,CustomerCode,CustomerName,Family,Amount,LastAVG,AVGAmount,[YearNo],[MonthNo],[Brand])
+			SELECT  							
+					k.DistributorCode,
+					k.DistributorName,
+					k.DistributorLevel,
+					CustomerCode,
+					CustomerName,
+					Family,
+					[dbo].[GetSeparatorThousandMoney](Amount, 1) Amount,
+					[dbo].[GetSeparatorThousandMoney](LastAVG,1)  LastAVG,
+					ROUND((Amount-LastAVG)/(CASE WHEN LastAVG=0 THEN 1 ELSE LastAVG END)*100,0) AVGAmount,
+					[Year],
+					[Month],
+					[Brand]
+			FROM    ( SELECT  V.[DistributorCode],
+							  V.[DistributorName],
+							  V.[DistributorLevel],
+							  v.[Brand],
+							  [CustomerCode],
+							  [CustomerName],
+							  Family,
+							  SUM([Amount]) Amount,
+							  CONVERT(MONEY, ( SELECT Amount
+							  						  AVGAmount
+												FROM ( SELECT ISNULL(SUM(ISNULL(Amount,0)), 0) / 3 Amount
+										   			   FROM [STRInterface].[dbo].[VIEW_Volatility]
+										   			   WHERE DistributorCode = V.DistributorCode
+													   		 AND CustomerName = V.CustomerName AND Brand = V.brand
+													   		 AND [Year] = V.[Year]
+													         AND [Month] IN (V.[Month] - 1,V.[Month] - 3 )
+															 GROUP BY Brand) X)) LastAVG,
+							 [Year],
+							 [Month]
+					  FROM   [STRInterface].[dbo].[VIEW_Volatility] V
+					  LEFT JOIN dbo.Distributor D ON D.DistributorName = V.CustomerCode
+					  LEFT JOIN dbo.Company C ON C.CompanyCode = V.CustomerCode
+					  WHERE     D.DistributorCode IS NULL				
+						        AND [V].[Year] = @{year}
+								AND [V].[Month] = @{month}
+					 GROUP BY  V.[DistributorCode],
+							   V.[DistributorName],
+							   V.[DistributorLevel],
+							   V.Brand,
+							   [CustomerCode],
+							   [CustomerName],
+							   Family,
+							   [Year],
+							   [Month]) K
+			]]>
+		</sql>
+	
+	
+		<!--此SQL无日期 -->
+		<sql name="Agg_DistributorInvoicingDetails">
+			<![CDATA[
+			insert into 	Agg_DistributorInvoicingDetails (
+							DistributorCode,
+		                    DistributorName,
+		                    ProvinceName,
+		                    CityName,
+		                    Region,
+		                    RSM,
+		                    Supervisor,
+		                    InventoryStatus,
+		                    DutyRegion ,
+		                    [Year],
+		                    [Month],
+		                    ProductType,
+		                    PRH4,prh5,
+		                    PRH4Description,
+							[Brand],
+		                    DATA.ProductCode,
+		                    ProductName,
+		                    P.[Price],
+		                    P.[Description],
+		                    SumQuantity_I0 ,
+		                    SumQuantity_P0  ,
+		                    SumQuantity_S0 ,
+		                    SumQuantity_I1 ,
+		                    SumQuantity_P1,
+		                    SumQuantity_S1 ,
+		                    SumConsignmentQuantity_I0,
+		                    SumAmount_P0 ,
+		                    SumAmount_S0  ,
+		                    SumConsignmentQuantity_I1  ,
+		                    SumAmount_P1 ,
+		                    SumAmount_S1  ,
+		                    Exchange0 ,
+		                    Exchange1 
+							)
+		
+		SELECT     DISTINCT DATA.DistributorCode,
+                    D.DistributorName,
+                    D.ProvinceName,
+                    D.CityName,
+                    DH.Region,
+                    DH.RSM,
+                    DH.Supervisor,
+                    InventoryStatus,
+                    DutyRegion = STUFF(( SELECT ',' + Province
+                                         FROM   DistributorHierarchy
+                                         WHERE  DistributorCode = DATA.DistributorCode
+                                         FOR XML PATH('')), 1, 1, '') ,
+                    DATA.[Year],
+                    DATA.[Month],
+                    ProductType,
+                    PRH4,
+                                        PRH5,
+                    PRH4Description,
+                                        P.[Brand],
+                    DATA.ProductCode,
+                    ProductName,
+                    P.[Price],
+                    P.[Description],
+                    isnull(SumQuantity_I0,0) SumQuantity_I0,
+                    isnull(SumQuantity_P0,0) SumQuantity_P0,
+                    isnull(SumQuantity_S0,0) SumQuantity_S0,
+                    isnull(SumQuantity_I1,0) SumQuantity_I1,
+                    isnull(SumQuantity_P1,0) SumQuantity_P1,
+                    isnull(SumQuantity_S1,0) SumQuantity_S1,
+                    isnull(SumConsignmentQuantity_I0,0) SumConsignmentQuantity_I0,
+                    isnull(SumAmount_P0,0) SumAmount_P0,
+                    isnull(SumAmount_S0,0) SumAmount_S0,
+                    isnull(SumConsignmentQuantity_I1,0) SumConsignmentQuantity_I1,
+                    isnull(SumAmount_P1,0) SumAmount_P1,
+                    isnull(SumAmount_S1,0) SumAmount_S1,
+                    isnull(Exchange0,0) Exchange0,
+                    isnull(Exchange1,0) Exchange1
+          FROM      ( SELECT    DISTINCT
+                                [DistributorCode] ,
+                                [DataI].[ProductCode] ,
+                                YEAR([BizDate]) AS [Year] ,
+                                MONTH([BizDate]) AS [Month],Brand
+                      FROM      [dbo].[DataI]
+                                            LEFT JOIN Product P ON p.ProductCode = [DataI].ProductCode
+                      WHERE     DistributorLevel = '一级商'
+                             
+                      UNION
+
+                      SELECT    DISTINCT
+                                [DistributorCode] ,
+                                [DataS].[ProductCode] ,
+                                YEAR([BizDate]) AS [Year] ,
+                                MONTH([BizDate]) AS [Month],Brand
+                      FROM      [dbo].[DataS]
+                                            LEFT JOIN Product P ON p.ProductCode = [DataS].ProductCode
+                      WHERE     DistributorLevel = '一级商'
+                            
+                      UNION
+
+                      SELECT    DISTINCT
+                                [DistributorCode] ,
+                                [DataP].[ProductCode] ,
+                                YEAR([BizDate]) AS [Year] ,
+                                MONTH([BizDate]) AS [Month],Brand
+                      FROM      [dbo].[DataP]
+                                            LEFT JOIN Product P ON p.ProductCode = [DataP].ProductCode
+                      WHERE     DistributorLevel = '一级商'
+                               
+                      UNION
+
+                      SELECT    DISTINCT
+                                [DistributorCode] ,
+                                [DDIDaily_I].[ProductCode] ,
+                                YEAR([BizDate]) AS [Year] ,
+                                MONTH([BizDate]) AS [Month],Brand
+                      FROM      [dbo].[DDIDaily_I]
+                                            LEFT JOIN Product P ON p.ProductCode = [DDIDaily_I].ProductCode
+                      WHERE     DistributorLevel = '一级商'
+                               
+                      UNION
+
+                      SELECT    DISTINCT
+                                [DistributorCode] ,
+                                [DDIDaily_S].[ProductCode] ,
+                                YEAR([BizDate]) AS [Year] ,
+                                MONTH([BizDate]) AS [Month],Brand
+                      FROM      [dbo].[DDIDaily_S]
+                                            LEFT JOIN Product P ON p.ProductCode = [DDIDaily_S].ProductCode
+                      WHERE     DistributorLevel = '一级商'
+                                
+                      UNION
+
+                      SELECT    DISTINCT [DistributorCode] ,
+                                [DDIDaily_P].[ProductCode] ,
+                                YEAR([BizDate]) AS [Year] ,
+                                MONTH([BizDate]) AS [Month],Brand
+                      FROM      [dbo].[DDIDaily_P]
+                                            LEFT JOIN Product P ON p.ProductCode = [DDIDaily_P].ProductCode
+                      WHERE     DistributorLevel = '一级商'
+                                
+                    ) DATA
+                                        LEFT JOIN ( SELECT   ISNULL(SUM([Quantity]), 0) SumQuantity_I0,DistributorCode,[DataI].ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                              FROM     [dbo].[DataI]
+                                                                LEFT JOIN Product pr ON pr.ProductCode = [DataI].ProductCode
+                                                              WHERE    DistributorLevel = '一级商'
+                                                                GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DataI].ProductCode
+                                     ) I0 ON I0.DistributorCode = DATA.DistributorCode AND I0.Brand = DATA.Brand AND I0.[ProductCode] = DATA.[ProductCode] AND I0.[YEAR]= DATA.[Year]  AND I0.[MONTH] = DATA.[Month] 
+
+                                        LEFT JOIN ( SELECT   ISNULL(SUM([Quantity]), 0) SumQuantity_P0,DistributorCode,DataP.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                FROM     [dbo].[DataP]
+                                                                LEFT JOIN Product pr ON pr.ProductCode = [DataP].ProductCode            
+                                WHERE     DistributorLevel = '一级商'
+                                                                GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DataP].ProductCode
+                               ) P0 ON P0.DistributorCode = DATA.DistributorCode AND P0.Brand = DATA.Brand AND P0.[ProductCode] = DATA.[ProductCode] AND P0.[YEAR]= DATA.[Year]  AND P0.[MONTH] = DATA.[Month] 
+
+                                        
+                                        LEFT JOIN (SELECT   ISNULL(SUM([Quantity]), 0) SumQuantity_S0,DistributorCode,DataS.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                             FROM     [dbo].[DataS]
+                                                             LEFT JOIN Product pr ON pr.ProductCode = [DataS].ProductCode
+                                                             WHERE    DistributorLevel = '一级商'
+                                                                                AND NOT EXISTS ( SELECT 1
+                                                                                                                 FROM dbo.Distributor
+                                                                                                                 WHERE Distributor.DistributorName = DataS.CustomerName
+                                                                                                                 AND Distributor.DistributorLevel = '一级商' )
+                                                            GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DataS].ProductCode
+                                                         )S0 ON S0.DistributorCode = DATA.DistributorCode AND S0.Brand = DATA.Brand AND S0.[ProductCode] = DATA.[ProductCode] AND S0.[YEAR]= DATA.[Year]  AND S0.[MONTH] = DATA.[Month] 
+
+
+                                     LEFT JOIN ( SELECT   ISNULL(SUM([Quantity]), 0) SumQuantity_I1,DistributorCode,DDIDaily_I.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                             FROM     [dbo].[DDIDaily_I]
+                                                             LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_I].ProductCode
+                                                             WHERE    DistributorLevel = '一级商'
+                                                            GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DDIDaily_I].ProductCode
+                            ) I1 ON I1.DistributorCode = DATA.DistributorCode AND I1.Brand = DATA.Brand AND I1.[ProductCode] = DATA.[ProductCode] AND I1.[YEAR]= DATA.[Year]  AND I1.[MONTH] = DATA.[Month]
+
+    
+                                    LEFT JOIN ( SELECT   ISNULL(SUM([Quantity]), 0) SumQuantity_P1,DistributorCode,DDIDaily_P.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                            FROM     [dbo].[DDIDaily_P]
+                                                            LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_P].ProductCode
+                                                            WHERE    DistributorLevel = '一级商'
+                                                            GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DDIDaily_P].ProductCode
+                                                          )  P1 ON P1.DistributorCode = DATA.DistributorCode AND P1.Brand = DATA.Brand AND P1.[ProductCode] = DATA.[ProductCode] AND P1.[YEAR]= DATA.[Year]  AND P1.[MONTH] = DATA.[Month]
+                                    
+
+                                    LEFT JOIN (SELECT   ISNULL(SUM([Quantity]), 0) SumQuantity_S1,DistributorCode,DDIDaily_S.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                         FROM     [dbo].[DDIDaily_S]
+                                                         LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_S].ProductCode
+                                                         WHERE    DistributorLevel = '一级商'
+                                                                            AND NOT EXISTS ( SELECT 1
+                                                                                                             FROM dbo.Distributor
+                                                                                                             WHERE Distributor.DistributorName = DDIDaily_S.CustomerName
+                                                                                                                         AND Distributor.DistributorLevel = '一级商' )
+                                                        GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DDIDaily_S].ProductCode
+                                                     )  S1 ON S1.DistributorCode = DATA.DistributorCode AND S1.Brand = DATA.Brand AND S1.[ProductCode] = DATA.[ProductCode] AND S1.[YEAR]= DATA.[Year]  AND S1.[MONTH] = DATA.[Month]
+                                    
+
+
+                                    LEFT JOIN ( SELECT    ISNULL(SUM(ConsignmentQuantity),0) SumConsignmentQuantity_I0,DistributorCode,DataI.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                            FROM      [dbo].[DataI]
+                                                            LEFT JOIN Product pr ON pr.ProductCode = [DataI].ProductCode
+                                                            WHERE    DistributorLevel = '一级商'
+                                                            GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DataI].ProductCode
+                                                        )  CI0 ON CI0.DistributorCode = DATA.DistributorCode AND CI0.Brand = DATA.Brand AND CI0.[ProductCode] = DATA.[ProductCode] AND CI0.[YEAR]= DATA.[Year]  AND CI0.[MONTH] = DATA.[Month]
+
+
+                                    LEFT JOIN (SELECT ISNULL(SUM(Amount), 0) SumAmount_P0, DistributorCode,DataP.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                         FROM   [dbo].[DataP]
+                                                         LEFT JOIN Product pr ON pr.ProductCode = [DataP].ProductCode
+                                                         WHERE  DistributorLevel = '一级商'
+                                                         GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DataP].ProductCode
+                                                     ) AP0 ON AP0.DistributorCode = DATA.DistributorCode AND AP0.Brand = DATA.Brand AND AP0.[ProductCode] = DATA.[ProductCode] AND AP0.[YEAR]= DATA.[Year]  AND AP0.[MONTH] = DATA.[Month]
+
+
+                                LEFT JOIN (SELECT ISNULL(SUM(Amount), 0) SumAmount_S0, DistributorCode,DataS.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                     FROM   [dbo].[DataS]
+                                                     LEFT JOIN Product pr ON pr.ProductCode = [DataS].ProductCode
+                                                     WHERE  DistributorLevel = '一级商'
+                                                                    AND NOT EXISTS ( SELECT
+                                                                                                        1
+                                                                                                     FROM
+                                                                                                        dbo.Distributor
+                                                                                                     WHERE
+                                                                                                        Distributor.DistributorName = DataS.CustomerName
+                                                                                                        AND Distributor.DistributorLevel = '一级商' )
+                                                    GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DataS].ProductCode
+                          ) AS0 ON AS0.DistributorCode = DATA.DistributorCode AND AS0.Brand = DATA.Brand AND AS0.[ProductCode] = DATA.[ProductCode] AND AS0.[YEAR]= DATA.[Year]  AND AS0.[MONTH] = DATA.[Month]
+                                
+                                LEFT JOIN ( SELECT    ISNULL(SUM(ConsignmentQuantity),0) SumConsignmentQuantity_I1,DistributorCode,DDIDaily_I.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                        FROM      [dbo].[DDIDaily_I]
+                                                        LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_I].ProductCode
+                                                        WHERE     DistributorLevel = '一级商'
+                                                        GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DDIDaily_I].ProductCode
+                                                    ) CI1 ON CI1.DistributorCode = DATA.DistributorCode AND CI1.Brand = DATA.Brand AND CI1.[ProductCode] = DATA.[ProductCode] AND CI1.[YEAR]= DATA.[Year]  AND CI1.[MONTH] = DATA.[Month]
+
+                                LEFT JOIN (SELECT ISNULL(SUM(Amount), 0) SumAmount_P1,DistributorCode,DDIDaily_P.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                     FROM   [dbo].[DDIDaily_P]
+                                                     LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_P].ProductCode
+                                                     GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DDIDaily_P].ProductCode
+                                                 ) AP1 ON AP1.DistributorCode = DATA.DistributorCode AND AP1.Brand = DATA.Brand AND AP1.[ProductCode] = DATA.[ProductCode] AND AP1.[YEAR]= DATA.[Year]  AND AP1.[MONTH] = DATA.[Month]
+
+
+                                LEFT JOIN (SELECT ISNULL(SUM(Amount), 0) SumAmount_S1,DistributorCode,DDIDaily_S.ProductCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                     FROM   [dbo].[DDIDaily_S]
+                                                     LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_S].ProductCode
+                                                     WHERE  NOT EXISTS ( SELECT 1
+                                                                                             FROM dbo.Distributor
+                                                                                             WHERE Distributor.DistributorName = DDIDaily_S.CustomerName AND Distributor.DistributorLevel = '一级商' )
+                                                    GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate),[DDIDaily_S].ProductCode
+                                                 ) AS1 ON AS1.DistributorCode = DATA.DistributorCode AND AS1.Brand = DATA.Brand AND AS1.[ProductCode] = DATA.[ProductCode] AND AS1.[YEAR]= DATA.[Year]  AND AS1.[MONTH] = DATA.[Month]
+                                
+
+                            LEFT JOIN ( SELECT    ISNULL(SUM(Amount), 0) Exchange0,DataS.DistributorCode,DataS.ProductCode,pr.Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                    FROM      [dbo].[DataS]
+                                                    LEFT JOIN Product pr ON pr.ProductCode = [DataS].ProductCode
+                                                    LEFT JOIN dbo.Distributor ON Distributor.DistributorName = DataS.CustomerName
+                                                    WHERE     Distributor.DistributorLevel = '一级商'
+                                                    GROUP BY pr.Brand,DataS.DistributorCode,YEAR(BizDate),MONTH(BizDate),[DataS].ProductCode
+                        ) E0 ON E0.DistributorCode = DATA.DistributorCode AND E0.Brand = DATA.Brand AND E0.[ProductCode] = DATA.[ProductCode] AND E0.[YEAR]= DATA.[Year]  AND E0.[MONTH] = DATA.[Month]
+
+
+                        LEFT JOIN  (SELECT    ISNULL(SUM(Amount), 0) Exchange1,DDIDaily_S.DistributorCode,DDIDaily_S.ProductCode,pr.Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                                FROM      [dbo].[DDIDaily_S]
+                                                LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_S].ProductCode
+                                                LEFT JOIN dbo.Distributor ON Distributor.DistributorName = DDIDaily_S.CustomerName
+                                                WHERE     Distributor.DistributorLevel = '一级商'
+                                                GROUP BY pr.Brand,DDIDaily_S.DistributorCode,YEAR(BizDate),MONTH(BizDate),[DDIDaily_S].ProductCode
+                                            ) E1 ON E1.DistributorCode = DATA.DistributorCode AND E1.Brand = DATA.Brand AND E1.[ProductCode] = DATA.[ProductCode] AND E1.[YEAR]= DATA.[Year]  AND E1.[MONTH] = DATA.[Month]
+
+
+                    LEFT JOIN dbo.Distributor D ON D.DistributorCode = DATA.DistributorCode
+                    LEFT JOIN dbo.DistributorHierarchy DH ON DH.DistributorCode = DATA.DistributorCode
+                    LEFT JOIN ( SELECT  DISTINCT
+                                        [DistributorCode] ,
+                                        [ProductCode] ,
+                                        InventoryStatus
+                                FROM    [dbo].[DataI]
+                                UNION
+                                SELECT  DISTINCT
+                                        [DistributorCode] ,
+                                        [ProductCode] ,
+                                        InventoryStatus
+                                FROM    [dbo].[DDIDaily_I]
+                              ) I ON DATA.DistributorCode = I.DistributorCode
+                                     AND DATA.ProductCode = I.ProductCode
+                    LEFT JOIN dbo.Product P ON P.ProductCode = DATA.ProductCode
+			]]>
+		</sql>
+		<!--此SQL无日期 -->
+		<sql name="Agg_DistributorTotalSales">
+			<![CDATA[
+			insert into Agg_DistributorTotalSales(
+					DistributorCode,
+                    DistributorName,
+                    DistributorLevel,
+                    Province,
+                    DistributorCity,
+                    CustomerCode,
+					[Year],
+                    [Month],
+                    CustomerName,
+                    CustomerType,
+					brand,
+                    ProductCode,
+                    ProductName,
+                    [Description],
+                    PRH4,
+                    PRH4Description,
+                    PRH5,
+                    PRH5Description,
+                    ProductType,
+                    UnitName,
+                    SalePrice,
+                    PurchasePrice,
+                    Quantity,
+                    ActualSales,
+                    NDPSales)
+			SELECT    	DistributorCode,
+	                    MAX(DistributorName) AS DistributorName,
+	                    MAX(DistributorLevel) AS DistributorLevel,
+	                    MAX(DistributorProvince) AS Province,
+	                    MAX(DistributorCity) AS DistributorCity,
+	                    CustomerCode,
+						[Year],
+	                    [Month],
+	                    MAX(CustomerName) AS CustomerName,
+	                    MAX(CustomerType) AS CustomerType,
+						brand,
+	                    ProductCode,
+	                    MAX(ProductName) AS ProductName,
+	                    MAX([Description]) AS [Description],
+	                    PRH4,
+	                    MAX(PRH4Description) AS PRH4Description,
+	                    MAX(PRH5) AS PRH5,
+	                    MAX(PRH5Description) AS PRH5Description,
+	                    MAX(ProductType) AS ProductType,
+	                    MAX(UnitName) AS UnitName,
+	                    [dbo].[GetSeparatorThousandMoney](MAX(SalePrice), 1) AS SalePrice,
+	                    [dbo].[GetSeparatorThousandMoney](MAX(PurchasePrice), 1) AS PurchasePrice,
+	                    SUM(Quantity) AS Quantity,
+	                    [dbo].[GetSeparatorThousandMoney](SUM(ActualSales), 1) AS ActualSales,
+	                    [dbo].[GetSeparatorThousandMoney](SUM(NDPSales), 1) AS NDPSales
+	       FROM      dbo.VIEW_DistributorSales
+		   GROUP BY  DistributorCode,
+				     CustomerCode,
+				     [Month],
+				     brand,
+				     ProductCode,
+				     PRH4,
+				    [year]
+			]]>
+		</sql>
+		<!--此SQL无日期 -->
+		<sql name="Agg_InventorySumRefresh">
+			<![CDATA[
+			insert into Agg_InventorySumRefresh(BizDate,DistributorCode,DistributorName)
+			SELECT  MAX(I.BizDate) ,
+            I.DistributorCode ,
+            I.DistributorName  
+    		FROM    ( SELECT    
+		                        DATENAME(DAY, [BizDate]) AS [Day],
+		                        [DistributorCode],
+		                        [DistributorName],
+		                        [BizDate]
+                     FROM      [dbo].[DDIDaily_I]
+            		) AS I
+  			GROUP BY  
+		            I.DistributorCode ,
+		            I.DistributorName     
+			]]>
+		</sql>
+		<!--此SQL无日期 -->
+		<sql name="Agg_InvoicingComparisonTotal">
+			<![CDATA[
+			insert into  Agg_InvoicingComparisonTotal(DistributorCode,
+                    DistributorName,
+					Brand,
+                    Region,
+                    RSM,
+                    Supervisor,
+                    DutyRegion,
+                    [Year],
+                    [Month],
+                    SumAmount_P0,
+                    SumAmount_S0,
+                    SumAmount_P1,
+                    SumAmount_S1,
+                    Exchange0,
+                    Exchange1 
+
+)
+
+SELECT    DISTINCT  DATA.DistributorCode,
+                    D.DistributorName,
+                    DATA.Brand,
+                    DH.Region,
+                    DH.RSM,
+                    DH.Supervisor,
+                    DutyRegion = STUFF(( SELECT ',' + Province
+                                         FROM   DistributorHierarchy
+                                         WHERE  DistributorCode = DATA.DistributorCode
+                                                                                 FOR XML PATH('')), 1, 1, ''),
+                    DATA.[Year],
+                    DATA.[Month],
+                    ISNULL(SumAmount_P0, 0) SumAmount_P0,
+                    ISNULL(SumAmount_S0, 0) SumAmount_S0,
+                    ISNULL(SumAmount_P1, 0) SumAmount_P1,
+                    ISNULL(SumAmount_S1, 0) SumAmount_S1,
+                    ISNULL(Exchange0, 0) Exchange0,
+                    ISNULL(Exchange1, 0) Exchange1 
+            FROM      ( SELECT  DISTINCT [DistributorCode],
+                                YEAR([BizDate]) AS [Year],
+                                MONTH([BizDate]) AS [Month],Brand
+                      FROM      [dbo].[DataI]
+                                            LEFT JOIN Product P ON p.ProductCode = [DataI].ProductCode
+                      WHERE     DistributorLevel = '一级商'
+                                
+                      UNION
+
+                      SELECT  DISTINCT [DistributorCode],
+                              YEAR([BizDate]) AS [Year],
+                              MONTH([BizDate]) AS [Month],Brand
+                      FROM    [dbo].[DataS]
+                                            LEFT JOIN Product P ON p.ProductCode = [DataS].ProductCode
+                      WHERE   DistributorLevel = '一级商'
+                               
+                      UNION
+
+                      SELECT  DISTINCT [DistributorCode],
+                              YEAR([BizDate]) AS [Year],
+                              MONTH([BizDate]) AS [Month],Brand
+                      FROM   [dbo].[DataP]
+                                            LEFT JOIN Product P ON p.ProductCode = [DataP].ProductCode
+                      WHERE  DistributorLevel = '一级商'
+                                
+                      UNION
+
+                      SELECT  DISTINCT [DistributorCode],
+                              YEAR([BizDate]) AS [Year],
+                              MONTH([BizDate]) AS [Month],Brand
+                      FROM    [dbo].[DDIDaily_I]
+                                            LEFT JOIN Product P ON p.ProductCode = [DDIDaily_I].ProductCode
+                      WHERE   DistributorLevel = '一级商'
+                           
+                      UNION
+
+                      SELECT  DISTINCT [DistributorCode],
+                              YEAR([BizDate]) AS [Year],
+                              MONTH([BizDate]) AS [Month],Brand
+                      FROM    [dbo].[DDIDaily_S]
+                                            LEFT JOIN Product P ON p.ProductCode = [DDIDaily_S].ProductCode
+                      WHERE   DistributorLevel = '一级商'
+                              
+                      UNION
+
+                      SELECT  DISTINCT [DistributorCode],
+                                YEAR([BizDate]) AS [Year],
+                                MONTH([BizDate]) AS [Month],
+                                                                Brand
+                      FROM      [dbo].[DDIDaily_P]
+                                            LEFT JOIN Product P ON p.ProductCode = [DDIDaily_P].ProductCode
+                      WHERE     DistributorLevel = '一级商' )DATA
+                                            LEFT JOIN ( SELECT ISNULL(SUM(Amount), 0) SumAmount_P0,DistributorCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                     FROM   [dbo].[DataP]
+                                                                         LEFT JOIN Product pr ON pr.ProductCode = [DataP].ProductCode
+                                     WHERE DistributorLevel = '一级商'
+                                                                        GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate)
+                                   ) P0 ON P0.DistributorCode = DATA.DistributorCode AND P0.Brand = DATA.Brand AND  P0.[YEAR]= DATA.[Year] AND P0.[MONTH] = DATA.[Month]
+
+                                            LEFT JOIN ( SELECT ISNULL(SUM(Amount), 0) SumAmount_S0,DistributorCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                     FROM   [dbo].[DataS]
+                                                                         LEFT JOIN Product pr ON pr.ProductCode = [DataS].ProductCode
+                                     WHERE DistributorLevel = '一级商'
+                                                                        GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate)
+                                   ) S0 ON S0.DistributorCode = DATA.DistributorCode AND S0.Brand = DATA.Brand AND  S0.[YEAR]= DATA.[Year]  AND S0.[MONTH] = DATA.[Month]
+
+                                            LEFT JOIN ( SELECT ISNULL(SUM(Amount), 0) SumAmount_P1,DistributorCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                     FROM   [dbo].[DDIDaily_P]
+                                                                         LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_P].ProductCode
+                                     WHERE DistributorLevel = '一级商'
+                                                                        GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate)
+                                   ) P1 ON P1.DistributorCode = DATA.DistributorCode AND P1.Brand = DATA.Brand AND  P1.[YEAR]= DATA.[Year]  AND P1.[MONTH] = DATA.[Month]
+
+                                            LEFT JOIN ( SELECT ISNULL(SUM(Amount), 0) SumAmount_S1,DistributorCode,Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                     FROM   [dbo].[DDIDaily_S]
+                                                                         LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_S].ProductCode
+                                     WHERE DistributorLevel = '一级商'
+                                                                        GROUP BY pr.Brand,DistributorCode,YEAR(BizDate),MONTH(BizDate)
+                                   ) S1 ON S0.DistributorCode = DATA.DistributorCode AND S1.Brand = DATA.Brand AND  S1.[YEAR]= DATA.[Year]  AND S1.[MONTH] = DATA.[Month]
+
+                                            LEFT JOIN ( SELECT    ISNULL(SUM(Amount), 0) Exchange0,[DataS].DistributorCode,pr.Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                  FROM      [dbo].[DataS]
+                                                                    LEFT JOIN Product pr ON pr.ProductCode = [DataS].ProductCode
+                                  LEFT JOIN dbo.Distributor ON Distributor.DistributorName = DataS.CustomerName
+                                  WHERE     Distributor.DistributorLevel = '一级商'
+                                                                    GROUP BY pr.Brand,[DataS].DistributorCode,YEAR(BizDate),MONTH(BizDate)
+                                ) E0 ON E0.DistributorCode = DATA.DistributorCode AND E0.Brand = DATA.Brand AND  E0.[YEAR]= DATA.[Year]  AND E0.[MONTH] = DATA.[Month]
+                                            
+                                            LEFT JOIN ( SELECT    ISNULL(SUM(Amount), 0) Exchange1,[DDIDaily_S].DistributorCode,pr.Brand,YEAR(BizDate) [YEAR],MONTH(BizDate) [MONTH]
+                                  FROM      [dbo].[DDIDaily_S]
+                                                                    LEFT JOIN Product pr ON pr.ProductCode = [DDIDaily_S].ProductCode
+                                  LEFT JOIN dbo.Distributor ON Distributor.DistributorName = DDIDaily_S.CustomerName
+                                  WHERE     Distributor.DistributorLevel = '一级商'
+                                                                    GROUP BY pr.Brand,[DDIDaily_S].DistributorCode,YEAR(BizDate),MONTH(BizDate)
+                                ) E1 ON E1.DistributorCode = DATA.DistributorCode AND E1.Brand = DATA.Brand AND  E1.[YEAR]= DATA.[Year]  AND E1.[MONTH] = DATA.[Month]
+                                            
+
+                                            LEFT JOIN dbo.Distributor D ON D.DistributorCode = DATA.DistributorCode
+                                            LEFT JOIN dbo.DistributorHierarchy DH ON DH.DistributorCode = DATA.DistributorCode
+                                            LEFT JOIN ( SELECT  DISTINCT [DistributorCode] ,
+                                                                                                     InventoryStatus
+                                 FROM    [dbo].[DataI]
+                                 UNION
+                                 SELECT  DISTINCT [DistributorCode] ,
+                                                                                 InventoryStatus
+                                 FROM    [dbo].[DDIDaily_I]
+                               ) I ON DATA.DistributorCode = I.DistributorCode
+						]]>
+					</sql>
+		<!--此SQL无日期 -->
+		<sql name="Agg_straumann_InventorySum">
+			<![CDATA[
+			INSERT INTO [dbo].[InventorySumView](I.[Year] ,
+					            [Month] ,
+					            DistributorCode ,
+					            DistributorName ,
+					            DistributorLevel ,
+								Brand,
+								ProductCode,
+								ProductType,
+								ProductName,
+								PRH4,
+								PRH5,
+					            Region,
+								Quantity,
+								ConsignmentQuantity,
+					            DistributorProvince,
+					            DistributorCity,
+								BizDate,
+					            Inventoryamount,
+					            Consignmentamount,
+					            Saleamount)
+					SELECT  	I.[Year],
+					            I.[Month],
+					            I.DistributorCode,
+					            I.DistributorName,
+					            I.DistributorLevel,
+								P.Brand,
+								P.ProductCode,
+								P.ProductType,
+								P.ProductName,
+								PRH4,PRH5,
+					            DH.Region,
+								I.Quantity,
+								I.ConsignmentQuantity,
+					            DH.Province AS DistributorProvince,
+					            I.DistributorCity,
+					            I.BizDate,
+					            P.Price * I.Quantity AS Inventoryamount ,
+					            P.Price * I.ConsignmentQuantity AS Consignmentamount ,
+					            S.Saleamount
+					    FROM    ( SELECT    DATENAME(YEAR, [BizDate]) AS [Year],
+					                        DATENAME(MONTH, [BizDate]) AS [Month],
+					                        DATENAME(DAY, [BizDate]) AS [Day],
+					                        [DistributorCode],
+					                        [DistributorName],
+					                        DistributorLevel,
+					                        DistributorProvince,
+					                        DistributorCity,
+					                        ProductCode,
+											ProductName,
+					                        Quantity,
+					                        ConsignmentQuantity,
+					                        [BizDate]
+					              FROM      [dbo].[DDIDaily_I]
+					            ) AS I
+					            LEFT JOIN ( SELECT  DistributorCode,
+					                                DS.BizDate,
+					                                SUM([Quantity] * SP.Price) AS Saleamount
+					                        FROM    [dbo].[VIEW_DataSales] AS DS
+					                        LEFT JOIN [dbo].[Product] AS SP ON SP.ProductCode = DS.ProductCode
+					                        GROUP BY DistributorCode,
+					                                DS.BizDate
+					                      ) AS S ON S.DistributorCode = I.DistributorCode AND S.BizDate = I.BizDate
+					            LEFT JOIN [dbo].[Product] AS P ON P.ProductCode = I.ProductCode
+					            LEFT JOIN [dbo].DistributorHierarchy AS DH ON DH.DistributorCode = I.DistributorCode
+						]]>
+					</sql>
+		<!--此SQL无日期 -->
+		<sql name="Agg_TotalSales">
+			<![CDATA[
+			INSERT into Agg_TotalSales (
+						Province,
+						City,
+						[Year],
+						[Month],
+						CustomerCode,
+						CustomerName,
+						CustomerType,
+						DistributorCode,
+						DistributorName,
+						DistributorLevel,
+						TerminalLevel,
+						[brand],
+						ProductCode,
+						ProductName,
+						Description,
+						PRH4,
+						PRH4Description,
+						PRH5,
+						PRH5Description,
+						ProductType, 
+						[UnitName],
+						[Quantity],
+						[SalePrice],
+						[PurchasePrice],
+						[ActualSales],
+						[NDPSales]) 
+			SELECT    									
+                        MAX([Province]) AS [Province],
+                        MAX([City]) AS [City],
+				  		[Year],
+                        [Month],
+                        [CustomerCode],
+                        MAX([CustomerName]) AS [CustomerName],
+                        MAX([CustomerType]) AS [CustomerType],
+                        MAX([DistributorCode]) AS [DistributorCode],
+                        MAX([DistributorName]) AS [DistributorName],
+                        MAX([DistributorLevel]) AS [DistributorLevel],
+                        MAX([TerminalLevel]) AS [TerminalLevel],
+				  		[brand],
+                        [ProductCode],
+                        MAX([ProductName]) AS [ProductName],
+                        MAX([Description]) AS [Description],
+                        [PRH4],
+                        MAX([PRH4Description]) AS [PRH4Description],
+                        MAX([PRH5]) AS [PRH5] ,
+                        MAX([PRH5Description]) AS [PRH5Description],
+                        MAX([ProductType]) AS [ProductType],
+                        MAX([UnitName]) AS [UnitName],
+                        SUM(ISNULL([Quantity], 0)) AS [Quantity],
+                        [dbo].[GetSeparatorThousandMoney](MAX([SalePrice]),1) AS [SalePrice],
+                        [dbo].[GetSeparatorThousandMoney](MAX([PurchasePrice]), 1) AS [PurchasePrice],
+                        [dbo].[GetSeparatorThousandMoney](SUM([ActualSales]),1) AS [ActualSales],
+                        [dbo].[GetSeparatorThousandMoney](SUM([NDPSales]),1) AS [NDPSales]
+              FROM      [dbo].[VIEW_TerminalSales]
+              GROUP BY  
+                        [Month],
+                        [CustomerCode],
+				  		[brand],
+                        [ProductCode],
+                        [PRH4],
+				  		[Year]
+			]]>
+		</sql>
+		
+		<sql name="Agg_Terminal_Quantity">
+			<![CDATA[
+			INSERT INTO Agg_Terminal_Quantity([Yearno],[monthno],Region,RSM,Rname,Target,ratio,NUM,negative,new,overlap)
+			SELECT
+					Tb.[Year] [Year],
+					@{month} [month],
+					Tb.Region,
+					T.RSM RSM,
+					T.Rname,
+					Target,
+					ROUND(NUM * 100 / Target, 1) ratio,
+					NUM,
+					negative,
+					new,
+					overlap
+			FROM
+				(SELECT
+							TB.[Year] [Year],
+							Region,
+							RSM,
+							Rname,
+							SUM (NUM1) NUM,
+							SUM (negative) negative,
+							SUM (new) AS new
+				FROM(SELECT
+							[Year],
+							Region,
+							RSM,
+							Rname,
+							COUNT (1) NUM1,
+							0 AS negative,
+							0 AS new
+					FROM
+						(SELECT
+								V.[Year] [Year],
+								Region,
+								RSM,
+								U.EnglishName Rname,
+								V.CustomerCode,
+								V.CustomerName,
+								SUM (Amount) Amount
+							FROM VIEW_DataSales V
+							LEFT JOIN SaleHierarchy S ON V.CustomerCode = S.ClientCode
+							LEFT JOIN usr U ON U.LoginName = S.RSM
+							WHERE RSM IS NOT NULL
+								  AND RSM <> ''
+								  AND V.[Year] = @{Year}
+							GROUP BY
+									V.[Year],
+									Region,
+									RSM,
+									U.EnglishName,
+									V.CustomerCode,
+									V.CustomerName
+							HAVING SUM (Amount) > 0) tb
+				  GROUP BY
+							[Year],
+							Region,
+							RSM,
+							Rname
+				UNION ALL
+				SELECT
+						[Year],
+						Region,
+						RSM,
+						Rname,
+						0 AS NUM1,
+						COUNT (1) negative,
+						0 AS new
+				FROM
+					(SELECT
+							V.[Year] [Year],
+							Region,
+							RSM,
+							U.EnglishName Rname,
+							V.CustomerCode,
+							V.CustomerName,
+							SUM (Amount) Amount
+					FROM VIEW_DataSales V
+					LEFT JOIN SaleHierarchy S ON V.CustomerCode = S.ClientCode
+					LEFT JOIN usr U ON U.LoginName = S.RSM
+					WHERE RSM IS NOT NULL
+					AND RSM <> ''
+					AND V.[Year] = @{Year}
+					GROUP BY
+							V.[Year],
+							Region,
+							RSM,
+							U.EnglishName,
+							V.CustomerCode,
+							V.CustomerName
+					HAVING SUM (Amount) = 0
+				) tb1
+				GROUP BY
+						[Year],
+						Region,
+						RSM,
+						Rname
+				UNION ALL
+					SELECT
+							[Year],
+							Region,
+							RSM,
+							Rname,
+							0 AS NUM1,
+							0 AS negative,
+							COUNT (3) new
+					FROM
+						(SELECT
+								W.[Year] [Year],
+								Region,
+								RSM,
+								U.EnglishName Rname,
+								W.CustomerCode,
+								W.CustomerName,
+								SUM (Amount) Amount
+						 FROM   VIEW_DataSales W
+						 LEFT JOIN SaleHierarchy S ON W.CustomerCode = S.ClientCode
+						 LEFT JOIN usr U ON U.LoginName = S.RSM
+						 WHERE RSM IS NOT NULL AND RSM <> '' AND W.[Year] = @{Year}
+						GROUP BY
+								W.[Year],
+								Region,
+								RSM,
+								U.EnglishName,
+								W.CustomerCode,
+								W.CustomerName
+						HAVING SUM (Amount) > 0
+							   AND NOT EXISTS (
+									   SELECT
+											V.[Year] [Year],
+											Region,
+											RSM,
+											U.EnglishName Rname,
+											V.CustomerCode,
+											V.CustomerName,
+											SUM (Amount) Amount
+										FROM VIEW_DataSales V
+										LEFT JOIN SaleHierarchy S ON V.CustomerCode = S.ClientCode
+										LEFT JOIN usr U ON U.LoginName = S.RSM
+										WHERE RSM IS NOT NULL
+											  AND RSM <> ''
+											  AND V.[Year] = @{Year} - 1
+											  AND V.CustomerCode = W.CustomerCode
+										GROUP BY
+												V.[Year],
+												Region,
+												RSM,
+												U.EnglishName,
+												V.CustomerCode,
+												V.CustomerName
+										HAVING SUM (Amount) > 0)
+								) tb2
+					GROUP BY
+							[Year],
+							Region,
+							RSM,
+							Rname) TB
+	GROUP BY
+			[Year],
+			Region,
+			RSM,
+			Rname
+		) Tb
+	LEFT JOIN TerminalTargets T ON T.rsm = Tb.RSM
+	LEFT JOIN view_overlap O ON O.RSM = Tb.RSM AND  O.[YEAR] = Tb.[Year]
+	WHERE Tb.RSM IS NOT NULL
+	AND Tb.RSM <> ''
+	AND Tb.[Year] = @{Year}
+			]]>
+		</sql>
+		
+		<sql name="Agg_Terminal_Quantity_2018">
+            <![CDATA[
+            INSERT INTO Agg_Terminal_Quantity_2018([Yearno],[monthno],Region,RSM,Rname,Target,ratio,NUM,negative,new,overlap)
+            SELECT
+                    Tb.[Year] [Year],
+                    @{month} [month],
+                    Tb.Region,
+                    T.RSM RSM,
+                    T.Rname,
+                    Target,
+                    ROUND(NUM * 100 / Target, 1) ratio,
+                    NUM,
+                    negative,
+                    new,
+                    overlap
+            FROM
+                (SELECT
+                            TB.[Year] [Year],
+                            Region,
+                            RSM,
+                            Rname,
+                            SUM (NUM1) NUM,
+                            SUM (negative) negative,
+                            SUM (new) AS new
+                FROM(SELECT
+                            [Year],
+                            Region,
+                            RSM,
+                            Rname,
+                            COUNT (1) NUM1,
+                            0 AS negative,
+                            0 AS new
+                    FROM
+                        (SELECT
+                                V.[Year] [Year],
+                                Region,
+                                RSM,
+                                U.EnglishName Rname,
+                                V.CustomerCode,
+                                V.CustomerName,
+                                SUM (Amount) Amount
+                            FROM VIEW_DataSales V
+                            LEFT JOIN SaleHierarchy S ON V.CustomerCode = S.ClientCode
+                            LEFT JOIN usr U ON U.LoginName = S.RSM
+                            WHERE RSM IS NOT NULL
+                                  AND RSM <> ''
+                                  AND V.[Year] = @{Year}
+                            GROUP BY
+                                    V.[Year],
+                                    Region,
+                                    RSM,
+                                    U.EnglishName,
+                                    V.CustomerCode,
+                                    V.CustomerName
+                            HAVING SUM (Amount) > 0) tb
+                  GROUP BY
+                            [Year],
+                            Region,
+                            RSM,
+                            Rname
+                UNION ALL
+                SELECT
+                        [Year],
+                        Region,
+                        RSM,
+                        Rname,
+                        0 AS NUM1,
+                        COUNT (1) negative,
+                        0 AS new
+                FROM
+                    (SELECT
+                            V.[Year] [Year],
+                            Region,
+                            RSM,
+                            U.EnglishName Rname,
+                            V.CustomerCode,
+                            V.CustomerName,
+                            SUM (Amount) Amount
+                    FROM VIEW_DataSales V
+                    LEFT JOIN SaleHierarchy S ON V.CustomerCode = S.ClientCode
+                    LEFT JOIN usr U ON U.LoginName = S.RSM
+                    WHERE RSM IS NOT NULL
+                    AND RSM <> ''
+                    AND V.[Year] = @{Year}
+                    GROUP BY
+                            V.[Year],
+                            Region,
+                            RSM,
+                            U.EnglishName,
+                            V.CustomerCode,
+                            V.CustomerName
+                    HAVING SUM (Amount) = 0
+                ) tb1
+                GROUP BY
+                        [Year],
+                        Region,
+                        RSM,
+                        Rname
+                UNION ALL
+                    SELECT
+                            [Year],
+                            Region,
+                            RSM,
+                            Rname,
+                            0 AS NUM1,
+                            0 AS negative,
+                            COUNT (3) new
+                    FROM
+                        (SELECT
+                                W.[Year] [Year],
+                                Region,
+                                RSM,
+                                U.EnglishName Rname,
+                                W.CustomerCode,
+                                W.CustomerName,
+                                SUM (Amount) Amount
+                         FROM   VIEW_DataSales W
+                         LEFT JOIN SaleHierarchy S ON W.CustomerCode = S.ClientCode
+                         LEFT JOIN usr U ON U.LoginName = S.RSM
+                         WHERE RSM IS NOT NULL
+                               AND RSM <> '' AND W.[Year] = @{Year}
+                        GROUP BY
+                                W.[Year],
+                                Region,
+                                RSM,
+                                U.EnglishName,
+                                W.CustomerCode,
+                                W.CustomerName
+                        HAVING SUM (Amount) > 0
+                               AND NOT EXISTS (
+                                       SELECT
+                                            DATEPART(year, bizdate) [Year],
+                                            Region,
+                                            RSM,
+                                            U.EnglishName Rname,
+                                            V.CustomerCode,
+                                            V.CustomerName,
+                                            SUM (Amount) Amount
+                                        FROM DataS_2017_Sum V
+                                        LEFT JOIN SaleHierarchy S ON V.CustomerCode = S.ClientCode
+                                        LEFT JOIN usr U ON U.LoginName = S.RSM
+                                        WHERE RSM IS NOT NULL
+                                              AND RSM <> ''
+                                              AND DATEPART(year, bizdate) = @{Year} - 1
+                                              AND V.CustomerCode = W.CustomerCode
+                                        GROUP BY
+                                                DATEPART(year, bizdate),
+                                                Region,
+                                                RSM,
+                                                U.EnglishName,
+                                                V.CustomerCode,
+                                                V.CustomerName
+                                        HAVING SUM (Amount) > 0)
+                                ) tb2
+                    GROUP BY
+                            [Year],
+                            Region,
+                            RSM,
+                            Rname) TB
+    GROUP BY
+            [Year],
+            Region,
+            RSM,
+            Rname
+        ) Tb
+    LEFT JOIN TerminalTargets T ON T.rsm = Tb.RSM
+    LEFT JOIN view_overlap O ON O.RSM = Tb.RSM AND  O.[YEAR] = Tb.[Year]
+    WHERE Tb.RSM IS NOT NULL
+    AND Tb.RSM <> ''
+    AND Tb.[Year] = @{Year}
+            ]]>
+        </sql>
+        
+		<sql name="Agg_SellOut_A_PX">
+		  <![CDATA[
+		      INSERT INTO Agg_SellOut_PX(brand,[YearNo],[MonthNo],Quarter,Region,RSM,rname,Supervisor,sname,salecode,cname,team,clientcode,CustomerName,YTDPX,MPX,Q1PX,Q2PX,Q3PX,Q4PX,YTDImplant,MImplant,Q1Implant,Q2Implant,Q3Implant,Q4Implant,YRP,MRP,Q1RP,Q2RP,Q3RP,Q4RP)
+                SELECT
+                    brand,
+                    [YEAR],
+                    [MONTH],
+                    Quarter,
+                    tb.Region,
+                    tb.RSM,
+                    O.ParentName rname,
+                    tb.Supervisor,
+                    O.englishname sname,
+                    tb.CSF salecode,
+                    S.EnglishName cname,
+                    S.team,
+                    CustomerCode clientcode,
+                    CustomerName,
+                    CONVERT (BIGINT, ROUND(SUM(YTDPX), 0))YTDPX,
+                    CONVERT (BIGINT, ROUND(SUM(MPX), 0)) MPX,
+                    CONVERT (BIGINT, ROUND(SUM(Q1PX), 0)) Q1PX,
+                    CONVERT (BIGINT, ROUND(SUM(Q2PX), 0)) Q2PX,
+                    CONVERT (BIGINT, ROUND(SUM(Q3PX), 0)) Q3PX,
+                    CONVERT (BIGINT, ROUND(SUM(Q4PX), 0)) Q4PX,
+                    CONVERT (BIGINT,ROUND(SUM(YTDImplant), 0)) YTDImplant,
+                    CONVERT (BIGINT,ROUND(SUM(MImplant), 0)) MImplant,
+                    CONVERT (BIGINT,ROUND(SUM(Q1Implant), 0)) Q1Implant,
+                    CONVERT (BIGINT,ROUND(SUM(Q2Implant), 0)) Q2Implant,
+                    CONVERT (BIGINT,ROUND(SUM(Q3Implant), 0)) Q3Implant,
+                    CONVERT (BIGINT,ROUND(SUM(Q4Implant), 0)) Q4Implant,
+                    CASE WHEN ISNULL(SUM(YTDImplant), 0) != 0 THEN CONVERT (DECIMAL,ROUND((((SUM(YTDPX) * 100) / ISNULL(SUM(YTDImplant), 0))),2))
+	                     ELSE CONVERT (BIGINT,ROUND(ISNULL(SUM(YTDPX), 0), 0))
+	                END YRP,
+	                CASE WHEN ISNULL(SUM(MImplant), 0) != 0 THEN CONVERT (DECIMAL,ROUND((((SUM(MPX) * 100) / ISNULL(SUM(MImplant), 0))),2))
+	                     ELSE CONVERT (BIGINT,ROUND(ISNULL(SUM(MPX), 0), 0))
+	                END MRP,
+	                CASE WHEN ISNULL(SUM(Q1Implant), 0) != 0 THEN CONVERT (DECIMAL,ROUND((((SUM(Q1PX) * 100) / ISNULL(SUM(Q1Implant), 0))),2))
+				         ELSE CONVERT (BIGINT,ROUND(ISNULL(SUM(Q1PX), 0), 0))
+				    END Q1RP,
+                    CASE WHEN ISNULL(SUM(Q2Implant), 0) != 0 THEN  CONVERT (DECIMAL,ROUND((((SUM(Q2PX) * 100) / ISNULL(SUM(Q2Implant), 0))),2))
+                         ELSE CONVERT (BIGINT,ROUND(ISNULL(SUM(Q2PX), 0), 0))
+                    END Q2RP,
+                    CASE WHEN ISNULL(SUM(Q3Implant), 0) != 0 THEN CONVERT (DECIMAL,ROUND((((SUM(Q3PX) * 100) / ISNULL(SUM(Q3Implant), 0))),2))
+                         ELSE CONVERT (BIGINT,ROUND(ISNULL(SUM(Q3PX), 0), 0))
+                    END Q3RP,
+					CASE WHEN ISNULL(SUM(Q4Implant), 0) != 0 THEN CONVERT (DECIMAL,ROUND((((SUM(Q4PX) * 100) / ISNULL(SUM(Q4Implant), 0))),2))
+					     ELSE CONVERT (BIGINT,ROUND(ISNULL(SUM(Q4PX), 0), 0))
+					END Q4RP
+FROM
+    (
+        SELECT
+            brand,
+            YEAR (BizDate) [YEAR],
+            MONTH (BizDate) [MONTH],
+            DATEPART(Quarter, BizDate) Quarter,
+            Region,
+            RSM,
+            Supervisor,
+            DH.CSF,
+            DH.Cname,
+            D.CustomerCode,
+            D.CustomerName,
+            ISNULL(SUM(Quantity), 0) YTDPX,
+            0 MPX,
+            0 Q1PX,
+            0 Q2PX,
+            0 Q3PX,
+            0 Q4PX,
+            0 YTDImplant,
+            0 MImplant,
+            0 Q1Implant,
+            0 Q2Implant,
+            0 Q3Implant,
+            0 Q4Implant
+        FROM  VIEW_DataSales D
+        LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+        WHERE brand = 'Anthogyr'
+        AND producttype = 'Anthogyr implant-PX'
+        AND YEAR (BizDate) = @{Year}
+        AND MONTH (BizDate) <= DateName(MONTH, GetDate())
+        GROUP BY
+	            brand,
+	            YEAR (BizDate),
+	            MONTH (BizDate),
+	            DATEPART(Quarter, BizDate),
+	            Region,
+	            RSM,
+	            Supervisor,
+	            DH.CSF,
+	            DH.Cname,
+	            D.CustomerCode,
+	            D.CustomerName
+	            
+        UNION ALL
+        
+        SELECT
+             brand,
+             YEAR (BizDate) [YEAR],
+             MONTH (BizDate) [MONTH],
+             DATEPART(Quarter, BizDate) Quarter,
+             Region,
+             RSM,
+             Supervisor,
+             DH.CSF,
+             DH.Cname,
+             D.CustomerCode,
+             D.CustomerName,
+             0 YTDPX,
+             ISNULL(SUM(Quantity), 0) MPX,
+             0 Q1PX,
+             0 Q2PX,
+             0 Q3PX,
+             0 Q4PX,
+             0 YTDImplant,
+             0 MImplant,
+             0 Q1Implant,
+             0 Q2Implant,
+             0 Q3Implant,
+             0 Q4Implant
+        FROM VIEW_DataSales D
+        LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+        WHERE  brand = 'Anthogyr'
+        AND producttype = 'Anthogyr implant-PX'
+        AND YEAR (BizDate) = @{Year}
+        AND MONTH (BizDate) = @{month}
+        GROUP BY
+	            brand,
+	            YEAR (BizDate),
+	            MONTH (BizDate),
+	            DATEPART(Quarter, BizDate),
+	            Region,
+	            RSM,
+	            Supervisor,
+	            DH.CSF,
+	            DH.Cname,
+	            D.CustomerCode,
+	            D.CustomerName
+	            
+      UNION ALL
+      
+      SELECT
+          brand,
+          YEAR (BizDate) [YEAR],
+          MONTH (BizDate) [MONTH],
+          DATEPART(Quarter, BizDate) Quarter,
+          Region,
+          RSM,
+          Supervisor,
+          DH.CSF,
+          DH.Cname,
+          D.CustomerCode,
+          D.CustomerName,
+          0 YTDPX,
+          0 MPX,
+          ISNULL(SUM(Quantity), 0) Q1PX,
+          0 Q2PX,
+          0 Q3PX,
+          0 Q4PX,
+          0 YTDImplant,
+          0 MImplant,
+          0 Q1Implant,
+          0 Q2Implant,
+          0 Q3Implant,
+          0 Q4Implant
+      FROM  VIEW_DataSales D
+      LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+      WHERE brand = 'Anthogyr'
+		    AND producttype = 'Anthogyr implant-PX'
+		    AND YEAR (BizDate) = @{Year}
+		    AND DATEPART(Quarter, BizDate) = 1
+      GROUP BY
+	          brand,
+	          YEAR (BizDate),
+	          MONTH (BizDate),
+	          DATEPART(Quarter, BizDate),
+	          Region,
+	          RSM,
+	          Supervisor,
+	          DH.CSF,
+	          DH.Cname,
+	          D.CustomerCode,
+	          D.CustomerName
+	          
+      UNION ALL
+      
+      SELECT
+          brand,
+          YEAR (BizDate) [YEAR],
+          MONTH (BizDate) [MONTH],
+          DATEPART(Quarter, BizDate) Quarter,
+          Region,
+          RSM,
+          Supervisor,
+          DH.CSF,
+          DH.Cname,
+          D.CustomerCode,
+          D.CustomerName,
+          0 YTDPX,
+          0 MPX,
+          0 Q1PX,
+          ISNULL(SUM(Quantity), 0) Q2PX,
+          0 Q3PX,
+          0 Q4PX,
+          0 YTDImplant,
+          0 MImplant,
+          0 Q1Implant,
+          0 Q2Implant,
+          0 Q3Implant,
+          0 Q4Implant
+      FROM VIEW_DataSales D
+      LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+      WHERE brand = 'Anthogyr'
+		      AND producttype = 'Anthogyr implant-PX'
+		      AND YEAR (BizDate) = @{Year}
+		      AND DATEPART(Quarter, BizDate) = 2
+      GROUP BY
+	          brand,
+	          YEAR (BizDate),
+	          MONTH (BizDate),
+	          DATEPART(Quarter, BizDate),
+	          Region,
+	          RSM,
+	          Supervisor,
+	          DH.CSF,
+	          DH.Cname,
+	          D.CustomerCode,
+	          D.CustomerName
+	          
+       UNION ALL
+       
+           SELECT
+	               brand,
+	               YEAR (BizDate) [YEAR],
+	               MONTH (BizDate) [MONTH],
+	               DATEPART(Quarter, BizDate) Quarter,
+	               Region,
+	               RSM,
+	               Supervisor,
+	               DH.CSF,
+	               DH.Cname,
+	               D.CustomerCode,
+	               D.CustomerName,
+	               0 YTDPX,
+	               0 MPX,
+	               0 Q1PX,
+	               0 Q2PX,
+	               ISNULL(SUM(Quantity), 0) Q3PX,
+	               0 Q4PX,
+	               0 YTDImplant,
+	               0 MImplant,
+	               0 Q1Implant,
+	               0 Q2Implant,
+	               0 Q3Implant,
+	               0 Q4Implant
+           FROM VIEW_DataSales D
+           LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+           WHERE brand = 'Anthogyr'
+		           AND producttype = 'Anthogyr implant-PX'
+		           AND YEAR (BizDate) = @{Year}
+		           AND DATEPART(Quarter, BizDate) = 3
+           GROUP BY
+	               brand,
+	               YEAR (BizDate),
+	               MONTH (BizDate),
+	               DATEPART(Quarter, BizDate),
+	               Region,
+	               RSM,
+	               Supervisor,
+	               DH.CSF,
+	               DH.Cname,
+	               D.CustomerCode,
+	               D.CustomerName
+	               
+            UNION ALL
+            
+            SELECT
+                brand,
+                YEAR (BizDate) [YEAR],
+                MONTH (BizDate) [MONTH],
+                DATEPART(Quarter, BizDate) Quarter,
+                Region,
+                RSM,
+                Supervisor,
+                DH.CSF,
+                DH.Cname,
+                D.CustomerCode,
+                D.CustomerName,
+                0 YTDPX,
+                0 MPX,
+                0 Q1PX,
+                0 Q2PX,
+                0 Q3PX,
+                ISNULL(SUM(Quantity), 0) Q4PX,
+                0 YTDImplant,
+                0 MImplant,
+                0 Q1Implant,
+                0 Q2Implant,
+                0 Q3Implant,
+                0 Q4Implant
+            FROM VIEW_DataSales D
+            LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+            WHERE brand = 'Anthogyr'
+	            AND producttype = 'Anthogyr implant-PX'
+	            AND YEAR (BizDate) = @{Year}
+	            AND DATEPART(Quarter, BizDate) = 4
+            GROUP BY
+	                brand,
+	                YEAR (BizDate),
+	                MONTH (BizDate),
+	                DATEPART(Quarter, BizDate),
+	                Region,
+	                RSM,
+	                Supervisor,
+	                DH.CSF,
+	                DH.Cname,
+	                D.CustomerCode,
+	                D.CustomerName
+	                
+             UNION ALL
+             
+                 SELECT
+	                     brand,
+	                     YEAR (BizDate) [YEAR],
+	                     MONTH (BizDate) [MONTH],
+	                     DATEPART(Quarter, BizDate) Quarter,
+	                     Region,
+	                     RSM,
+	                     Supervisor,
+	                     DH.CSF,
+	                     DH.Cname,
+	                     D.CustomerCode,
+	                     D.CustomerName,
+	                     0 YTDPX,
+	                     0 MPX,
+	                     0 Q1PX,
+	                     0 Q2PX,
+	                     0 Q3PX,
+	                     0 Q4PX,
+	                     ISNULL(SUM(Quantity), 0) YTDImplant,
+	                     0 MImplant,
+	                     0 Q1Implant,
+	                     0 Q2Implant,
+	                     0 Q3Implant,
+	                     0 Q4Implant
+                 FROM VIEW_DataSales D
+                 LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+                 WHERE brand = 'Anthogyr'
+                 AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg')
+                 AND YEAR (BizDate) = @{Year}
+                 AND MONTH (BizDate) <= DateName(MONTH, GetDate())
+                 GROUP BY
+	                     brand,
+	                     YEAR (BizDate),
+	                     MONTH (BizDate),
+	                     DATEPART(Quarter, BizDate),
+	                     Region,
+	                     RSM,
+	                     Supervisor,
+	                     DH.CSF,
+	                     DH.Cname,
+	                     D.CustomerCode,
+	                     D.CustomerName
+	                     
+                  UNION ALL
+                  
+                      SELECT
+	                          brand,
+	                          YEAR (BizDate) [YEAR],
+	                          MONTH (BizDate) [MONTH],
+	                          DATEPART(Quarter, BizDate) Quarter,
+	                          Region,
+	                          RSM,
+	                          Supervisor,
+	                          DH.CSF,
+	                          DH.Cname,
+	                          D.CustomerCode,
+	                          D.CustomerName,
+	                          0 YTDPX,
+	                          0 MPX,
+	                          0 Q1PX,
+	                          0 Q2PX,
+	                          0 Q3PX,
+	                          0 Q4PX,
+	                          0 YTDImplant,
+	                          ISNULL(SUM(Quantity), 0) MImplant,
+	                          0 Q1Implant,
+	                          0 Q2Implant,
+	                          0 Q3Implant,
+	                          0 Q4Implant
+                      FROM VIEW_DataSales D
+                      LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+                      WHERE brand = 'Anthogyr'
+                      AND (
+                          producttype = 'Anthogyr implant-PX'
+                          OR producttype = 'Anthogry implant-Reg'
+                      )
+                      AND YEAR (BizDate) = @{Year} and MONTH (BizDate) = @{month}
+                      GROUP BY
+                               brand,
+                               YEAR (BizDate),
+                               MONTH (BizDate),
+                               DATEPART(Quarter, BizDate),
+                               Region,
+                               RSM,
+                               Supervisor,
+                               DH.CSF,
+                               DH.Cname,
+                               D.CustomerCode,
+                               D.CustomerName
+                               
+                       UNION ALL
+                       
+                           SELECT
+                                  brand,
+                                  YEAR (BizDate) [YEAR],
+                                  MONTH (BizDate) [MONTH],
+                                  DATEPART(Quarter, BizDate) Quarter,
+                                  Region,
+                                  RSM,
+                                  Supervisor,
+                                  DH.CSF,
+                                  DH.Cname,
+                                  D.CustomerCode,
+                                  D.CustomerName,
+                                  0 YTDPX,
+                                  0 MPX,
+                                  0 Q1PX,
+                                  0 Q2PX,
+                                  0 Q3PX,
+                                  0 Q4PX,
+                                  0 YTDImplant,
+                                  0 MImplant,
+                                  ISNULL(SUM(Quantity), 0) Q1Implant,
+                                  0 Q2Implant,
+                                  0 Q3Implant,
+                                  0 Q4Implant
+                           FROM VIEW_DataSales D
+                           LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+                           WHERE brand = 'Anthogyr'
+                           AND (
+                               producttype = 'Anthogyr implant-PX'
+                               OR producttype = 'Anthogry implant-Reg'
+                           )
+                           AND YEAR (BizDate) = @{Year}
+                           AND DATEPART(Quarter, BizDate) = 1
+                           GROUP BY
+	                               brand,
+	                               YEAR (BizDate),
+	                               MONTH (BizDate),
+	                               DATEPART(Quarter, BizDate),
+	                               Region,
+	                               RSM,
+	                               Supervisor,
+	                               DH.CSF,
+	                               DH.Cname,
+	                               D.CustomerCode,
+	                               D.CustomerName
+
+                            UNION ALL
+
+                                SELECT
+                                       brand,
+                                       YEAR (BizDate) [YEAR],
+                                       MONTH (BizDate) [MONTH],
+                                       DATEPART(Quarter, BizDate) Quarter,
+                                       Region,
+                                       RSM,
+                                       Supervisor,
+                                       DH.CSF,
+                                       DH.Cname,
+                                       D.CustomerCode,
+                                       D.CustomerName,
+                                       0 YTDPX,
+                                       0 MPX,
+                                       0 Q1PX,
+                                       0 Q2PX,
+                                       0 Q3PX,
+                                       0 Q4PX,
+                                       0 YTDImplant,
+                                       0 MImplant,
+                                       0 Q1Implant,
+                                       ISNULL(SUM(Quantity), 0) Q2Implant,
+                                       0 Q3Implant,
+                                       0 Q4Implant
+                                FROM VIEW_DataSales D
+                                LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+                                WHERE brand = 'Anthogyr'
+                                AND (
+                                    producttype = 'Anthogyr implant-PX'
+                                    OR producttype = 'Anthogry implant-Reg'
+                                )
+                                AND YEAR (BizDate) = @{Year}
+                                AND DATEPART(Quarter, BizDate) = 2
+                                GROUP BY
+	                                    brand,
+	                                    YEAR (BizDate),
+	                                    MONTH (BizDate),
+	                                    DATEPART(Quarter, BizDate),
+	                                    Region,
+	                                    RSM,
+	                                    Supervisor,
+	                                    DH.CSF,
+	                                    DH.Cname,
+	                                    D.CustomerCode,
+	                                    D.CustomerName
+	                                    
+                                UNION ALL
+                                
+                                    SELECT
+	                                        brand,
+	                                        YEAR (BizDate) [YEAR],
+	                                        MONTH (BizDate) [MONTH],
+	                                        DATEPART(Quarter, BizDate) Quarter,
+	                                        Region,
+	                                        RSM,
+	                                        Supervisor,
+	                                        DH.CSF,
+	                                        DH.Cname,
+	                                        D.CustomerCode,
+	                                        D.CustomerName,
+	                                        0 YTDPX,
+	                                        0 MPX,
+	                                        0 Q1PX,
+	                                        0 Q2PX,
+	                                        0 Q3PX,
+	                                        0 Q4PX,
+	                                        0 YTDImplant,
+	                                        0 MImplant,
+	                                        0 Q1Implant,
+	                                        0 Q2Implant,
+	                                        ISNULL(SUM(Quantity), 0) Q3Implant,
+	                                        0 Q4Implant
+                                    FROM VIEW_DataSales D
+                                    LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+                                    WHERE brand = 'Anthogyr'
+                                    AND (
+                                        producttype = 'Anthogyr implant-PX'
+                                        OR producttype = 'Anthogry implant-Reg'
+                                    )
+                                    AND YEAR (BizDate) = @{Year}
+                                    AND DATEPART(Quarter, BizDate) = 3
+                                    GROUP BY
+	                                        brand,
+	                                        YEAR (BizDate),
+	                                        MONTH (BizDate),
+	                                        DATEPART(Quarter, BizDate),
+	                                        Region,
+	                                        RSM,
+	                                        Supervisor,
+	                                        DH.CSF,
+	                                        DH.Cname,
+	                                        D.CustomerCode,
+	                                        D.CustomerName
+	                                        
+                                    UNION ALL
+                                    
+                                    SELECT
+	                                        brand,
+	                                        YEAR (BizDate) [YEAR],
+	                                        MONTH (BizDate) [MONTH],
+	                                        DATEPART(Quarter, BizDate) Quarter,
+	                                        Region,
+	                                        RSM,
+	                                        Supervisor,
+	                                        DH.CSF,
+	                                        DH.Cname,
+	                                        D.CustomerCode,
+	                                        D.CustomerName,
+	                                        0 YTDPX,
+	                                        0 MPX,
+	                                        0 Q1PX,
+	                                        0 Q2PX,
+	                                        0 Q3PX,
+	                                        0 Q4PX,
+	                                        0 YTDImplant,
+	                                        0 MImplant,
+	                                        0 Q1Implant,
+	                                        0 Q2Implant,
+	                                        0 Q3Implant,
+	                                        ISNULL(SUM(Quantity), 0) Q4Implant
+                                    FROM VIEW_DataSales D
+                                    LEFT JOIN SaleHierarchy DH ON D.CustomerCode = DH.ClientCode
+                                    WHERE brand = 'Anthogyr'
+                                    AND (
+                                        producttype = 'Anthogyr implant-PX'
+                                        OR producttype = 'Anthogry implant-Reg'
+                                    )
+                                    AND YEAR (BizDate) = @{Year}
+                                    AND DATEPART(Quarter, BizDate) = 4
+                                    GROUP BY
+	                                        brand,
+	                                        YEAR (BizDate),
+	                                        MONTH (BizDate),
+	                                        DATEPART(Quarter, BizDate),
+	                                        Region,
+	                                        RSM,
+	                                        Supervisor,
+	                                        DH.CSF,
+	                                        DH.Cname,
+	                                        D.CustomerCode,
+	                                        D.CustomerName
+                    ) tb
+					LEFT JOIN organization O ON O.loginname = tb.Supervisor
+					LEFT JOIN usr S ON S.LoginName = tb.CSF
+					GROUP BY
+						    brand,
+						    [YEAR],
+						    [MONTH],
+						    Quarter,
+						    tb.Region,
+						    tb.RSM,
+						    O.ParentName,
+						    tb.Supervisor,
+						    O.englishname,
+						    tb.CSF,
+						    S.EnglishName,
+						    S.team,
+						    CustomerCode,
+						    CustomerName
+                ]]>
+		</sql>
+	</dataSpace>
+</sqls>

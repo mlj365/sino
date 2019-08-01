@@ -1,0 +1,181 @@
+body{
+	overflow: hidden;
+}
+
+.left-top {
+	position: absolute;
+	top: 30px;
+	left: 0;
+	right: 65%;
+	bottom: 50%;
+	
+}
+
+.option{
+	position: absolute;
+	left: 26%;
+	height: 20px;
+	bottom: 20px;
+	font-size: 1rem;
+	color: #467abd;
+	
+}
+
+.panel-inner {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	bottom: 2px;
+	right: 2px;
+	border: 1px solid #efd9d9;
+}
+
+.left-bottom {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	right: 65%;
+	bottom: 2px;
+}
+
+.right-top {
+	position: absolute;
+	top: 30px;
+	left: 35%;
+	right: 0;
+	bottom: 50%;
+}
+
+.right-bottom {
+	position: absolute;
+	top: 50%;
+	right: 0;
+	left: 35%;
+	bottom: 2px;
+}
+
+.title-img {
+	position: absolute;
+	top: 10px;
+	left: 20px;
+	height: 26px;
+	width: 26px;
+}
+
+.details {
+	position: absolute;
+	top: 5%;
+	right: 5%;
+	line-height: 30px;
+	border-bottom: 1px solid #a5e0ff;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 16px;
+	color: #a5e0ff;
+	font-style: italic;
+	cursor: pointer;
+}
+.details:HOVER {
+	color: #138bca;
+	border-bottom: 1px solid #138bca;
+}
+.details-bottom {
+	position: absolute;
+	bottom: 5%;
+	right: 5%;
+	line-height: 30px;
+	border-bottom: 1px solid #a5e0ff;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 16px;
+	color: #a5e0ff;
+	font-style: italic;
+	cursor: pointer;
+}
+.details-bottom :HOVER {
+	color: #138bca;
+	border-bottom: 1px solid #138bca;
+}
+
+.title {
+	position: absolute;
+    top: 8px;
+    left: 48px;
+    height: 30px;
+    width: 28%;
+    line-height: 1.7rem;
+    border-bottom: 1px solid #96cfec;
+    font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+    font-size: 1rem;
+    color: #96cfec;
+    font-style: italic;
+    cursor: pointer;
+}
+
+.title:HOVER {
+	color: #0081c3;
+}
+
+.subtitle {
+	position: absolute;
+    top: 14%;
+    left: 50px;
+    height: 1rem;
+    width: 300px;
+    font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+    font-size: 1rem;
+    color: #37a2da;
+    margin-top: 5px;
+}
+
+.middle-cricle {
+	position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 35%;
+    bottom: 10px;
+}
+
+.report-title {
+	position: absolute;
+	left: 50px;
+	width: 28%;
+	top: 10px;
+	height: 1.7rem;
+	border-bottom: 1px solid #96cfec;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #96cfec;
+	font-style: italic;	
+	cursor: pointer;
+}
+
+.report-title:HOVER {
+	color: #0081c3;
+}
+.report-body {
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 50px;
+	bottom: 0px;
+}
+
+.periodselectdiv{
+	position: absolute;
+    top: 2px;
+    left: 30px;
+    line-height: 1.7rem;
+    border-bottom: 1px solid #a5e0ff;
+    font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+    font-size: 0.1rem;
+    color: #467abd;
+    font-style: italic;
+}
+.periodselect {
+	float: left;
+    margin-left: 20px;
+    margin-top: 4px;
+    margin-right: 20px;
+    width: 120px;
+    height: 20px;
+    font-size: 0.8rem;
+}

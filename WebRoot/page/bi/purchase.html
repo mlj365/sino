@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>标准采购流向</title>
+    <link href="../../css/common11.css" rel="stylesheet">
+    <link href="../../css/control.css" rel="stylesheet">
+    <link href="../../css/detail.css" rel="stylesheet">
+    <link href="../../css/iconfont.css" rel="stylesheet">
+    <link href="../../css/grid.css" rel="stylesheet">
+    <script src="../../js/jquery1.8.min.js"></script>
+    <script src="../../js/jquery-ui-1.10.4.js"></script>
+    <script src="../../js/foundation-2.0.js"></script>
+    <script src="../../js/control.js"></script>
+    <script src="../../data/data.js"></script>
+    <script src="../../js/designer.js"></script>
+    <script src="../../js/grid.js"></script>
+    <script src="../../js/staticpaneldata.js"></script>
+    <script src="../../js/random.js"></script>
+   <script src="../../data/purchase.js"></script>
+
+    <script type="text/javascript">
+        var mainTool, chartTool, chartToolItems, reportPanel, gridPanel;
+        var chart, grid;
+		var olapFiltersHide = false; 
+        var exporturl, exportTimer;
+        
+
+		function query() {
+			var filterUrl = FilterArea.getFilterUrl();
+			exporturl = "code=Purchase&sqlName=getPurchase&fileExtension=xlsx&fileName=标准采购流向&"+filterUrl;
+			
+			grid.setURL("root/data/procedure/getPurchase/getDataSet?"+filterUrl);
+		} 
+		
+        function goScroll(taskid){
+            exportTimer = setInterval(function() {doScroll(taskid)}, 3000);
+        }
+        
+        function doScroll(taskid){
+            Server.call("root/console/getFileStep", "taskid=" + taskid, function(result) {
+            	if (!result.filetask) {
+            		return;
+            	}
+            	
+                var status = result.filetask.status;
+               	var statusText = statusToText(status);
+                
+                if (status == "downloading") {
+                	stopScroll();
+                	var main_shelter = $("#shelter");
+					main_shelter.css("height", 0);
+					var url = encodeURI("root/console/downloadFile?filename=" + result.filetask.filename);
+                    mainTool.message.a.attr("href",url);
+                    mainTool.message.a.html("《" + result.filetask.filename + "》");
+                    mainTool.message.a.click(function(){
+                    	mainTool.message.label.text("");
+                    	mainTool.message.a.html("");
+                    	mainTool.message.hide();
+                    });
+                    
+                    Server.call("root/console/clearFileStep", "taskid=" + taskid, function(result) {});
+                }
+                else if(status == "error"){
+                    stopScroll(exportTimer);
+                } 
+                
+                mainTool.message.label.text(statusText);
+            });        	
+        }
+        function resetPanelData(widget) {
+            OlapTab.init([
+                {code: "olap-filters", header: "olap-filters-header", body: "olap-filters"}
+            ]);
+
+            mainTool = new Toolbar({
+                element: "#mainTool",
+                items: [
+                    {type: "spliter"},
+                    {
+                        text: "隐藏/显示", icon: "icon-yunduanxiazai", onClick: function () {
+                       		toggleleft();  	
+                        }
+                    },
+                    {
+                        text: "导出数据", icon: "icon-yunduanxiazai", onClick: function () {
+                           var exportTimer = null;
+				           var exportID = 0;
+							//var url = "http://47.92.117.138:3456/api/FileCenter/Download?";
+							Dialog.confirm("下载提示","确认要导出当前的记录？",function(data) {
+								if (data){
+									mainTool.message.show();
+									var main_shelter = $("#shelter");
+									main_shelter.css("height", "100%");
+									mainTool.message.label.text('正在导出数据，请等待！');
+									mainTool.message.css("width", $(window).width());
+									var preFilter = "1=1";
+									
+									if (exporturl.split("filterList=").length > 1){
+										preFilter = exporturl.split("filterList=")[1];
+										exporturl = exporturl.split("filterList=")[0];
+									}
+										
+									var filter = FilterArea.getOnlyFilterUrl();
+									var id = $.fm.guid();
+									exporturl += "&filterList=" + filter + " and " + preFilter + "&taskid=" + id;
+									exporturl = encodeURI(exporturl);
+									
+									Server.call("root/console/export", exporturl);
+									goScroll(id);
+								}
+							});
+                        }
+                    },
+
+                ]
+            });
+
+            FilterArea.init({
+                element: "#olap-filters",
+                items: toFieldArray(purchaseDetailFields),
+                groupIcon: "icon-liebiao",
+                onFilterChange :function(field, value, ele) {
+               	
+               		query();
+               		console.info(field);
+               		console.info(value);
+               		console.info(ele);
+               	}
+            });
+
+            Spliter.init({
+                element: "#spliterbar",
+                left: "#area-olap",
+                right: "#area-content"
+            });
+
+            var gridOption = widget.gridOption;
+            if (gridOption != null) {
+                grid = new $.fm.Grid({
+                    element: "grid",
+                    limit: 20,
+                    showPage:true,
+                    hasSubTitle: true,
+                    columns:[
+				{"field": "brand","caption": "产品线", "width": 100,"align": "left","sortable":true},
+				{"field": "bizdate", "caption":"采购日期", "width": 100,"align": "center","sortable":true},
+				{"field": "month", "caption": "月份", "width": 100,"align": "center","sortable":true},
+				{"field": "distributorcode", "caption": "经销商编码", "width": 100,"align": "center","sortable":true},
+				{"field": "distributorname", "caption": "经销商名称", "width": 200,"align": "left","sortable":true},
+				{"field": "productcode", "caption": "产品代码", "width": 100,"align": "right","sortable":true},
+				{"field": "productname", "caption": "产品名称", "width": 300,"align": "left","sortable":true},
+				{"field": "quantity", "caption": "采购数量", "width": 100,"align": "right","sortable":true},
+				{"field": "unitname", "caption": "单位", "width": 100,"align": "center","sortable":true},
+				{"field": "price", "caption": "NDP采购单价", "width": 100,"align": "right","sortable":true},
+				{"field": "amount", "caption": "NDP销售额", "width": 100,"align": "right","sortable":true},
+				{"field": "rawprice", "caption": "实际采购单价（不含税）", "width": 100,"align": "right","sortable":true},
+				{"field": "rawamount", "caption": "实际采购金额", "width": 100,"align": "right","sortable":true},
+				{"field": "specification", "caption": "产品规格", "width": 100,"align": "center","sortable":true},
+				{"field": "lotno", "caption": "批号", "width": 100,"align": "right","sortable":true},
+				{"field": "manufacturer", "caption": "生产厂家", "width": 150,"align": "left","sortable":true},
+				{"field": "vendorname", "caption": "供应商", "width": 200,"align":"left","sortable":true},	
+				{"field": "prh4", "caption": "PRH4", "width": 100,"align":"center","sortable":true},	
+				{"field": "prh5", "caption": "PRH5", "width": 100,"align":"center","sortable":true},
+				{"field": "createtime", "caption": "更新时间", "width": 150,"align":"center","sortable":true}
+
+                    ]
+                });
+
+                //grid.loadData(tabledata, 1);
+            }
+
+
+            //chart.setOption(option);
+        }
+
+        $(document).ready(function () {
+            reportPanel = $("#reportPanel");
+            gridPanel = $("#gridPanel");
+
+            resetPanelData(staticdatas.widget);
+            initDateime('start');
+            initDateime('end');
+            query();
+        });
+
+    </script>
+</head>
+
+<body>
+
+<div class="report-title">
+	<div class="title-icon">
+		<img src="../../image/report-color.png" width="24">
+	</div>
+	<div class="title-text">
+		<label>《标准采购流向》&nbsp;&nbsp;</label>
+		<label>数据日期：2019-01-05: 13:45:00</label>
+	</div>
+</div>
+
+<div id="area-olap" class="area-olap">
+    <div class="area-olap-header">
+        <div id="olap-filters-header" class="tab-header" onclick="OlapTab.changeActive('olap-filters')">
+            <span class="iconfont icon-chazhaobiaodanliebiao"></span>
+			过滤条件
+        </div>
+    </div>
+    <div class="area-olap-body">
+        <div class="tab-body-outer">
+            <div id="olap-filters" class="tab-body"></div>
+        </div>
+        <div id="olap-fields" class="tab-body" style="display: none;">
+            <div id="olap-fields-dimension" class="area-fields">
+            </div>
+            <div id="olap-fields-value" class="area-fields">
+            </div>
+        </div>
+    </div>
+    <div class="area-olap-tabbody"></div>
+</div>
+
+<div id="spliterbar" class="spliterbar"></div>
+
+<div id="area-content" class="area-content">
+	<div id="mainTool" class="area-tool"></div>
+	
+    <div class="area-report">
+        <div class="reportBand">
+            <div id="grid"></div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

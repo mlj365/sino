@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="company_unmatched">
+		<sql name="getCompany_unmatchedByAll">
+			  SELECT * from company_unmatched 
+			  where @{filter}
+		</sql>
+		
+		<sql name="getCompany_unmatchedByMe">
+			  SELECT * from company_unmatched 
+			  where (managercode='@{usercode}' or directorcode='@{usercode}' or salecode='@{usercode}')
+			  	and @{filter}
+		</sql>
+		
+		<sql name="getUnmatchedByApply">
+			  SELECT * from company_unmatched 
+			  where @{filter} and state='已提交申请'
+		</sql>
+		
+		<sql name="getUnmatchedByMemanager">
+			  SELECT * from company_unmatched 
+			  where @{filter} and state='已分发经理' and managercode='@{usercode}'
+		</sql>
+		<sql name="getUnmatchedByMedirector">
+			  SELECT * from company_unmatched 
+			  where @{filter} and state='已分发主管' and directorcode='@{usercode}'
+		</sql>
+		<sql name="getUnmatchedByMesale">
+			  SELECT * from company_unmatched 
+			  where @{filter} and state='已分发销售' and salecode='@{usercode}'
+		</sql>
+		
+		<sql name="getUserSubordinateList">
+			  select LoginName code,EnglishName name
+			  FROM organization
+			  WHERE ParentLoginName ='@{usercode}'
+		</sql>
+	</dataSpace>	
+</sqls>

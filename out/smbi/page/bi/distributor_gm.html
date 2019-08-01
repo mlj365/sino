@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>经销商管理</title>
+    <link href="../../css/distributor.css" rel="stylesheet">
+    <link href="../../css/control.css" rel="stylesheet">
+    		<link href="../../css/jquery-ui.min.css" rel="stylesheet">
+		<link href="../../css/jquery.multiselect.css" rel="stylesheet">
+	<link href="../../css/checkbox.css" rel="stylesheet">
+    <script type="text/javascript" src="../../js/jquery1.8.min.js"></script>
+    		<script type="text/javascript" src="../../js/jquery-ui-1.10.4.js" ></script>
+		<script type="text/javascript" src="../../js/jquery.multiselect.js" ></script>
+    <script type="text/javascript" src="../../js/echarts.min.3.8.5.js"></script>
+    <script type="text/javascript" src="../../js/china.js"></script>
+    <script type="text/javascript" src="../../js/foundation-2.0.js"></script>
+    <script type="text/javascript" src="../../js/control.js"></script>
+    <script type="text/javascript" src="../../js/random.js"></script>
+    <script type="text/javascript" src="../../option/distributor_gm.js"></script>
+    <style>
+        
+    </style>
+</head>
+
+<script>
+	var accountDistributorNames,inventoryDistributorNames;
+	/*function setMapRegion(mapchart) {
+        mapchart.on('mouseover', function(params) {
+            var city = params.name;
+
+            if (city == '福建' || city == '广东' || city == '广西' || city == '海南') {
+                rightbottomchart.dispatchAction({
+                    type: 'highlight',
+                    name: "福建"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "广东"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "广西"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "海南"
+                });
+            }
+
+            if (city == '江苏' || city == '浙江' || city == '安徽' || city == '江西' || city == '湖北' || city == '湖南') {
+
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "江苏"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "浙江"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "安徽"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "江西"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "湖北"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "湖南"
+                });
+            }
+
+            if (city == '山东' || city == '河南') {
+
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "山东"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "河南"
+                });
+
+            }
+
+            if (city == '重庆' || city == '四川' || city == '贵州' || city == '云南') {
+
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "重庆"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "四川"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "贵州"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "云南"
+                });
+
+            }
+            if (city == '北京' || city == '天津' || city == '河北') {
+
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "北京"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "天津"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "河北"
+                });
+            }
+            if (city == '山西' || city == '陕西' || city == '甘肃' || city == '青海' || city == '宁夏' || city == '新疆' ) {
+
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "山西"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "陕西"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "甘肃"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "青海"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "宁夏"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "新疆"
+                });
+
+            }
+            if (city == '辽宁' || city == '吉林' || city == '黑龙江'|| city == '内蒙古') {
+
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "辽宁"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "吉林"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "黑龙江"
+                });
+                mapchart.dispatchAction({
+                    type: 'highlight',
+                    name: "内蒙古"
+                });
+            }
+
+        });
+
+        mapchart.on('mouseout', function(params) {
+            var city = params.name;
+            if (city == '福建' || city == '广东' || city == '广西' || city == '海南') {
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "福建"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "广东"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "广西"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "海南"
+                });
+            }
+            if (city == '江苏' || city == '浙江' || city == '安徽' || city == '江西' || city == '湖北' || city == '湖南') {
+
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "江苏"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "浙江"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "安徽"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "江西"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "湖北"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "湖南"
+                });
+            }
+
+            if (city == '山东' || city == '河南') {
+
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "山东"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "河南"
+                });
+
+            }
+
+            if (city == '重庆' || city == '四川' || city == '贵州' || city == '云南') {
+
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "重庆"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "四川"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "贵州"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "云南"
+                });
+
+            }
+            if (city == '北京' || city == '天津' || city == '河北') {
+
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "北京"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "天津"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "河北"
+                });
+
+            }
+            if (city == '山西' || city == '陕西' || city == '甘肃' || city == '青海' || city == '宁夏' || city == '新疆' ) {
+
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "山西"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "陕西"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "甘肃"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "青海"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "宁夏"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "新疆"
+                });
+
+            }
+            if (city == '辽宁' || city == '吉林' || city == '黑龙江'|| city == '内蒙古') {
+
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "辽宁"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "吉林"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "黑龙江"
+                });
+                mapchart.dispatchAction({
+                    type: 'downplay',
+                    name: "内蒙古"
+                });
+            }
+
+        });
+    }*/
+
+    function detectionData(air, middleCount) {
+        var color = new echarts.graphic.LinearGradient(0, 0, 1, 1,
+            [{
+                offset: 0,
+                color: '#b7b6b600'
+            }, {
+                offset:1,
+                color: '#b7b6b600'
+            }]);
+
+        if (air > 0 && air <= middleCount) {
+            color = new echarts.graphic.LinearGradient(0, 0, 1, 1,
+                [{
+                    offset: 0,
+                    color: '#4675bd'
+                }, {
+                    offset:1,
+                    color: '#4675bd'
+                }]);
+
+        }else {
+            color = new echarts.graphic.LinearGradient(0, 0, 1, 1,
+                [{
+                    offset: 0,
+                    color: '#854059'
+                }, {
+                    offset:1,
+                    color: '#854059'
+                }]);
+        }
+        return {
+            color: color,
+
+        };
+    }
+
+    function resetAchieve() {
+        var filter = getHeaderFilter();
+        var user = getLocalData("user");
+        var topicCode = "achieve";
+
+        var dataname = "getTotalDistributorSaleAchieve";
+        var aggcode = "brand;DistributorCode;peroid;";
+
+        var chartInstance = echarts.getInstanceByDom(document.getElementById("achieve"));
+
+        var params = "code=" + topicCode + "&userType="+user.type + "&userId=" + user.name;
+
+        if (aggcode) {
+            params += "&aggcode=" + aggcode;
+        }
+        if(dataname) {
+            params += "&dataName=" + dataname;
+        }
+        if(filter) {
+            params += "&filter=" + filter;
+        }
+
+        chartInstance.showLoading('default', {text:'获取中..'});
+        Server.call("root/bi/data", params, function (result) {
+            if(!result) {
+                return;
+            }
+            var achieve = result.achieve[0];
+            var Amount = result.Amount[0];
+            var target = result.target[0];
+            var option = chartInstance.getOption();
+            var {color, level}= detectionData(Amount, target);
+            option.series[0].data[0].value = Amount;
+            option.series[0].data[0].name = `销售额\n\n${formatterOneMoney(parseInt(Amount)/1000)}k`;
+            //这里颜色跟着改变
+            option.series[0].detail.backgroundColor = color.colorStops[1].color;
+            option.series[0].axisLine.lineStyle.color[0][0] = Amount / target * 2;
+            option.series[0].axisLine.lineStyle.color[0][1] = color;
+            chartInstance.setOption(option, true);
+            chartInstance.hideLoading();
+        });
+    }
+
+    function resetTotalAccount() {
+        var filter = getHeaderFilter();
+        var user = getLocalData("user");
+        var topicCode = "achieve";
+
+        var dataname = "getAverageAccount";
+        var aggcode = "CompanyCode;peroid;DistributorCode";
+
+        var chartInstance = echarts.getInstanceByDom(document.getElementById("totalAccount"));
+
+        var params = "code=" + topicCode + "&userType="+user.type + "&userId=" + user.name;
+
+        if (aggcode) {
+            params += "&aggcode=" + aggcode;
+        }
+
+        if(dataname) {
+            params += "&dataName=" + dataname;
+        }
+
+        if(filter) {
+            params += "&filter=" + filter;
+        }
+
+        chartInstance.showLoading('default', {text:'获取中..'});
+        Server.call("root/bi/data", params, function (result) {
+            if(!result) {
+                return;
+            }
+            var value = result.averageAccount[0];
+            var option = chartInstance.getOption();
+            var {color, level}= detectionData(value, 6);
+            option.series[0].data[0].value = value;
+            option.series[0].data[0].name = `账期\n\n${value}月`;
+            //这里颜色跟着改变
+            option.series[0].detail.backgroundColor = color.colorStops[1].color;
+            option.series[0].axisLine.lineStyle.color[0][0] = value / 12;  // 12保证6月在中间
+            option.series[0].axisLine.lineStyle.color[0][1] = color;
+			var opt = JSON.stringify(option);
+            chartInstance.setOption(option, true);
+            chartInstance.hideLoading();
+        });
+    }
+
+    function resetTotalInvetory() {
+        var filter = getHeaderFilter();
+        var user = getLocalData("user");
+        var topicCode = "achieve";
+
+        var dataname = "getinventoryday";
+        var aggcode = "BizDate;brand;DistributorCode";
+
+        var chartInstance = echarts.getInstanceByDom(document.getElementById("totalInventory"));
+
+        var params = "code=" + topicCode + "&userType="+user.type + "&userId=" + user.name;
+
+        if (aggcode) {
+            params += "&aggcode=" + aggcode;
+        }
+
+        if(dataname) {
+            params += "&dataName=" + dataname;
+        }
+
+        if(filter) {
+            params += "&filter=" + filter;
+        }
+
+        chartInstance.showLoading('default', {text:'获取中..'});
+        Server.call("root/bi/data", params, function (result) {
+            if(!result) {
+                return;
+            }
+            var value = result.averageinventoryday[0];
+            var option = chartInstance.getOption();
+            var {color, level}= detectionData(value, 90);
+            option.series[0].data[0].value = value;
+            option.series[0].data[0].name = `库存\n\n${value}天`;
+            //这里颜色跟着改变
+            option.series[0].detail.backgroundColor = color.colorStops[1].color;
+            option.series[0].axisLine.lineStyle.color[0][0] = value / 180;  // 180保证90天在中间
+            option.series[0].axisLine.lineStyle.color[0][1] = color;
+            var opt = JSON.stringify(option);
+            chartInstance.setOption(option, true);
+            chartInstance.hideLoading();
+        });
+	}
+
+	function resetInvetoryDetail() {
+        var filter = getHeaderFilter();
+        var user = getLocalData("user");
+        var topicCode = "achieve";
+
+        var dataname = "getinventorydaydetail";
+        var aggcode = "BizDate;brand;DistributorCode";
+
+        var chartInstance = echarts.getInstanceByDom(document.getElementById("inventory"));
+
+        var params = "code=" + topicCode + "&userType="+user.type + "&userId=" + user.name;
+
+        if (aggcode) {
+            params += "&aggcode=" + aggcode;
+        }
+
+        if(dataname) {
+            params += "&dataName=" + dataname;
+        }
+
+        if(filter) {
+            params += "&filter=" + filter;
+        }
+
+        chartInstance.showLoading('default', {text:'获取中..'});
+        Server.call("root/bi/data", params, function (result) {
+            if(!result) {
+                return;
+            }
+            var option = chartInstance.getOption();
+            inventoryDistributorNames = result.DistributorName;
+
+            option.series[0].data = result.inventoryday;
+            chartInstance.setOption(option);
+            chartInstance.hideLoading();
+        });
+    }
+
+    function resetAccountDetail() {
+        var filter = getHeaderFilter();
+        var user = getLocalData("user");
+        var topicCode = "achieve";
+
+        var dataname = "getAverageAccountDetail";
+        var aggcode = "CompanyCode;DistributorCode;peroid";
+
+        var chartInstance = echarts.getInstanceByDom(document.getElementById("inventory"));
+
+        var params = "code=" + topicCode + "&userType="+user.type + "&userId=" + user.name;
+
+        if (aggcode) {
+            params += "&aggcode=" + aggcode;
+        }
+
+        if(dataname) {
+            params += "&dataName=" + dataname;
+        }
+
+        if(filter) {
+            params += "&filter=" + filter;
+        }
+
+        chartInstance.showLoading('default', {text:'获取中..'});
+        Server.call("root/bi/data", params, function (result) {
+            if(!result) {
+                return;
+            }
+            var option = chartInstance.getOption();
+            accountDistributorNames = result.DistributorName;
+            option.xAxis[0].data = accountDistributorNames;
+            option.series[1].data = result.account;
+            chartInstance.setOption(option);
+            chartInstance.hideLoading();
+        });
+    }
+
+    function fixData(result) {
+	    var fixArray = [];
+		var regionArray = result.region;
+        var cntArray = result.cnt;
+        var names = result.name;
+        names.forEach(function (onename,index) {
+
+			var region = regionArray[index];
+			var cnt = cntArray[index];
+            var find = false;
+            fixArray.forEach(function (one) {
+                if (one.region == region) {
+                    find = true;
+                }
+            });
+	        if (!find) {
+                var onedata = {
+                    region: region,
+					data:[onename],
+                    cnt:[cnt]
+				};
+                fixArray.push(onedata);
+			}else {
+	            var onedata = fixArray.find(function (one) {
+                    if(one.region == region) {
+                        return one;
+                    }
+                })
+                onedata.data.push(onename);
+	            onedata.cnt.push(cnt);
+			}
+
+        });
+
+	    return fixArray;
+    }
+    function uniq(array){
+        var temp = []; //一个新的临时数组
+        for(var i = 0; i < array.length; i++){
+            if(temp.indexOf(array[i]) == -1){
+                temp.push(array[i]);
+            }
+        }
+        return temp;
+    }
+
+    function resetMapArea(isOverlap) {
+
+        if (isOverlap) {
+            var filter = getCommonFilter("brand");
+            var dataname = "getDistributorOverlapCountByRegion";
+        }else {
+            var filter = getCommonFilter();
+            var dataname = "getDistributorCountByRegion";
+        }
+
+		//var filter = getCommonFilter();
+        var user = getLocalData("user");
+        var topicCode = "achieve";
+
+
+        var chartInstance = echarts.getInstanceByDom(document.getElementById("invetory-variance"));
+
+        var params = "code=" + topicCode + "&userType="+user.type + "&userId=" + user.name;
+
+
+        if(dataname) {
+            params += "&dataName=" + dataname;
+        }
+
+        if(filter) {
+            params += "&filter=" + filter;
+        }
+
+        chartInstance.showLoading('default', {text:'获取中..'});
+        Server.call("root/bi/data", params, function (result) {
+            if(!result) {
+                return;
+            }
+
+            var regionArray = fixData(result);
+			console.info(regionArray);
+            var option = chartInstance.getOption();
+            var category =  uniq(result.region);
+            //option.visualMap[0].categories = category;
+
+            var datas = [];
+
+            regionArray.forEach(function (one,index) {
+                var onenames = one.data;
+                var region = one.region;
+                var cnts = one.cnt;
+                var count = 0;
+                cnts.forEach(function (one) {
+                    count += parseInt(one);
+                });
+                one.regionCnt = count;
+
+                onenames.forEach(function (onename,idx) {
+                    var onecnt = cnts[idx];
+                    datas.push({name:onename, value: index, region: region,cnt:onecnt, regionCnt: count});
+                });
+            })
+
+            option.series[0].data = datas;
+            //option.dataRange.pieces = splitArray;
+            //option.visualMap[0].target = undefined;
+            var opt= JSON.stringify(option);
+            chartInstance.setOption(option);
+            chartInstance.hideLoading();
+        });
+    }
+
+    function chartRefresh() {
+        for(var i = 0; i <topicMap.length; i++) {
+            var one = topicMap[i];
+            resetChartData(one);
+        }
+		resetAchieve();
+        resetTotalAccount();
+        resetTotalInvetory();
+        resetInvetoryDetail();
+        resetAccountDetail();
+		resetMapArea();
+    }
+
+
+    $(document).ready(function () {
+     	var middleChart = echarts.init(document.getElementById("achieve"));
+        middleChart.setOption(totalOption);
+        var righttopChart = echarts.init(document.getElementById("sales-acount"));
+        righttopChart.setOption(salesAcountOption);
+        var mapchart = echarts.init(document.getElementById("invetory-variance"));
+        mapchart.setOption(mapoption);
+
+        var totalAccount = echarts.init(document.getElementById("totalAccount"));
+        totalAccount.setOption(totalOption);
+
+        var totalInventory = echarts.init(document.getElementById("totalInventory"));
+        totalInventory.setOption(totalOption);
+        
+        var righttopChart = echarts.init(document.getElementById("topsales"));
+        righttopChart.setOption(compareoption);
+        
+        var heatchart = echarts.init(document.getElementById("inventory"));
+        heatchart.setOption(inventoryOption);
+        
+        heatchart.on('legendselectchanged', function(params) {
+        	 var option = heatchart.getOption();
+        	 if(params.name == "账期") {
+        	     option.xAxis[0].data = accountDistributorNames;
+				 option.yAxis[0].axisLabel.formatter = '{value}月';
+        	 }else {
+                 option.xAxis[0].data = inventoryDistributorNames;
+				 option.yAxis[0].axisLabel.formatter = '{value}天';
+        	 }
+        	 heatchart.setOption(option);
+        });
+        
+        $(window).bind('resize',resizeChart);
+
+       	//setMapRegion(mapchart);
+
+        initCommonMutiSelect();
+
+        initPeroidMonth();
+
+		$("#overlap").click(function () {
+			if($("#overlap").is(':checked')) {
+				resetMapArea(true);
+			}else {
+				resetMapArea();
+			}
+		});
+
+    });
+</script>
+
+<body style="margin: 0;background: #f9f9f9;">
+<div   class="halflefttop">
+
+	<div id="achieve" style="width: 32%; height: 100%;display: inline-block;">
+	</div>
+	<div id="totalAccount"  style="width: 32%; height: 100%;display: inline-block;"></div>
+	<div id="totalInventory"  style="width: 32%; height: 100%;display: inline-block;"></div>
+</div>
+<div  class="halfrighttop">
+	<div class="panel-inner">
+		<div class="title-img">
+			<img src="../../image/report-color.png" width="24">
+		</div>
+		<div class="title">经销商纯销占比</div>
+		<div id="sales-acount" class="report-body"></div>
+	</div>
+</div>
+<div  class="halfleftmiddle">
+	<div class="panel-inner">
+		<div class="title-img">
+			<img src="../../image/report-color.png" width="24">
+		</div>
+		<div class="title">渠道Coverage</div>
+		<div id="invetory-variance" class="report-body"></div>
+
+		<div class="el-checkbox" style="margin-left: 85%;margin-top: 20px; font-family: ;: 'Microsoft YaHei', 'Hiragino Sans GB W3';">
+			<span>Overlap:</span>
+			<input type="checkbox" id="overlap" name="productlineSale" value="0">
+			<label for="overlap" class="el-checkbox-style"></label>
+		</div>
+	</div>
+</div>
+
+<div class="halfrightmiddle">
+<div class="panel-inner">
+		<div class="title-img">
+			<img src="../../image/report-color.png" width="24">
+		</div>
+		<div class="title">月度进销存对比</div>
+		<div id="topsales" style="width: 100%;height: 100%"></div> 
+	</div>
+
+</div>
+
+<div class="bottom">
+	<div class="panel-inner">
+			<div class="title-img">
+				<img src="../../image/report-color.png" width="24">
+			</div>
+			<div class="title">经销商库存&账期</div>
+			<div id="inventory" style="width: 100%;height: 100%"></div>
+	</div>
+	<div class = "details-bottom" onclick="changetab('../bi/inventorysum.html', 2, 3)">&nbsp;&gt;&gt;&nbsp;明细&nbsp;&nbsp;</div>
+
+</div>
+<div class = "periodselectdiv ">
+			<div style="float: left;">年：
+				<select id="year" class="periodselect">
+					<option>2017</option>
+					<option selected="selected">2018</option>
+					<option>2019</option>
+					<option>2020</option>
+				</select>
+				</div>
+				<div style="float: left;">季度：
+				<select id="quarter" class="periodselect">
+
+					<option value="1">Q1</option>
+					<option value="2">Q2</option>
+					<option value="3">Q3</option>
+					<option value="4">Q4</option>
+				</select>
+				</div>
+					<div style="float: left;">月份：
+				<select id="month" class="periodselect">
+
+					<option value="1">1</option>
+					<option value="2">2</option>
+					<option value="3">3</option>
+					<option value="4">4</option>
+					<option value="5">5</option>
+					<option value="6">6</option>
+					<option value="7">7</option>
+					<option value="8">8</option>
+					<option value="9">9</option>
+					<option value="10">10</option>
+					<option value="11">11</option>
+					<option value="12">12</option>
+				</select>
+				</div>
+				<div style="float: left;">Brand：
+					<select id="brand"  class="periodselect" >
+						<option value="Straumann">士卓曼</option>
+						<option value="Anthogyr">安卓健</option>
+						<option value="Tplus">T-plus</option>
+					</select>
+				</div>
+			</div>
+</body>
+
+</html>

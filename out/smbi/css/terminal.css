@@ -1,0 +1,229 @@
+        .left {
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 49.3%;
+            bottom:0;
+            left: 2px;
+            top:30px;
+            padding: 1px;
+        }
+
+
+        .halfrightbottom {
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 47.5%;
+            height: 48%;
+            right: 0;
+            bottom: 0;
+            padding: 5px;
+        }
+
+        .halfrighttop {
+            margin: 1rem;
+            background: #fff;
+            box-shadow: 0 0 1rem #f3f3f3;
+            position: absolute;
+            width: 47.5%;
+            height: 44%;
+            right: 0;
+            top: 30px;
+            padding: 5px;
+        }
+       
+
+.panel-inner {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	bottom: 2px;
+	right: 2px;
+	border: 1px solid #efd9d9;
+}
+
+
+.panel-outter {
+	position: absolute;
+	top: 2px;
+	left: 0px;
+	bottom: 2px;
+	right: 80px;
+	border: 1px solid #efd9d9;
+}
+
+.left-bottom {
+	position: absolute;
+	top: 50%;
+	left: 25%;
+	right: 40%;
+	bottom: 2px;
+}
+
+.middle-bottom {
+	position: absolute;
+	top: 50%;
+	left: 2px;
+	right: 70%;
+	bottom: 2px;
+}
+
+.middle-top {
+	position: absolute;
+	top: 0px;
+	left: 30%;
+	width: 45%;
+	bottom: 50%;
+}
+
+.right-top {
+	position: absolute;
+	top: 0px;
+	left: 75%;
+	right: 0;
+	bottom: 50%;
+}
+
+.right-bottom {
+	position: absolute;
+	top: 50%;
+	right: 0;
+	left: 60%;
+	bottom: 2px;
+}
+
+.title-img {
+	position: absolute;
+	top: 10px;
+	left: 20px;
+	height: 26px;
+	width: 26px;
+}
+
+.title {
+	position: absolute;
+	top: 10px;
+	left: 50px;
+	height: 30px;
+	width: 30%;
+	line-height: 1.7rem;
+	border-bottom: 1px solid #96cfec;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #96cfec;
+	font-style: italic;
+}
+
+.subtitle {
+	position: absolute;
+	top: 40px;
+	left: 50px;
+	height: 30px;
+	width: 300px;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #37a2da;
+	margin-top: 10px;
+}
+
+.firstsubtitle {
+    position: absolute;
+    left: 5%;
+    height: 25px;
+    width: 45%;
+    font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+    font-size: 1rem;
+    color: #37a2da;
+    margin-top: 5px;
+}
+
+.secondsubtitle {
+	position: absolute;
+	top: 2px;
+	left: 50%;
+    height: 25px;
+    width: 45%;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 20px;
+	color: #37a2da;
+	margin-top: 5px;
+}
+
+.thirdsubtitle {
+	position: relative;
+	height: 1.7rem;
+	top: 28%;
+	width: 50%;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #37a2da;
+	bottom: 20%;
+}
+
+
+.detailtitle {
+	color: #37a2da;
+}
+
+.middle-cricle {
+	position: absolute;
+	left: 20px;
+	right: 20px;
+	top: 35%;
+	height: 60%;
+}
+
+.report-title {
+	position: absolute;
+	left: 50px;
+	top: 10px;
+	height: 1.7rem;
+	border-bottom: 1px solid #96cfec;
+	font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+	font-size: 1rem;
+	color: #96cfec;
+	font-style: italic;	
+}
+
+.report-body {
+	position: absolute;
+	left: 1px;
+    right: 0px;
+	top: 50px;
+	bottom: 0px;
+}
+.details{
+	position: absolute;
+    bottom: 5%;
+    right: 5%;
+    line-height: 30px;
+    border-bottom: 1px solid #a5e0ff;
+    font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+    font-size: 16px;
+    color: #a5e0ff;
+    font-style: italic;
+    cursor: pointer;
+}
+.periodselectdiv{
+	position: absolute;
+    top: 2px;
+    left: 30px;
+    line-height: 1.7rem;
+    border-bottom: 1px solid #a5e0ff;
+    font-family: "Microsoft YaHei", "Hiragino Sans GB W3";
+    font-size: 0.1rem;
+    color: #467abd;
+    font-style: italic;
+}
+.periodselect {
+	float: left;
+    margin-left: 20px;
+    margin-top: 4px;
+    margin-right: 20px;
+    width: 120px;
+    height: 20px;
+    font-size: 0.8rem;
+}

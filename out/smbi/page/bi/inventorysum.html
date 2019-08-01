@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>经销商库存汇总</title>
+    <link href="../../css/common11.css" rel="stylesheet">
+    <link href="../../css/control.css" rel="stylesheet">
+    <link href="../../css/detail.css" rel="stylesheet">
+    <link href="../../css/iconfont.css" rel="stylesheet">
+    <link href="../../css/grid.css" rel="stylesheet">
+    <script src="../../js/jquery1.8.min.js"></script>
+    <script src="../../js/jquery-ui-1.10.4.js"></script>
+    <script src="../../js/foundation-2.0.js"></script>
+    <script src="../../js/control.js"></script>
+    <script src="../../data/data.js"></script>
+    <script src="../../js/designer.js"></script>
+    <script src="../../js/grid.js"></script>
+    <script src="../../js/staticpaneldata.js"></script>
+   <script src="../../data/inventorysum.js"></script>
+    <script type="text/javascript">
+        var mainTool, chartTool, chartToolItems, reportPanel, gridPanel;
+        var chart, grid;
+		var olapFiltersHide = false; 
+        
+        function resetPanelData(widget) {
+            OlapTab.init([
+                {code: "olap-filters", header: "olap-filters-header", body: "olap-filters"}
+            ]);
+
+            mainTool = new Toolbar({
+                element: "#mainTool",
+                items: [
+                    {type: "spliter"},
+                    {
+                        text: "隐藏/显示", icon: "icon-yunduanxiazai", onClick: function () {
+                       		toggleleft();  	
+                        }
+                    },
+                    {
+                        text: "显示设置", icon: "icon-yunduanxiazai", onClick: function () {
+                            alert("导出数据");
+                        }
+                    },
+                    {
+                        text: "导出数据", icon: "icon-weizhigeshi", onClick: function () {
+                            alert("导出图表");
+                        }
+                    },
+                    {type: "spliter"},
+                    {
+                        text: "报表说明", icon: "icon-huixingzhen", onClick: function () {
+                            alert("报表说明");
+                        }
+                    },
+                    {
+                        text: "操作手册", icon: "icon-icon_bangzhuwendang", onClick: function () {
+                            alert("操作手册");
+                        }
+                    }
+                ]
+            });
+			
+			FieldArea.init({
+                element: "#olap-fields",
+                report: report,
+                groupIcon: "icon-liebiao",
+                onChangeFilterSetting: function (fieldOption, checked) {
+                }
+            });
+	
+            FilterArea.init({
+                element: "#olap-filters",
+                items: toFieldArray(inventorySumFields),
+                groupIcon: "icon-liebiao",
+                onChangeFilter: function () {
+
+                }
+            });
+
+            Spliter.init({
+                element: "#spliterbar",
+                left: "#area-olap",
+                right: "#area-content"
+            });
+
+            var gridOption = widget.gridOption;
+            if (gridOption != null) {
+                grid = new $.fm.Grid({
+                    element: "grid",
+                    limit: 20,
+                    showPage:true,
+                    hasSubTitle: gridOption.hasTitle,
+                    columns:[
+						{"field": "brand", "caption": "产品线", "width": 100,"align":"left"},
+						{"field": "distributorcode", "caption": "经销商编码", "width": 100,"align":"center"},
+						{"field": "distributorname", "caption": "经销商名称", "width": 200,"align":"left"},
+						{"field": "distributorlevel", "caption": "经销商级别", "width": 100,"align":"center"},
+						{"field": "region", "caption": "区域", "width": 100,"align":"left"},
+						{"field": "inventoryamount", "caption": "库存总金额", "width": 100,"align":"right"},
+						{"field": "consignmentamount", "caption": "寄售库存总金额", "width": 100,"align":"right"},
+						{"field": "saleamount", "caption": "销售金额（R90)", "width": 100,"align":"right"},
+						{"field": "inventorydays", "caption": "库存天数（R90)", "width": 100,"align":"right"}
+                    ]
+                });
+
+                grid.loadData(tabledata, page);
+            }
+        }
+
+        $(document).ready(function () {
+            gridPanel = $("#gridPanel");
+            resetPanelData(staticdatas.widget);
+        });
+
+    </script>
+</head>
+
+<body>
+
+<div class="report-title">
+	<div class="title-icon">
+		<img src="../../image/report-color.png" width="24">
+	</div>
+	<div class="title-text">
+		<label>《经销商库存汇总》&nbsp;&nbsp;</label>
+		<label>数据日期：2019-01-05: 13:45:00</label>
+	</div>
+</div>
+
+<div id="area-olap" class="area-olap">
+    <div class="area-olap-header">
+        <div id="olap-filters-header" class="tab-header" onclick="OlapTab.changeActive('olap-filters')">
+            <span class="iconfont icon-chazhaobiaodanliebiao"></span>
+			过滤条件
+        </div>
+    </div>
+    <div class="area-olap-body">
+        <div class="tab-body-outer">
+            <div id="olap-filters" class="tab-body"></div>
+        </div>
+        <div id="olap-fields" class="tab-body" style="display: none;">
+            <div id="olap-fields-dimension" class="area-fields">
+            </div>
+            <div id="olap-fields-value" class="area-fields">
+            </div>
+        </div>
+    </div>
+    <div class="area-olap-tabbody"></div>
+</div>
+
+<div id="spliterbar" class="spliterbar"></div>
+
+<div id="area-content" class="area-content">
+	<div id="mainTool" class="area-tool"></div>
+	
+    <div class="area-report">
+        <div class="reportBand">
+            <div id="grid"></div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1678 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="getList">
+<!-- 		波动性预警 -->
+		<sql name="getVolatilityReport">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by DistributorName) as rownum, *
+			from(
+					SELECT 	brand,
+						    DistributorCode,
+					        DistributorName,
+					        DistributorLevel,
+					        CustomerCode,
+					        CustomerName,
+					        Family,
+					        Amount,
+					        LastAVG,
+					        AVGAmount,
+					        YearNo [Year],
+					        MonthNo [Month]
+					FROM	Agg_VolatilityReport G					
+					WHERE  LastAVG<>'0.00'  and ( AVGAmount > 20 OR AVGAmount < -20)
+						   and G.[YearNo] = @{year} AND G.[MonthNo] in (@{month})
+					) tb
+			 where @{filter} and @{distributor}   
+			]]>
+		</sql>
+<!-- 		纯销占比 -->
+		<sql name="getSaleRatioReport">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by DistributorName) as rownum, * ,ISNULL(DAmount, 0) DAmount1
+			from(
+			 		 SELECT
+							K.Brand,
+							K.[DistributorCode],
+							[DistributorName],
+							[Region],
+							[Province],
+							DAmount = [dbo].[GetSeparatorThousandMoney] (
+								(
+									SELECT SUM (ISNULL(DS.Amount, 0))
+									FROM [dbo].[VIEW_DataSales] DS
+									LEFT JOIN [dbo].[Product] P ON P.ProductCode = DS.ProductCode
+									LEFT JOIN [dbo].[DistributorHierarchy] DH ON DS.DistributorCode = DH.DistributorCode
+									LEFT JOIN [dbo].[company] DD ON DD.companycode = DS.Customercode
+									WHERE DS.DistributorCode = K.DistributorCode
+									      AND P.Brand = K.Brand AND DD.CompanyType = '二级分销商'
+		                                  AND BizDate >= '@{startDate}'
+		                                  AND BizDate <= '@{endDate}'),1),
+						   CAmount = [dbo].[GetSeparatorThousandMoney] (
+						        (
+									SELECT SUM (ISNULL(CS.Amount, 0))
+									FROM [dbo].[VIEW_DataSales] CS
+									LEFT JOIN [dbo].[Product] P ON P.ProductCode = CS.ProductCode
+									LEFT JOIN [dbo].[DistributorHierarchy] CH ON CS.DistributorCode = CH.DistributorCode
+									LEFT JOIN [dbo].[company] CD ON CD.companycode = CS.Customercode
+									WHERE CS.DistributorCode = K.DistributorCode AND P.Brand = K.Brand
+										  AND (CD.CompanyType != '二级分销商' or CD.CompanyType != '一级经销商')
+		                                  AND BizDate >= '@{startDate}'
+		                                  AND BizDate <= '@{endDate}'),1),
+				            ROUND([公立] / S.Num * 100,2) [公立],
+                            ROUND([民营] / S.Num * 100,2) [民营],
+                            ROUND([连锁诊所] / S.Num * 100,2) [连锁诊所],
+                            ROUND([技工加工所]/ S.Num * 100,2) [技工加工所],
+                            ROUND([二级分销商] / S.Num * 100,2) [二级分销商]
+				  FROM      ( SELECT    [DistributorCode],
+				                        [DistributorName],
+				                        [Region],
+				                        [Province],
+				                        SUM([公立]) [公立],
+				                        SUM([民营]) [民营],
+				                        SUM([连锁诊所]) [连锁诊所],
+				                        SUM([技工加工所]) [技工加工所],
+				                        SUM([二级分销商]) [二级分销商],brand
+				              FROM      [dbo].[VIEW_SaleRatio1]
+				              WHERE     BizDate >= '@{startDate}'
+				                        AND BizDate <= '@{endDate}'
+				              GROUP BY  [DistributorCode],
+				                        [DistributorName],
+				                        [Region],
+				                        [Province],brand
+				            ) K
+				            LEFT JOIN (
+									SELECT
+											ISNULL(SUM(amount), 0) Num,
+											VIEW_DataSales.DistributorCode,
+											brand
+									FROM [dbo].[VIEW_DataSales]
+				                    WHERE   BizDate >= '@{startDate}'
+				                            AND BizDate <= '@{endDate}'
+				                             and not exists (select * from company where VIEW_DataSales.CustomerCode = company.companycode and CompanyType = '一级经销商') 
+					GROUP BY VIEW_DataSales.DistributorCode,brand) S ON S.DistributorCode = K.DistributorCode and s.brand = K.brand
+				            ) tb
+				  WHERE     @{filter} and @{distributor} 
+			]]>
+		</sql>
+	</dataSpace>
+	
+<!-- 	经销商KPI -->
+	<dataSpace name="getDistributorKPI">
+		<sql name="getTotalKPI4Distributor">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Region) as rownum, * 
+			from(
+				 SELECT  *
+ 				 FROM   (SELECT DISTINCT H.DistributorName,
+								 H.distributorcode,
+								 H.Region,
+								 H.RSM,
+								 S.MonthNo AS [Month],
+								 S.YearNo AS [Year],
+								 U.EnglishName RName,
+								 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.YTDSellIn,0)),1) AS YTDAmount,
+								 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q1TDSellIn,0)),1) AS Q1Amount,
+								 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q2TDSellIn,0)),1) AS Q2Amount,
+								 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q3TDSellIn,0)),1) AS Q3Amount,
+								 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q4TDSellIn,0)),1) AS Q4Amount,
+								 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.MTDSellIn,0)),1) AS MAmount,
+								 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.LYTDSellIn,0)),1) AS LTDAmount,
+								 CONVERT(INT,ROUND(S.YTDSellIn* 100 /T.YTarget,0)) AS LTDRP,
+								 CONVERT(INT,ROUND(S.Q1TDSellIn* 100 /T.Q1Target,0)) AS Q1RP,
+								 CONVERT(INT,ROUND(S.Q2TDSellIn* 100 /T.Q2Target,0)) AS Q2RP,
+								 CONVERT(INT,ROUND(S.Q3TDSellIn* 100 /T.Q3Target,0)) AS Q3RP,
+								 CONVERT(INT,ROUND(S.Q4TDSellIn* 100 /T.Q4Target,0)) AS Q4RP,
+								 CONVERT(INT,ROUND(S.MTDSellIn* 100 /T.MTarget,0)) AS MRP,
+								 CONVERT(BIGINT, ROUND(((S.YTDSellIn-S.LYTDSellIn)/CASE WHEN S.LYTDSellIn=0 THEN 1 ELSE S.LYTDSellIn END)*100, 0)) AS YOY,
+								 CONVERT(BIGINT, ROUND(Ratio, 0)) AS Ratio,S.brand
+						FROM  Agg_Distributor_SellIn S
+						LEFT JOIN DistributorHierarchy H ON s.DistributorCode = H.DistributorCode
+						LEFT JOIN Agg_Distributor_Target T ON T.DistributorCode = S.DistributorCode AND T.Brand = S.Brand AND T.TypeCode = S.TypeCode AND S.YearNo = T.YearNo  AND S.MonthNo = T.MonthNo
+						LEFT JOIN dbo.usr U ON U.LoginName = H.RSM
+						WHERE S.[YearNo] = @{year} AND S.[MonthNo] = @{month} AND S.[TypeCode] = '总销售额'  AND S.brand = '@{brand}'
+ 				 ) T) tb
+               WHERE  @{filter} and @{distributor}   
+			]]>
+		</sql>
+		
+		<sql name="getDistributorKPIR">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Region) as rownum, * 
+			from (
+					 SELECT   *
+					 FROM    ( SELECT DISTINCT  DistributorName,
+					                    DistributorCode,
+					                    Region,
+					                    RSM,
+										RName,
+					                    YTDAmount,
+					                    Q1Amount,
+					                    Q2Amount,
+					                    Q3Amount,
+					                    Q4Amount,
+					                    MAmount,
+					                    LTDAmount,
+										YOY,
+					                    Ratio,Brand
+		                      FROM      ( SELECT H.DistributorName,
+												 H.distributorcode,
+												 H.Region,
+												 H.RSM,
+												 S.MonthNo AS [Month],
+												 S.YearNo AS [Year],
+												 U.EnglishName RName,
+												 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.YTDSellIn,0)),1) AS YTDAmount,
+												 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q1TDSellIn,0)),1) AS Q1Amount,
+												 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q2TDSellIn,0)),1) AS Q2Amount,
+												 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q3TDSellIn,0)),1) AS Q3Amount,
+												 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q4TDSellIn,0)),1) AS Q4Amount,
+												 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.MTDSellIn,0)),1) AS MAmount,
+												 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.LYTDSellIn,0)),1) AS LTDAmount,
+												 CONVERT(INT,ROUND(S.YTDSellIn* 100 /T.YTarget,0)) AS LTDRP,
+												 CONVERT(INT,ROUND(S.Q1TDSellIn* 100 /T.Q1Target,0)) AS Q1RP,
+												 CONVERT(INT,ROUND(S.Q2TDSellIn* 100 /T.Q2Target,0)) AS Q2RP,
+												 CONVERT(INT,ROUND(S.Q3TDSellIn* 100 /T.Q3Target,0)) AS Q3RP,
+												 CONVERT(INT,ROUND(S.Q4TDSellIn* 100 /T.Q4Target,0)) AS Q4RP,
+												 CONVERT(INT,ROUND(S.MTDSellIn* 100 /T.MTarget,0)) AS MRP,
+												 CONVERT(BIGINT, ROUND(((S.YTDSellIn-S.LYTDSellIn)/CASE WHEN S.LYTDSellIn=0 THEN 1 ELSE S.LYTDSellIn END)*100, 0)) AS YOY,
+												 CONVERT(BIGINT, ROUND(Ratio, 0)) AS Ratio,S.Brand
+										FROM  Agg_Distributor_SellIn S
+										LEFT JOIN DistributorHierarchy H ON s.DistributorCode = H.DistributorCode
+										LEFT JOIN Agg_Distributor_Target T ON T.DistributorCode = S.DistributorCode AND T.Brand = S.Brand AND T.TypeCode = S.TypeCode AND S.YearNo = T.YearNo  AND S.MonthNo = T.MonthNo
+										LEFT JOIN dbo.usr U ON U.LoginName = H.RSM
+										WHERE S.[YearNo] = @{year} AND S.[MonthNo] = @{month} AND S.[TypeCode] = 'Roxolid' AND S.brand = '@{brand}') O
+							        ) DATA) tb
+							WHERE   @{filter} and @{distributor}    
+			]]>
+		</sql>
+		
+		<sql name="getDistributorKPI4A_PX">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Region) as rownum, * 
+			from (SELECT    brand,
+							[YEAR],
+							[MONTH],
+							Quarter,
+							Region,
+							RSM,
+							o.ParentName rname,
+							Supervisor,
+							o.EnglishName sname,
+							DistributorCode,
+							DistributorName,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(YTDPX),0)), 1) YTDPX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(MPX),0)), 1) MPX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q1PX),0)), 1) Q1PX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q2PX),0)), 1) Q2PX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q3PX),0)), 1) Q3PX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q4PX),0)), 1) Q4PX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(YTDImplant),0)), 1) YTDImplant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(MImplant),0)), 1) MImplant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q1Implant),0)), 1) Q1Implant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q2Implant),0)), 1) Q2Implant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q3Implant),0)), 1) Q3Implant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q4Implant),0)), 1) Q4Implant,
+							CASE WHEN ISNULL(SUM(YTDImplant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(YTDPX) * 100)
+							                                         / ISNULL(SUM(YTDImplant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(YTDPX), 0), 0))
+							        END YRP,
+			
+						 CASE WHEN ISNULL(SUM(MImplant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(MPX) * 100)
+							                                         / ISNULL(SUM(MImplant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(MPX), 0), 0))
+							        END MRP,
+			
+						 CASE WHEN ISNULL(SUM(Q1Implant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(Q1PX) * 100)
+							                                         / ISNULL(SUM(Q1Implant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(Q1PX), 0), 0))
+							        END Q1RP,
+			
+							CASE WHEN ISNULL(SUM(Q2Implant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(Q2PX) * 100)
+							                                         / ISNULL(SUM(Q2Implant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(Q2PX), 0), 0))
+							        END Q2RP,
+							CASE WHEN ISNULL(SUM(Q3Implant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(Q3PX) * 100)
+							                                         / ISNULL(SUM(Q3Implant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(Q3PX), 0), 0))
+							        END Q3RP,
+			
+							CASE WHEN ISNULL(SUM(Q4Implant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(Q4PX) * 100)
+							                                         / ISNULL(SUM(Q4Implant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(Q4PX), 0), 0))
+							        END Q4RP
+						
+			FROM(
+						SELECT  brand,
+								YEAR(BizDate) [YEAR],
+								MONTH(BizDate) [MONTH],
+								DATEPART(Quarter,BizDate) Quarter,
+								Region,
+								RSM,
+								Supervisor,
+								D.DistributorCode,
+								D.DistributorName,
+								ISNULL(SUM(Quantity), 0) YTDPX,
+								0 MPX,
+								0 Q1PX,
+								0 Q2PX,
+								0 Q3PX,
+								0 Q4PX,
+								0 YTDImplant,
+								0 MImplant,
+								0 Q1Implant,
+								0 Q2Implant,
+								0 Q3Implant,
+								0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND MONTH(BizDate) <= DateName(month,GetDate())
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+	
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						ISNULL(SUM(Quantity), 0) MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND MONTH(BizDate) in (@{month})
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+															
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						ISNULL(SUM(Quantity), 0) Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 1
+				GROUP BY  brand,
+						YEAR(BizDate),
+						MONTH(BizDate),
+						DATEPART(Quarter,BizDate),
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName
+	
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						ISNULL(SUM(Quantity), 0) Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 2
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+
+				UNION ALL
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						ISNULL(SUM(Quantity), 0) Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 3
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+	
+				UNION ALL
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						ISNULL(SUM(Quantity), 0) Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 4
+				GROUP BY  brand,
+						YEAR(BizDate),
+						MONTH(BizDate),
+						DATEPART(Quarter,BizDate),
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName
+	
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						ISNULL(SUM(Quantity), 0) YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND MONTH(BizDate) <= DateName(month,GetDate())
+				GROUP BY  brand,
+						YEAR(BizDate),
+						MONTH(BizDate),
+						DATEPART(Quarter,BizDate),
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName
+
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						ISNULL(SUM(Quantity), 0) MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND MONTH(BizDate) = @{month}
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+															
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						ISNULL(SUM(Quantity), 0) Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 1
+				GROUP BY  brand,
+						YEAR(BizDate),
+						MONTH(BizDate),
+						DATEPART(Quarter,BizDate),
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName
+	
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						ISNULL(SUM(Quantity), 0) Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 2
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+	
+				UNION ALL
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						ISNULL(SUM(Quantity), 0) Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 3
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+	
+				UNION ALL
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						ISNULL(SUM(Quantity), 0) Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 4
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName)tb
+				LEFT JOIN organization O ON O.LoginName = tb.Supervisor
+				GROUP BY  brand,
+						  [YEAR],
+						  [MONTH],
+						  Quarter,
+						  Region,
+						  RSM,
+						  O.ParentName,
+						  Supervisor,
+						  O.EnglishName,
+						  DistributorCode,
+						  DistributorName
+							  ) TB
+			WHERE   @{filter} and @{distributor} AND brand = '@{brand}'  and year = @{year} and month = @{month}
+			]]>
+		</sql>
+		
+		<sql name="getDistributorKPIRatio">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Region) as rownum, * 
+			from(
+				 SELECT 
+				 		DistributorName,
+				        DistributorCode,
+				        Region,
+				        RSM,
+				        RName,
+				        CONVERT(INT, ROUND(ISNULL(YTDImplant, 0), 0)) YTDImplant,
+				        CONVERT(INT, ROUND(ISNULL(YTDAbutment, 0), 0)) YTDAbutment,
+				        CASE WHEN ISNULL(YTDImplant, 0) != 0
+				             THEN CONVERT(BIGINT, ROUND(( (ISNULL(YTDAbutment, 0)/ ISNULL(YTDImplant, 0) ) * 100 ), 0))
+				             ELSE CONVERT(BIGINT, ROUND(ISNULL(YTDAbutment, 0), 0))
+				        END 'YTDAIRatio',
+				        CONVERT(INT, ROUND(ISNULL(MTDImplant, 0), 0)) MTDImplant,
+				        CONVERT(INT, ROUND(ISNULL(MTDAbutment, 0), 0)) MTDAbutment,
+				        CASE WHEN ISNULL(MTDImplant, 0) != 0
+				             THEN CONVERT(BIGINT, ROUND(( ( ISNULL(MTDAbutment, 0)
+				                                         / ISNULL(MTDImplant, 0) ) * 100 ), 0))
+				             ELSE CONVERT(BIGINT, ROUND(ISNULL(MTDAbutment, 0), 0))
+				        END 'MTDAIRatio',
+				        CASE WHEN ISNULL(LYTDImplant, 0) != 0
+				             THEN CONVERT(BIGINT, ROUND(( ( ISNULL(LYTDAbutment, 0)* 100
+				                                         / ISNULL(LYTDImplant, 0) ) ), 0))
+				             ELSE CONVERT(BIGINT, ROUND(ISNULL(LYTDAbutment, 0), 0))
+				        END 'LYTDAIRatio'
+				 FROM   ( SELECT    D.DistributorName,
+				                    D.DistributorCode,
+				                    Region,
+				                    RSM,
+				                    U.EnglishName AS RName,
+				                    YTDImplant = ( SELECT   SUM(Quantity)
+				                                   FROM     VIEW_DataSales S
+				                                            LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+				                                            LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+				                                   WHERE    PH.[Category] = 'Implant'
+				                                            AND D.DistributorCode = S.DistributorCode
+				                                            AND YEAR([BizDate]) = @{year}
+				                                            AND MONTH(BizDate) <= @{month}
+				                                 ),
+				                    YTDAbutment = ( SELECT  SUM(Quantity)
+				                                    FROM    VIEW_DataSales S
+				                                            LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+				                                            LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+				                                    WHERE   PH.[Category] = 'Abutment'
+				                                            AND D.DistributorCode = S.DistributorCode
+				                                            AND YEAR([BizDate]) = @{year}
+				                                            AND MONTH(BizDate) <= @{month}
+				                                  ),
+				                    MTDImplant = ( SELECT   SUM(Quantity)
+				                                   FROM     VIEW_DataSales S
+				                                            LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+				                                            LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+				                                   WHERE    PH.[Category] = 'Implant'
+				                                            AND D.DistributorCode = S.DistributorCode
+				                                            AND YEAR([BizDate]) = @{year}
+				                                            AND MONTH(BizDate) = @{month}
+				                                 ),
+				                    MTDAbutment = ( SELECT  SUM(Quantity)
+				                                    FROM    VIEW_DataSales S
+				                                            LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+				                                            LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+				                                    WHERE   PH.[Category] = 'Abutment'
+				                                            AND D.DistributorCode = S.DistributorCode
+				                                            AND YEAR([BizDate]) = @{year}
+				                                            AND MONTH(BizDate) = @{month}
+				                                  ),
+				                    LYTDImplant = ( SELECT  SUM(LYTDImplant)
+				                                    FROM    dbo.DistributorLYTD S
+				                                    WHERE   S.DistributorCode = D.DistributorCode
+				                                            AND [Year] = @{year} - 1
+				                                            AND [Month] <= @{month}
+				                                  ),
+				                    LYTDAbutment = ( SELECT SUM(LYTDAbutment)
+				                                     FROM   DistributorLYTD S
+				                                     WHERE  S.DistributorCode = D.DistributorCode
+				                                            AND [Year] = @{year} - 1
+				                                            AND [Month] <= @{month}
+				                                   )
+				          FROM      dbo.Distributor D
+				          LEFT  JOIN dbo.DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				          LEFT  JOIN dbo.usr U ON U.LoginName = DH.RSM
+				          WHERE     D.DistributorLevel = '一级商'
+				        ) K)tb
+			WHERE  @{filter} and @{distributor}
+			]]>
+		</sql>	
+	</dataSpace>
+	
+<!-- 	SellOut KPI -->
+	<dataSpace name="SalesKPI">
+		<sql name="getTotalKPI4Sales">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by saleCode) as rownum, * from (
+				SELECT  *
+				FROM   (SELECT   W.CompanyName CustomerName,
+				                 W.family,
+                                 S.CustomerCode clientcode,
+                                 S.MonthNo AS [Month],
+                                 S.YearNo AS [Year],
+                                 U.area Region,
+                                 U.team,
+                                 R.ParentLoginName RSM,
+                                 C.ParentLoginName Supervisor,
+                                 H.CSF AS saleCode,
+                                 R.ParentName RName,
+                                 C.ParentName SName,
+                                 C.EnglishName CName,
+                                 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.YTDSellOut,0)),1) AS YTDAmount,
+                                 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q1TDSellOut,0)),1) AS Q1Amount,
+                                 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q2TDSellOut,0)),1) AS Q2Amount,
+                                 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q3TDSellOut,0)),1) AS Q3Amount,
+                                 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q4TDSellOut,0)),1) AS Q4Amount,
+                                 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.MTDSellOut,0)),1) AS MAmount,
+                                 [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.LYTDSellOut,0)),1) AS LTDAmount,
+                                 CONVERT(INT,ROUND(S.YTDSellOut* 100 /T.YTarget,0)) AS LTDRP,
+                                 CONVERT(INT,ROUND(S.Q1TDSellOut* 100 /T.Q1Target,0)) AS Q1RP,
+                                 CONVERT(INT,ROUND(S.Q2TDSellOut* 100 /T.Q2Target,0)) AS Q2RP,
+                                 CONVERT(INT,ROUND(S.Q3TDSellOut* 100 /T.Q3Target,0)) AS Q3RP,
+                                 CONVERT(INT,ROUND(S.Q4TDSellOut* 100 /T.Q4Target,0)) AS Q4RP,
+                                 CONVERT(INT,ROUND(S.MTDSellOut* 100 /T.MTarget,0)) AS MRP,
+                                 CONVERT(BIGINT, ROUND(((S.YTDSellOut-S.LYTDSellOut)/CASE WHEN S.LYTDSellOut=0 THEN 1 ELSE S.LYTDSellOut END)*100, 0)) AS YOY,
+                                 S.brand
+                FROM Agg_Terminal_SellOut4kpi S 
+                LEFT JOIN Company W ON W.CompanyCode = S.CustomerCode
+                LEFT JOIN SaleHierarchy H ON S.CustomerCode = H.ClientCode
+                LEFT JOIN Agg_Sales_Target T ON T.SaleCode = H.CSF AND T.Brand = S.Brand AND T.YearNo = S.YearNo AND T.MonthNo = S.MonthNo AND T.TypeCode = S.TypeCode 
+                LEFT JOIN dbo.organization C ON C.LoginName = H.CSF
+                LEFT JOIN dbo.organization R ON R.LoginName = C.ParentLoginName
+                LEFT JOIN dbo.usr U ON U.LoginName = R.LoginName
+				WHERE S.[YearNo] = @{year} AND S.[MonthNo] = @{month} AND S.[TypeCode] = '总销售额' AND S.brand = '@{brand}') 
+				DATA) tb 
+				WHERE   @{filter} and @{saleCode} AND @{supervisr} and @{salecodeFilter} AND yoy <> 0 and @{team}
+			]]>
+		</sql>
+		
+		<sql name="getSalesKPIProduct">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by saleCode) as rownum, * from (
+					SELECT *  
+					FROM    ( SELECT  DISTINCT  CustomerName,
+						              CustomerCode clientcode,
+						              family,
+						              Region,
+						              team,
+						              RSM,
+						              Supervisor,
+						              saleCode,
+						              RName,
+						              SName,
+						              CName,
+						              YTDAmount,
+						              Q1Amount,
+						              Q2Amount,
+						              Q3Amount,
+						              Q4Amount,
+						              MAmount,
+						              LTDRP,
+						              Q1RP,
+						              Q2RP,
+						              Q3RP,
+						              Q4RP,
+						              MRP,
+						              LTDAmount,
+						              YOY,
+						              Brand
+						FROM      
+				            ( SELECT H.ClientName CustomerName,
+				                     H.ClientCode CustomerCode,
+				                     W.family,
+				                     S.MonthNo AS [Month],
+				                     S.YearNo AS [Year],
+				                     U.area Region,
+				                     U.team team,
+				                     R.ParentLoginName RSM,
+				                     C.ParentLoginName Supervisor,
+				                     H.CSF AS saleCode,
+				                     R.ParentName RName,
+				                     C.ParentName SName,
+				                     C.EnglishName CName,
+				                     [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.YTDSellOut,0)),1) AS YTDAmount,
+				                     [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q1TDSellOut,0)),1) AS Q1Amount,
+				                     [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q2TDSellOut,0)),1) AS Q2Amount,
+				                     [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q3TDSellOut,0)),1) AS Q3Amount,
+				                     [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q4TDSellOut,0)),1) AS Q4Amount,
+				                     [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.MTDSellOut,0)),1) AS MAmount,
+				                     [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.LYTDSellOut,0)),1) AS LTDAmount,
+				                     CONVERT(INT,ROUND(S.YTDSellOut* 100 /T.YTarget,0)) AS LTDRP,
+				                     CONVERT(INT,ROUND(S.Q1TDSellOut* 100 /T.Q1Target,0)) AS Q1RP,
+				                     CONVERT(INT,ROUND(S.Q2TDSellOut* 100 /T.Q2Target,0)) AS Q2RP,
+				                     CONVERT(INT,ROUND(S.Q3TDSellOut* 100 /T.Q3Target,0)) AS Q3RP,
+				                     CONVERT(INT,ROUND(S.Q4TDSellOut* 100 /T.Q4Target,0)) AS Q4RP,
+				                     CONVERT(INT,ROUND(S.MTDSellOut* 100 /T.MTarget,0)) AS MRP,
+				                     CONVERT(BIGINT, ROUND(((S.YTDSellOut-S.LYTDSellOut)/CASE WHEN S.LYTDSellOut=0 THEN 1 ELSE S.LYTDSellOut END)*100, 0)) AS YOY,
+				                     S.Brand
+				            FROM Agg_Terminal_SellOut4kpi S 
+				            LEFT JOIN Company W ON W.CompanyCode = S.CustomerCode
+				            LEFT JOIN SaleHierarchy H ON S.CustomerCode = H.ClientCode 
+				            LEFT JOIN Agg_Sales_Target T ON T.SaleCode = H.CSF AND T.Brand = S.Brand AND T.YearNo = S.YearNo AND T.MonthNo = S.MonthNo AND T.TypeCode = S.TypeCode 
+				            LEFT JOIN dbo.organization C ON C.LoginName = H.CSF
+				            LEFT JOIN dbo.organization R ON R.LoginName = C.ParentLoginName
+				            LEFT JOIN dbo.usr U ON U.LoginName = R.LoginName
+							WHERE S.[YearNo] = @{year} AND S.[MonthNo] = @{month} AND S.[TypeCode] = 'Roxolid'  AND S.brand = '@{brand}') O
+						        ) DATA
+						        ) tb
+						WHERE   @{filter} and @{saleCode}  AND @{supervisr} and @{salecodeFilter} AND yoy <> 0 and @{team} 
+			]]>
+		</sql>
+		
+		<sql name="getSalesKPI4A_PX">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by brand) as rownum, * from (
+						SELECT  brand,
+			                    [YEARNO] YEAR,
+			                    [MONTHNO] MONTH,
+			                    Quarter,
+			                    Region,
+			                    RSM,
+			                    rname,
+			                    Supervisor,
+			                    sname,
+			                    salecode,
+			                    cname,
+			                    team,
+			                    clientcode,
+			                    CustomerName,
+			                    W.family,
+								[dbo].[GetSeparatorThousandMoney](YTDPX,1) YTDPX,
+								[dbo].[GetSeparatorThousandMoney](MPX,1) MPX,
+								[dbo].[GetSeparatorThousandMoney](Q1PX,1) Q1PX,
+								[dbo].[GetSeparatorThousandMoney](Q2PX,1) Q2PX,
+								[dbo].[GetSeparatorThousandMoney](Q3PX,1) Q3PX,
+								[dbo].[GetSeparatorThousandMoney](Q4PX,1) Q4PX,
+								[dbo].[GetSeparatorThousandMoney](YTDImplant,1) YTDImplant,
+								[dbo].[GetSeparatorThousandMoney](MImplant,1) MImplant,
+								[dbo].[GetSeparatorThousandMoney](Q1Implant,1) Q1Implant,
+								[dbo].[GetSeparatorThousandMoney](Q2Implant,1) Q2Implant,
+								[dbo].[GetSeparatorThousandMoney](Q3Implant,1) Q3Implant,
+								[dbo].[GetSeparatorThousandMoney](Q4Implant,1) Q4Implant,
+								YRP,
+				                MRP,
+				                Q1RP,
+								Q2RP,
+								Q3RP,
+								Q4RP
+						FROM Agg_SellOut_PX S
+						LEFT JOIN Company W ON W.CompanyCode = S.clientcode
+						WHERE   @{filter} AND @{team} and @{saleCode} and @{salecodeFilter} AND brand = '@{brand}' AND @{supervisr} and yearNO = @{year} and monthNO = @{month} 
+						)tb
+						
+			]]>
+		</sql>
+		
+		<sql name="getSalesKPIRatio">
+			<![CDATA[
+			select  ROW_NUMBER() OVER(order by Region) as rownum, * from (
+					SELECT  
+							ClientCode,
+					        ClientName,
+					        Region,
+					        RSM,
+					        Supervisor,
+					        CSF AS saleCode,
+					        RName,
+					        SName,
+					        CName,
+					        CONVERT(BIGINT, ROUND(ISNULL(YTDImplant, 0), 0)) YTDImplant,
+					        CONVERT(BIGINT, ROUND(ISNULL(YTDAbutment, 0), 0)) YTDAbutment,
+					        CASE WHEN ISNULL(YTDImplant, 0) != 0
+					             THEN CONVERT(BIGINT, ROUND(( ISNULL(YTDAbutment, 0)
+					                                          / ISNULL(YTDImplant, 0) ) * 100, 0))
+					             ELSE CONVERT(BIGINT, ROUND(ISNULL(YTDAbutment, 0), 0))
+					        END 'YTDAIRatio',
+					        CONVERT(BIGINT, ROUND(ISNULL(MTDImplant, 0), 0)) MTDImplant,
+					        CONVERT(BIGINT, ROUND(ISNULL(MTDAbutment, 0), 0)) MTDAbutment,
+					        CASE WHEN ISNULL(MTDImplant, 0) != 0
+					             THEN CONVERT(BIGINT, ROUND(( ISNULL(MTDAbutment, 0)
+					                                          / ISNULL(MTDImplant, 0) ) * 100, 0))
+					             ELSE CONVERT(BIGINT, ROUND(ISNULL(MTDAbutment, 0), 0))
+					        END 'MTDAIRatio',
+					        CASE WHEN ISNULL(LYTDImplant, 0) != 0
+					             THEN CONVERT(BIGINT, ROUND(( ISNULL(LYTDAbutment, 0)* 100
+					                                          / ISNULL(LYTDImplant, 0) ), 0))
+					             ELSE CONVERT(BIGINT, ROUND(ISNULL(LYTDAbutment, 0), 0))
+					        END 'LYTDAIRatio'
+					FROM    ( SELECT   
+							C.CompanyCode ClientCode,
+		                    C.CompanyName ClientName,
+		                    TH.Region,
+		                    TH.RSM,
+		                    TH.Supervisor,
+		                    TH.CSF,
+		                    R.EnglishName RName,
+		                    S.EnglishName SName,
+		                    CS.EnglishName CName,
+		                    YTDImplant = ( SELECT   SUM(Quantity)
+		                                   FROM     VIEW_DataSales S
+		                                            LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+		                                            LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+		                                   WHERE    PH.[Category] = 'Implant'
+		                                            AND C.CompanyCode = S.CustomerCode
+		                                            AND YEAR([BizDate]) = '@{year}'
+		                                            AND MONTH(BizDate) <= '@{month}'
+		                                 ),
+		                    YTDAbutment = ( SELECT  SUM(Quantity)
+		                                    FROM    VIEW_DataSales S
+		                                            LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+		                                            LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+		                                    WHERE   PH.[Category] = 'Abutment'
+		                                            AND C.CompanyCode = S.CustomerCode
+		                                            AND YEAR([BizDate]) = '@{year}'
+		                                            AND MONTH(BizDate) <= '@{month}'
+		                                  ),
+		                    MTDImplant = ( SELECT   SUM(Quantity)
+		                                   FROM     VIEW_DataSales S
+		                                            LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+		                                            LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+		                                   WHERE    PH.[Category] = 'Implant'
+		                                            AND C.CompanyCode = S.CustomerCode
+		                                            AND YEAR([BizDate]) = '@{year}'
+		                                            AND MONTH(BizDate) = '@{month}'
+		                                 ),
+		                    MTDAbutment = ( SELECT  SUM(Quantity)
+		                                    FROM    VIEW_DataSales S
+		                                            LEFT  JOIN dbo.Product P ON P.ProductCode = S.ProductCode
+		                                            LEFT  JOIN [dbo].[PH4Category] PH ON PH.[RH4] = P.PRH4
+		                                    WHERE   PH.[Category] = 'Abutment'
+		                                            AND C.CompanyCode = S.CustomerCode
+		                                            AND YEAR([BizDate]) = '@{year}'
+		                                            AND MONTH(BizDate) = '@{month}'
+		                                  ),
+		                    LYTDImplant = ( SELECT  SUM(LYTDImplant)
+		                                    FROM    dbo.SaleLYTD S  
+		                                    WHERE   SaleCode =TH.CSF
+		                                            AND [Year] = '@{year}' - 1
+		                                            AND [Month] <= '@{month}'
+		                                  ),
+		                    LYTDAbutment = ( SELECT SUM(LYTDAbutment)
+		                                     FROM   dbo.SaleLYTD S
+		                                     WHERE   SaleCode =TH.CSF
+		                                           AND [Year] = '@{year}' - 1
+		                                            AND [Month] <= '@{month}'
+		                                   )
+		          	FROM    dbo.Company C
+                    LEFT JOIN [dbo].[SaleHierarchy] TH
+                    LEFT JOIN dbo.usr R ON R.LoginName = TH.RSM
+                    LEFT JOIN dbo.usr S ON S.LoginName = TH.Supervisor
+                    LEFT JOIN dbo.usr CS ON CS.LoginName = TH.CSF ON TH.ClientCode = C.CompanyCode
+		        	) K) tb
+				WHERE   @{filter}  and  @{saleCode} AND @{supervisr} and @{salecodeFilter}
+			]]>
+		</sql>
+	</dataSpace>
+<!-- 	SellIn KPI -->
+	<dataSpace name="BusinessKPI">
+		<sql name="getTotalKPI4Business">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Region) as rownum, * 
+			from (
+				SELECT   *
+				FROM    ( 
+				SELECT DISTINCT	H.DistributorName DistributorName,
+						H.DistributorCode distributorcode,
+						S.YearNo AS [Year],
+						S.MonthNo AS [Month],
+						H.Region Region,
+						H.RSM RSM,
+						H.Supervisor Supervisor,
+						U.EnglishName RName,
+						R.EnglishName SName,
+						[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.YTDSellIn,0)),1) AS YTDAmount,
+						[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q1TDSellIn,0)),1) AS Q1Amount,
+						[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q2TDSellIn,0)),1) AS Q2Amount,
+						[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q3TDSellIn,0)),1) AS Q3Amount,
+						[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q4TDSellIn,0)),1) AS Q4Amount,
+						[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.MTDSellIn,0)),1) AS MAmount,
+						CONVERT(INT,ROUND(S.YTDSellIn* 100 /T.YTarget,0)) AS YRP,
+						CONVERT(INT,ROUND(S.Q1TDSellIn* 100 /T.Q1Target,0)) AS Q1RP,
+						CONVERT(INT,ROUND(S.Q2TDSellIn* 100 /T.Q2Target,0)) AS Q2RP,
+						CONVERT(INT,ROUND(S.Q3TDSellIn* 100 /T.Q3Target,0)) AS Q3RP,
+						CONVERT(INT,ROUND(S.Q4TDSellIn* 100 /T.Q4Target,0)) AS Q4RP,
+						CONVERT(INT,ROUND(S.MTDSellIn* 100 /T.MTarget,0)) AS MRP,S.Brand
+				FROM Agg_Distributor_SellIn S 
+				LEFT JOIN DistributorHierarchy H ON s.DistributorCode = H.DistributorCode
+				LEFT JOIN Agg_Supervisor_Target T ON T.SupervisorId = H.Supervisor AND T.Brand = S.Brand AND T.TypeCode = S.TypeCode AND S.YearNo = T.YearNo  AND S.MonthNo = T.MonthNo
+				LEFT JOIN dbo.usr U ON U.LoginName = H.RSM
+				LEFT JOIN dbo.usr R ON R.LoginName = H.Supervisor
+				WHERE S.[YearNo] = @{year} AND S.[MonthNo] = @{month} AND S.[TypeCode] = '总销售额'  AND S.brand = '@{brand}'
+				        ) Z) tb
+				WHERE   @{filter} AND @{distributor}  
+			]]>
+		</sql>
+		
+		<sql name="getBusinessKPIProduct">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by RSM) as rownum, * from(
+				SELECT  *
+				FROM    ( SELECT  DISTINCT  DistributorName,
+								  Distributorcode,
+				                  Region,
+				                  RSM,
+				                  Supervisor,
+				                  RName,
+				                  SName,
+				                  YTDAmount AS YTDQuantity,
+				                  Q1Amount AS Q1Quantity,
+				                  Q2Amount AS Q2Quantity,
+				                  Q3Amount AS Q3Quantity,
+				                  Q4Amount AS Q4Quantity,
+				                  MAmount AS MQuantity,
+				                  YRP,
+				                  Q1RP,
+				                  Q2RP,
+				                  Q3RP,
+				                  Q4RP,
+				                  MRP,brand
+          				FROM      (SELECT 	H.DistributorName DistributorName,
+											H.DistributorCode distributorcode,
+											S.YearNo AS [Year],
+											S.MonthNo AS [Month],
+											H.Region Region,
+											H.RSM RSM,
+											H.Supervisor Supervisor,
+											U.EnglishName RName,
+											R.EnglishName SName,
+											[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.YTDSellIn,0)),1) AS YTDAmount,
+											[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q1TDSellIn,0)),1) AS Q1Amount,
+											[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q2TDSellIn,0)),1) AS Q2Amount,
+											[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q3TDSellIn,0)),1) AS Q3Amount,
+											[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.Q4TDSellIn,0)),1) AS Q4Amount,
+											[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.MTDSellIn,0)),1) AS MAmount,
+											CONVERT(INT,ROUND(S.YTDSellIn* 100 /T.YTarget,0)) AS YRP,
+											CONVERT(INT,ROUND(S.Q1TDSellIn* 100 /T.Q1Target,0)) AS Q1RP,
+											CONVERT(INT,ROUND(S.Q2TDSellIn* 100 /T.Q2Target,0)) AS Q2RP,
+											CONVERT(INT,ROUND(S.Q3TDSellIn* 100 /T.Q3Target,0)) AS Q3RP,
+											CONVERT(INT,ROUND(S.Q4TDSellIn* 100 /T.Q4Target,0)) AS Q4RP,
+											CONVERT(INT,ROUND(S.MTDSellIn* 100 /T.MTarget,0)) AS MRP,S.brand
+									FROM Agg_Distributor_SellIn S 
+									LEFT JOIN DistributorHierarchy H ON s.DistributorCode = H.DistributorCode
+									LEFT JOIN Agg_Supervisor_Target T ON T.SupervisorId = H.Supervisor AND T.Brand = S.Brand AND T.TypeCode = S.TypeCode AND S.YearNo = T.YearNo  AND S.MonthNo = T.MonthNo
+									LEFT JOIN dbo.usr U ON U.LoginName = H.RSM
+									LEFT JOIN dbo.usr R ON R.LoginName = H.Supervisor
+									WHERE S.[YearNo] = @{year} AND S.[MonthNo] = @{month} AND S.[TypeCode] = 'Roxolid' AND  S.brand = '@{brand}') T
+				        ) Z) tb
+				WHERE   @{filter}  AND @{distributor} 
+			]]>
+		</sql>	
+		
+				<sql name="getBusinessKPI4A_PX">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Region) as rownum, * 
+			from (SELECT    brand,
+							[YEAR],
+							[MONTH],
+							Quarter,
+							Region,
+							RSM,
+							o.ParentName rname,
+							Supervisor,
+							o.EnglishName sname,
+							DistributorCode,
+							DistributorName,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(YTDPX),0)), 1) YTDPX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(MPX),0)), 1) MPX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q1PX),0)), 1) Q1PX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q2PX),0)), 1) Q2PX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q3PX),0)), 1) Q3PX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q4PX),0)), 1) Q4PX,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(YTDImplant),0)), 1) YTDImplant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(MImplant),0)), 1) MImplant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q1Implant),0)), 1) Q1Implant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q2Implant),0)), 1) Q2Implant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q3Implant),0)), 1) Q3Implant,
+							[dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(SUM(Q4Implant),0)), 1) Q4Implant,
+							CASE WHEN ISNULL(SUM(YTDImplant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(YTDPX) * 100)
+							                                         / ISNULL(SUM(YTDImplant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(YTDPX), 0), 0))
+							        END YRP,
+			
+						 CASE WHEN ISNULL(SUM(MImplant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(MPX) * 100)
+							                                         / ISNULL(SUM(MImplant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(MPX), 0), 0))
+							        END MRP,
+			
+						 CASE WHEN ISNULL(SUM(Q1Implant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(Q1PX) * 100)
+							                                         / ISNULL(SUM(Q1Implant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(Q1PX), 0), 0))
+							        END Q1RP,
+			
+							CASE WHEN ISNULL(SUM(Q2Implant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(Q2PX) * 100)
+							                                         / ISNULL(SUM(Q2Implant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(Q2PX), 0), 0))
+							        END Q2RP,
+							CASE WHEN ISNULL(SUM(Q3Implant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(Q3PX) * 100)
+							                                         / ISNULL(SUM(Q3Implant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(Q3PX), 0), 0))
+							        END Q3RP,
+			
+							CASE WHEN ISNULL(SUM(Q4Implant), 0) != 0
+							             THEN CONVERT(DECIMAL, ROUND((((SUM(Q4PX) * 100)
+							                                         / ISNULL(SUM(Q4Implant), 0) ) ), 2))
+							             ELSE CONVERT(BIGINT, ROUND(ISNULL(SUM(Q4PX), 0), 0))
+							        END Q4RP
+						
+			FROM(
+						SELECT  brand,
+								YEAR(BizDate) [YEAR],
+								MONTH(BizDate) [MONTH],
+								DATEPART(Quarter,BizDate) Quarter,
+								Region,
+								RSM,
+								Supervisor,
+								D.DistributorCode,
+								D.DistributorName,
+								ISNULL(SUM(Quantity), 0) YTDPX,
+								0 MPX,
+								0 Q1PX,
+								0 Q2PX,
+								0 Q3PX,
+								0 Q4PX,
+								0 YTDImplant,
+								0 MImplant,
+								0 Q1Implant,
+								0 Q2Implant,
+								0 Q3Implant,
+								0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND MONTH(BizDate) <= DateName(month,GetDate())
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+	
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						ISNULL(SUM(Quantity), 0) MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND MONTH(BizDate) = @{month}
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+															
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						ISNULL(SUM(Quantity), 0) Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 1
+				GROUP BY  brand,
+						YEAR(BizDate),
+						MONTH(BizDate),
+						DATEPART(Quarter,BizDate),
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName
+	
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						ISNULL(SUM(Quantity), 0) Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 2
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+
+				UNION ALL
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						ISNULL(SUM(Quantity), 0) Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 3
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+	
+				UNION ALL
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						ISNULL(SUM(Quantity), 0) Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND producttype = 'Anthogyr implant-PX' AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 4
+				GROUP BY  brand,
+						YEAR(BizDate),
+						MONTH(BizDate),
+						DATEPART(Quarter,BizDate),
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName
+	
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						ISNULL(SUM(Quantity), 0) YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND MONTH(BizDate) <= DateName(month,GetDate())
+				GROUP BY  brand,
+						YEAR(BizDate),
+						MONTH(BizDate),
+						DATEPART(Quarter,BizDate),
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName
+
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						ISNULL(SUM(Quantity), 0) MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND MONTH(BizDate) = @{month}
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+															
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						ISNULL(SUM(Quantity), 0) Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 1
+				GROUP BY  brand,
+						YEAR(BizDate),
+						MONTH(BizDate),
+						DATEPART(Quarter,BizDate),
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName
+	
+				UNION ALL 
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						ISNULL(SUM(Quantity), 0) Q2Implant,
+						0 Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 2
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+	
+				UNION ALL
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						ISNULL(SUM(Quantity), 0) Q3Implant,
+						0 Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 3
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName
+	
+				UNION ALL
+	
+				SELECT  brand,
+						YEAR(BizDate) [YEAR],
+						MONTH(BizDate) [MONTH],
+						DATEPART(Quarter,BizDate) Quarter,
+						Region,
+						RSM,
+						Supervisor,
+						D.DistributorCode,
+						D.DistributorName,
+						0 YTDPX,
+						0 MPX,
+						0 Q1PX,
+						0 Q2PX,
+						0 Q3PX,
+						0 Q4PX,
+						0 YTDImplant,
+						0 MImplant,
+						0 Q1Implant,
+						0 Q2Implant,
+						0 Q3Implant,
+						ISNULL(SUM(Quantity), 0) Q4Implant
+				FROM VIEW_DataPurchase D
+				LEFT JOIN  DistributorHierarchy DH ON D.DistributorCode = DH.DistributorCode
+				WHERE brand = 'Anthogyr' AND (producttype = 'Anthogyr implant-PX' OR producttype = 'Anthogry implant-Reg') AND YEAR(BizDate) = @{year} AND DATEPART(Quarter,BizDate) = 4
+				GROUP BY  brand,
+						  YEAR(BizDate),
+						  MONTH(BizDate),
+						  DATEPART(Quarter,BizDate),
+						  Region,
+						  RSM,
+						  Supervisor,
+						  D.DistributorCode,
+						  D.DistributorName)tb
+	LEFT JOIN organization O ON O.LoginName = tb.Supervisor
+	GROUP BY  brand,
+			 [YEAR],
+			 [MONTH],
+			 Quarter,
+			 Region,
+			 RSM,o.ParentName,
+			 Supervisor,o.EnglishName,
+			 DistributorCode,
+			 DistributorName
+				  ) TB
+			WHERE   @{filter} and @{distributor} AND brand = '@{brand}'  and year = @{year} and month in (@{month})
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace name="TerminalKPI">
+		<sql name="getTerminalKPI">
+			<![CDATA[
+		select ROW_NUMBER() OVER(order by rsm) as rownum, * from(
+			SELECT
+				 Tb.[Yearno] [Year],
+				 Region,
+				 T.RSM RSM,
+				 T.Rname,
+				 T.Target,
+				 ROUND(NUM*100/T.Target,1) ratio,
+				 NUM,
+				 negative,
+				 new,
+				 Isnull(overlap,0) overlap
+			FROM @{table} Tb
+			LEFT JOIN TerminalTargets T ON T.rsm = Tb.RSM
+			WHERE T.RSM IS  NOT NULL AND Tb.RSM <> '' AND Tb.RSM IS NOT NULL AND Region is NOT NULL AND Tb.[Yearno] = @{year} AND Tb.[monthno] = @{month} )temp
+			WHERE   @{filter} AND @{rsmFilter}  
+			]]>
+		</sql>
+	</dataSpace>
+</sqls>

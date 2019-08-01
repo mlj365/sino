@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="treeorganization">
+		<sql name="getUserList">
+			<![CDATA[
+			select 
+				  	ROW_NUMBER() OVER(order by role desc) as rownum, *
+				from (
+					SELECT DISTINCT EnglishName as parentname,
+									userid,
+									type as role,
+									loginname as parentloginname
+					FROM  dbo.usr 
+					WHERE EnglishName IS NOT NULL 
+						  AND type <> 'distributor' 
+						  AND type <> 'admin' 
+						  AND type <> 'Salesperson' AND @{filter} 
+				    )tb
+				ORDER BY  role
+			]]>
+		</sql>
+	</dataSpace>	
+	
+	<dataSpace name="menu">
+		<sql name="getPositionList">
+			<![CDATA[
+						SELECT DISTINCT type
+						FROM usr
+						WHERE type IS not NULL and type <> 'distributor' and type <> 'admin' and @{filter}
+						
+			]]>
+		</sql>
+		
+		<sql name="getPositionList4Company">
+			<![CDATA[
+						SELECT DISTINCT name as name,
+								name as code
+						FROM Account.Role
+						WHERE name IS not NULL and @{filter}
+						
+			]]>
+		</sql>
+		
+		<sql name="getTeamList">
+            <![CDATA[
+                        SELECT DISTINCT teamname as name,
+                                teamname as code
+                        FROM teamlist
+                        WHERE teamname IS not NULL and @{filter}
+                        
+            ]]>
+        </sql>
+        
+		<sql name="getActive">
+			<![CDATA[
+						SELECT DISTINCT activename as name,
+										active as code
+						FROM ActiveConvert
+						WHERE active IS not NULL and @{filter}
+			]]>
+		</sql>
+		
+	</dataSpace>
+</sqls>

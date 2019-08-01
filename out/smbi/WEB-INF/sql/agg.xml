@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="themegroup">
+		<sql name="getDimensionByCodeGroupId">
+			select code from bi_dimension where groupid = '@{groupid}' and active = 'T'
+		</sql>
+
+		<sql name="getMeasurmentByCode">
+			select * from bi_measurment where code in (@{code})
+		</sql>
+
+		<sql name="createTableTemplate">
+			CREATE TABLE [dbo].[@{tableName}] (
+			[id] nvarchar(32) NOT NULL PRIMARY KEY,
+			[aggcode] nvarchar(256) NULL ,
+			@{fields}
+			)
+		</sql>
+		<sql name="createAggPartitionTableTemplate">
+			CREATE TABLE [dbo].[@{tableName}] (
+			[id] nvarchar(32) NOT null,
+			[aggcode] nvarchar(254) NOT NULL ,
+			@{fields}
+			CONSTRAINT PK_@{tableName}_ID_aggcode PRIMARY KEY(id, aggcode)
+			) on @{partitionName}
+		</sql>
+		<sql name="aggGroupByTemplate">
+			SELECT @{selectfield} from (
+			SELECT  @{selectinfield} FROM @{aggtable} agg
+			@{leftjion}
+			WHERE aggcode = '@{aggcode}' and @{filter} and @{notnull} @{user}
+			)
+			a01
+			@{groupby}
+
+		</sql>
+
+		<sql name="commonAggTemplate">
+
+			SELECT  @{field} FROM @{aggtable} agg
+			@{leftjion}
+			WHERE aggcode = '@{aggcode}' and @{filter}
+
+		</sql>
+
+
+		<!-- territory -->
+
+		<sql name="createCommonTableTemplate">
+			CREATE TABLE [dbo].[@{tableName}] (
+			@{fields}
+			)
+		</sql>
+
+		<sql name="getOrganizationType">
+			SELECT DISTINCT type from organization WHERE type not in ('admin', 'Commercial');
+		</sql>
+
+		<sql name="getUserByOrganization">
+			SELECT * from organization WHERE loginName = '@{loginName}';
+		</sql>
+
+		<sql name="getparentidfromorganization">
+			SELECT @{parentId},  type from organization WHERE  @{baseId} = '@{id}'
+		</sql>
+
+		<sql name="getBaseUserByOrganization">
+			<![CDATA[
+			SELECT Parent@{baseId}, @{baseId} from organization WHERE type = '@{baseType}' and @{baseId} is not null
+			AND (territoryreject <> 'T' or territoryreject is null)
+			and NOT EXISTS
+			(
+			SELECT o.ParentID, o.id from territory
+			LEFT JOIN organization o on o.LoginName = territory.@{baseType}
+			WHERE type = '@{baseType}' and o.id = organization.id
+
+			);
+			]]>
+		</sql>
+
+		<sql name="dropTable">
+			drop table  @{table}
+		</sql>
+
+
+
+	</dataSpace>
+</sqls>

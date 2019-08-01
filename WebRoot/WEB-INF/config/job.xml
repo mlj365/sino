@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE schedule PUBLIC "schedule" "job.dtd">
+
+<schedule>
+	
+	<!--每天晚上11点执行聚合任务 -->
+	<job  
+		id="01"  
+		name="text" 
+		runtime="0 0 1 * * ? "
+		classname="foundation.shedule.EAIJob"/>
+</schedule>

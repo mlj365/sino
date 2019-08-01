@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!ELEMENT datasource (defination)> 
+
+<!ELEMENT defination (#PCDATA)> 
+
+<!ATTLIST defination
+	driverName CDATA #REQUIRED
+    url CDATA #REQUIRED
+    username CDATA #REQUIRED
+    password CDATA #REQUIRED
+    characterEncoding CDATA #REQUIRED
+    maxActive CDATA #IMPLIED  
+    initialSize CDATA #IMPLIED 
+    maxWait CDATA #IMPLIED  
+    minIdle CDATA #IMPLIED
+    timeBetweenEvictionRunsMillis CDATA #IMPLIED 
+    minEvictableIdleTimeMillis CDATA #IMPLIED  
+    validationQuery CDATA #IMPLIED  
+    testWhileIdle CDATA #IMPLIED  
+    testOnBorrow CDATA #IMPLIED 
+    testOnReturn CDATA #IMPLIED        
+>
+
+
+
+

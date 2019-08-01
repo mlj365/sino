@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!ELEMENT config (param*, freeVisit*, limitedVisit*, configLoader*, dataFilter*, virtualPaths*)+> 
+
+<!ELEMENT param (#PCDATA)> 
+
+<!ATTLIST param
+    name CDATA #REQUIRED
+    value CDATA #REQUIRED
+    remark CDATA #IMPLIED
+    client (T|F) #IMPLIED 
+>
+
+
+<!ELEMENT freeVisit (type*, resource*, call*, exclude*)+>
+
+<!ELEMENT type (#PCDATA)>
+<!ELEMENT resource (#PCDATA)>
+<!ELEMENT call (#PCDATA)>
+<!ELEMENT exclude (#PCDATA)>
+
+
+<!ELEMENT limitedVisit (roleResource*)+>
+<!ELEMENT roleResource (#PCDATA)>
+<!ATTLIST roleResource
+	role CDATA #REQUIRED
+	resource CDATA #REQUIRED
+>
+
+<!ELEMENT virtualPaths (virtualPath*)+>
+<!ELEMENT virtualPath (#PCDATA)>
+<!ATTLIST virtualPath
+	path CDATA #REQUIRED
+	target CDATA #IMPLIED
+	classname CDATA #IMPLIED
+>
+
+<!ELEMENT configLoader (loader)*>
+
+<!ELEMENT loader (#PCDATA)>
+<!ATTLIST loader
+	name CDATA #REQUIRED
+	classname CDATA #REQUIRED
+	active CDATA #REQUIRED
+>
+
+<!ELEMENT dataFilter (filter)*>
+<!ELEMENT filter (#PCDATA)>
+<!ATTLIST filter
+	tablename CDATA #REQUIRED
+	where CDATA #REQUIRED
+>

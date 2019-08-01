@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+
+	<dataSpace name="dictionary">
+		<sql name="getDictionary" > 
+			select * from dictionary order by groupcode, value
+		</sql>
+
+		<sql name="getOneDictionary" > 
+			select * from dictionary where groupcode = '@{groupcode}' order by value
+		</sql>
+	</dataSpace>
+	
+	<dataSpace name="other">
+		<sql name="getPlatform" > 
+			select id as code, name from customer where typecode = 'platform' order by name
+		</sql>
+		
+		<sql name="getBusinessList" > 
+			select id as code, name from customer where typecode = 'business' order by name limit @{beginno}, @{pagesize}
+		</sql>
+		
+		<sql name="getAgentList" > 
+			select id as agentId, name as agentName, customer.* from customer where typecode = 'agent' order by name limit @{beginno}, @{pagesize}
+		</sql>
+		
+		<sql name="getCustomerList" > 
+			select customer.* from customer where typecode = 'hospital' order by name limit @{beginno}, @{pagesize}
+		</sql>
+			
+		<sql name="getProvinceList" > 
+			select cnname as code, cnname as name from province order by name
+		</sql>	
+		
+		<sql name="getManagerList" > 
+			select id as code, name from hierarchy where title = 'AM' order by name
+		</sql>	
+		
+		<sql name="getProductList" > 
+			select product.* from product order by name limit @{beginno}, @{pagesize}
+		</sql>	
+	</dataSpace>
+	
+</sqls>

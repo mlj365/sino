@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>库存</title>
+    <link href="../../../css/common11.css" rel="stylesheet">
+    <link href="../../../css/main.css" rel="stylesheet">
+    <link href="../../../css/control.css" rel="stylesheet">
+    <link href="../../../css/report.css" rel="stylesheet">
+    <link href="../../../css/iconfont.css" rel="stylesheet">
+    <link href="../../../css/grid.css" rel="stylesheet">
+
+    <script src="../../../js/jquery1.8.min.js"></script>
+    <script src="../../../js/jquery-ui-1.10.4.js"></script>
+    <script src="../../../js/foundation-2.0.js"></script>
+    <script src="../../../js/control.js"></script>
+    <script src="../../../data/inventorydata.js"></script>
+    <script src="../../../js/designer.js"></script>
+    <script src="../../../js/echarts.min.js"></script>
+    <script src="../../../js/grid.js"></script>
+    <script src="../../../js/staticpaneldata.js"></script>
+    <style>
+        .reportBand {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            bottom: 0px;
+            border-bottom: 1px #c0c0df solid;
+        }
+
+        .title-text {
+            position: absolute;
+            left: 45px;
+            top: 0px;
+            width: 400px;
+            height: 24px;
+            font-size: 20px;
+            font-weight: bold;
+            line-height: 24px;
+            color: #003273;
+        }
+        .report-title {
+            position: absolute;
+            left: 0px;
+            right: 0px;
+            top: 0px;
+            height: 30px;
+            border-top: 1px solid rgb(192, 192, 223);
+            border-bottom: 1px solid rgb(192, 192, 223);
+        }
+    </style>
+    <script type="text/javascript">
+        var mainTool, chartTool, chartToolItems, reportPanel, gridPanel;
+        var grid;
+        var olapFiltersHide = false;
+
+        function resetPanelData(widget) {
+            OlapTab.init([
+                {code: "olap-filters", header: "olap-filters-header", body: "olap-filters"},
+                {code: "olap-fields", header: "olap-fields-header", body: "olap-fields"}
+            ]);
+
+            //chartToolItems = getReportChartTypes(report);
+
+            mainTool = new Toolbar({
+                element: "#mainTool",
+                items: [
+                    {type: "spliter"},
+                    {
+                        text: "隐藏/显示", icon: "icon-yunduanxiazai", onClick: function () {
+                            toggleleft();
+                        }
+                    },
+                    {
+                        text: "导出数据", icon: "icon-yunduanxiazai", onClick: function () {
+                            alert("导出数据");
+                        }
+                    },
+                   /* {
+                        text: "导出图表", icon: "icon-weizhigeshi", onClick: function () {
+                            alert("导出图表");
+                        }
+                    },
+                    {
+                        text: "数据列表", icon: "icon-liebiao2", onClick: function () {
+                            alert("数据列表");
+                        }
+                    },
+                    {type: "spliter"},
+                    {
+                        text: "报表设计", icon: "icon-ceshishenqing", onClick: function () {
+                            alert("报表设计");
+                        }
+                    },
+                    {type: "spliter"},
+                    {
+                        text: "报表说明", icon: "icon-huixingzhen", onClick: function () {
+                            alert("报表说明");
+                        }
+                    },
+                    {
+                        text: "操作手册", icon: "icon-icon_bangzhuwendang", onClick: function () {
+                            alert("操作手册");
+                        }
+                    }*/
+                ]
+            });
+
+            /*chartTool = new Toolbar({
+                element: "#chartTool",
+                showText: false,
+                autoSize: true,
+                items: chartToolItems,
+                imgPath: "../../img/charttype/",
+                btnTemplate: "<span><img id='img' class='tool-img'></span>",
+                onClick: function (code) {
+                    var series = option.series;
+                    for (var i = 0; i < series.length; i++) {
+                        series[i].type = code;
+                    }
+
+                    chart.setOption(option);
+                }
+            });*/
+
+            AxisArea.init({
+                element: "#area-axis",
+                axises: widget.axisList,
+                onFieldClick: function (name, option) {
+                    alert(name);
+                }
+            });
+
+            FieldArea.init({
+                element: "#olap-fields",
+                report: report,
+                groupIcon: "icon-liebiao",
+                onChangeFilterSetting: function (fieldOption, checked) {
+                    console.info(fieldOption);
+                    if (checked) {
+                        FilterArea.addFilter(fieldOption.group.code, fieldOption);
+                    }
+                    else {
+                        FilterArea.deleteFilter(fieldOption);
+                    }
+                    resetGrid();
+                }
+            });
+
+            FilterArea.init({
+                element: "#olap-filters",
+                items: FieldArea.checkItems,
+                groupIcon: "icon-liebiao",
+                onFilterChange : function (field, val) {
+                    resetGrid();
+                    if (field.toLowerCase() == "rsm") {
+                        var supvItem = FilterArea.getItem("Supervisor");
+                        if (supvItem) {
+                            var url = supvItem.option.url;
+
+                            url += "parentField=" + field + "&parentId=" + val;
+                            FilterArea.resetItemUrl("Supervisor", url);
+                        }
+
+                    }
+                }
+            });
+
+            Spliter.init({
+                element: "#spliterbar",
+                left: "#area-olap",
+                right: "#area-content"
+            });
+
+            var gridOption = widget.gridOption;
+            if (gridOption != null) {
+                grid = new $.fm.Grid({
+                    element: "grid",
+                    showPage:true,
+                    limit: gridOption.page.pageSize,
+                    hasSubTitle: gridOption.hasTitle,
+                    columns:[
+                        {field: "no", caption: "no", width: 120},
+                        {field: "DistributorName", caption: "经销商名称", width: 120},
+                        {field: "distributorcode", caption: "经销商编码", width: 120},
+                        {field: "Year", caption: "年", width: 120},
+                        {field: "Month", caption: "月", width: 120},
+                        {field: "Region", caption: "大区", width: 120},
+                        {field: "rsm", caption: "RSM", width: 120},
+                        {field: "Supervisor", caption: "主管", width: 120},
+                        {field: "YTDAmount", caption: "YTD销售额", width: 120},
+                        {field: "Q1Amount", caption: "Q1销售额", width: 120},
+                        {field: "Q2Amount", caption: "Q2销售额", width: 120},
+                        {field: "Q3Amount", caption: "Q3销售额", width: 120},
+                        {field: "Q4Amount", caption: "Q4销售额", width: 120},
+                        {field: "MAmount", caption: "月销售额", width: 120},
+                        {field: "YRP", caption: "YTD达成率%", width: 120},
+                        {field: "Q1RP", caption: "Q1达成率%", width: 120},
+                        {field: "Q2RP", caption: "Q2达成率%", width: 120},
+                        {field: "Q3RP", caption: "Q3达成率%", width: 120},
+                        {field: "Q4RP", caption: "Q4达成率%", width: 120},
+                        {field: "MRP", caption: "月达成率%", width: 120},
+                        {field: "Brand", caption: "产品线", width: 120}
+                    ]
+                });
+
+                //grid.loadData(tabledata, 1);
+            }
+
+
+            //chart.setOption(option);
+        }
+
+        function resetGrid() {
+            var aggcode = "";
+            var reShowColumns = [];
+
+            var items = FieldArea.checkItems;
+
+            var fields = [];
+            Object.keys(items).forEach( function(key) {
+                var item = FieldArea.checkItems[key];
+
+                fields.push(item);
+                var group = item.group;
+
+                if(group && "area" != group.code) {
+                    var groupcode = group.code;
+                    aggcode += groupcode + "." + key + ";";
+                }else {
+                    aggcode += key +";";
+                }
+
+            });
+
+            for (var i = 0; i < FieldArea.groups.length; i++) {
+                var group = FieldArea.groups[i];
+                fields.forEach(function (one) {
+                    if(!one.option.group) {
+                        return;
+                    }
+                    if(one.option.group.code == group.code) {
+                        var field =  {field: one.option.showField.toLowerCase(), caption: one.option.caption, width: 120};
+                        reShowColumns.push(field);
+                    }
+                });
+            }
+
+            fields.forEach(function (one) {
+                if(!one.option.group) {
+                    var field =  {field: one.option.showField.toLowerCase(), caption: one.option.caption, width: 120};
+                    reShowColumns.push(field);
+                }
+
+            });
+
+
+           /* fields.forEach(function (item) {
+                var option = item.option;
+                var field =  {field: option.showField.toLowerCase(), caption: option.caption, width: 120};
+                reShowColumns.push(field);
+            })*/
+
+            var filter = FilterArea.getFilterWithPeroidUrl(true) + "&isTable=true";
+            var paramsObj = {
+                code: report.topic,
+                fields:aggcode,
+                userType:"superAdmin",
+                isTable:true
+            }
+            Loading.show("生成报表中...");
+            $("#grid").empty();
+
+            grid = new $.fm.Grid({
+                element: "grid",
+                limit: 20,
+                showPage:true,
+                hasSubTitle: true,
+                columns:reShowColumns
+            });
+
+            var params = $.fm.objectToURI(paramsObj) + "&" + filter;
+            var gridurl = "root/bi/data?"+ params;
+            grid.url = gridurl;
+            Server.getData(gridurl, function(row, page) {
+                Loading.hide();
+                grid.loadData(row, page);
+            });
+        }
+
+        $(document).ready(function () {
+            reportPanel = $("#reportPanel");
+            gridPanel = $("#gridPanel");
+
+            //chart = echarts.init(document.getElementById('reportPanel'));
+
+            /*Server.getData("root/report/getWidget?id=001", function (widget) {
+                resetPanelData(widget);
+            })*/
+
+            resetPanelData(staticdatas.widget);
+            //$( ".selector" ).draggable( "option", "scope", "tasks" );
+
+        });
+
+    </script>
+</head>
+
+<body>
+<div class="report-title">
+    <div class="title-icon">
+        <img src="../../../image/report-color.png" width="24">
+    </div>
+    <div class="title-text">
+        <label>《经销商库存》&nbsp;&nbsp;</label>
+        <label>数据日期：2019-01-05: 13:45:00</label>
+    </div>
+</div>
+<div id="area-olap" class="area-olap">
+    <div class="area-olap-header">
+        <div id="olap-filters-header" class="tab-header" onclick="OlapTab.changeActive('olap-filters')">
+            <span class="iconfont icon-chazhaobiaodanliebiao"></span>
+            过滤条件
+        </div>
+        <div id="olap-fields-header" class="tab-header" onclick="OlapTab.changeActive('olap-fields')">
+            <span class="iconfont icon-chanpin2"></span>
+            高级设置
+        </div>
+    </div>
+    <div class="area-olap-body">
+        <div class="tab-body-outer">
+            <div id="olap-filters" class="tab-body"></div>
+        </div>
+        <div id="olap-fields" class="tab-body" style="display: none;">
+            <div id="olap-fields-dimension" class="area-fields">
+            </div>
+            <div id="olap-fields-value" class="area-fields">
+            </div>
+        </div>
+    </div>
+    <div class="area-olap-tabbody"></div>
+</div>
+
+<div id="spliterbar" class="spliterbar"></div>
+
+<div id="area-content" class="area-content">
+    <!--<div id="area-axis" class="area-axis">
+        <div class="axis-lines">
+            <div class="axis-line">
+                <div id="y-segment1" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        Y轴-1
+                    </div>
+                    <div id="axisY-1" class="axis-body"></div>
+                </div>
+                <div id="y-segment2" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        Y轴-2
+                    </div>
+                    <div id="axisY-2" class="axis-body"></div>
+                </div>
+            </div>
+
+            <div class="axis-line">
+                <div id="x-segment1" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        X轴-1
+                    </div>
+                    <div id="axisX-1" class="axis-body"></div>
+                </div>
+                <div id="x-segment2" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        X轴-2
+                    </div>
+                    <div id="axisX-2" class="axis-body"></div>
+                </div>
+            </div>
+
+            <div class="axis-change">
+                <span class="iconfont icon-shuaxin" style="font-size: 14px"></span>
+            </div>
+        </div>
+        <div class="axis-tools">
+            <div class="axis-tool-line">
+                <div id="axisY-add" class="axis-btn iconfont">
+                    +
+                </div>
+                <div id="axisY-delete" class="axis-btn iconfont">
+                    -
+                </div>
+            </div>
+            <div class="axis-tool-line">
+                <div id="axisX-add" class="axis-btn">
+                    +
+                </div>
+                <div id="axisX-delete" class="axis-btn">
+                    -
+                </div>
+            </div>
+        </div>
+    </div>-->
+    <div id="mainTool" class="area-tool"></div>
+    <div class="area-report" style="top: 35px;">
+       <!-- <div class="reportBand">
+            <div id="reportPanel" class="reportPanel">
+
+            </div>
+            <div id="chartTool" class="chartTool" align="center"></div>
+        </div>-->
+        <div class="reportBand">
+            <div id="grid"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>sellout kpi</title>
+    <link href="../../css/common11.css" rel="stylesheet">
+    <link href="../../css/main.css" rel="stylesheet">
+    <link href="../../css/control.css" rel="stylesheet">
+    <link href="../../css/report.css" rel="stylesheet">
+    <link href="../../css/iconfont.css" rel="stylesheet">
+    <link href="../../css/grid.css" rel="stylesheet">
+
+    <script src="../../js/jquery1.8.min.js"></script>
+    <script src="../../js/jquery-ui-1.10.4.js"></script>
+    <script src="../../js/foundation-2.0.js"></script>
+    <script src="../../js/control.js"></script>
+    <script src="../../data/sellout.js"></script>
+    <script src="../../js/designer.js"></script>
+    <script src="../../js/echarts.min.js"></script>
+    <script src="../../js/grid.js"></script>
+    <script src="../../js/staticpaneldata.js"></script>
+
+    <script type="text/javascript">
+        var mainTool, chartTool, chartToolItems, reportPanel, gridPanel;
+        var chart, grid;
+        var olapFiltersHide = false; 
+        var option = {
+                "tooltip": {
+                    "trigger": "axis",
+                    "axisPointer": {
+                        "type": "shadow",
+                        textStyle: {
+                            color: "#fff"
+                        }
+
+                    },
+                },
+                "grid": {
+              		containLabel:true,
+                	top:'15%',
+                	bottom:0,
+                },
+                "legend": {
+                    textStyle: {
+                        color: '#90979c',
+                    },
+                    "data": ['销售额', '指标', '达成率']
+                },
+                "calculable": true,
+                "xAxis": [{
+                    "type": "category",
+                    "axisLine": {
+                        lineStyle: {
+                            color: '#90979c'
+                        }
+                    },
+                    "data": ['1季度','2季度','3季度','4季度'],
+                }],
+                "yAxis": [{
+                    "type": "value",
+                    name:"金额(K)",
+                    "splitLine": {
+                        "show": false
+                    },
+                    "axisLine": {
+                        lineStyle: {
+                            color: '#87cefa'
+                        }
+                    },
+                    "axisTick": {
+                        "show": false
+                    },
+                    "axisLabel": {
+                        "interval": 0,
+
+                    },
+                    "splitArea": {
+                        "show": false
+                    },
+
+                },
+                    {
+                        "type": "value",
+                        name:"达成率",
+                        "splitLine": {
+                            "show": false
+                        },
+                        "axisLine": {
+                            lineStyle: {
+                                color: '#87cefa'
+                            }
+                        },
+                        "axisTick": {
+                            "show": false
+                        },
+                        "axisLabel": {
+                            "interval": 0,
+
+                        },
+                        "splitArea": {
+                            "show": false
+                        },
+
+                    }],
+                "series": [{
+                    "name": "销售额",
+                    "type": "bar",
+                    "barGap": "10%",
+                    "itemStyle": {
+                        "normal": {
+                            "color": "rgba(255,144,128,1)",
+                            "label": {
+                                "show": true,
+                                "position": "inside",
+                                formatter: function(p) {
+                                    return p.value > 0 ? (p.value) : '';
+                                }
+                            }
+                        }
+                    },
+                    "data": [
+                        124560.17,
+                        158003.25,
+                        158008.35,
+                        170980.09
+
+                    ],
+                },
+
+                    {
+                        "name": "指标",
+                        "type": "bar",
+                        "itemStyle": {
+                            "normal": {
+                                "color": "rgba(0,191,183,1)",
+                                "barBorderRadius": 0,
+                                "label": {
+                                    "show": true,
+                                    "position": "inside",
+                                    formatter: function(p) {
+                                        return p.value > 0 ? (p.value) : '';
+                                    }
+                                }
+                            }
+                        },
+                        "data": [
+                            143605.04,
+                            143605.04,
+                            155572.13,
+                            155572.13,
+                        ]
+                    }, {
+                        "name": "达成率",
+                        yAxisIndex:1,
+                        "type": "line",
+                        symbolSize:10,
+                        symbol:'circle',
+                        "itemStyle": {
+                            "normal": {
+                                "color": "rgba(252,20,148,1)",
+                                "barBorderRadius": 0,
+                                "label": {
+                                    "show": true,
+                                    "position": "top",
+                                    formatter: function(p) {
+                                        return p.value > 0 ? (p.value)+"%" : '0%';
+                                    }
+                                }
+                            }
+                        },
+                        "data": [
+                            86,
+                            110,
+                            101,
+                            109
+                        ]
+                    },
+                ]
+            };
+
+        var tabledata = [
+            {"no":1, "CustmerName":"贵阳市口腔医院", "family":"贵阳市口腔医院", "clientcode":"56500227", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "857,880.00", "Q1Amount":"172,456.00","Q2Amount": "381,690.00","Q3Amount": "303,734.00","Q4Amount": "0.00", "MAmount":"160,436.00", "LTDAmount":"1,041,310.00","LTDRP": "", "Q1RP":"", "Q2RP":"","Q3RP": "","Q4RP": "","MRP": "", "YOY":-18, "brand":"Straumann"
+            },
+            {"no":2, "CustmerName":"宁波口腔医院", "family":"通策医疗集团", "clientcode":"56500308", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "845,505.00", "Q1Amount":"0.00", "Q2Amount":"260,529.00","Q3Amount": "584,976.00","Q4Amount":"0.00","MAmount": "0.00", "LTDAmount":"0.00", "LTDRP":"", "Q1RP":"","Q2RP": "","Q3RP": "","Q4RP": "", "MRP":"","YOY": 84550500, "brand":"Straumann"
+            },
+            {"no":3, "CustmerName":"安徽省口腔医院", "family":"安徽省口腔医院", "clientcode":"56500353", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "2,701,282.00","Q1Amount": "1,043,862.00",  "Q2Amount":"1,284,468.00", "Q3Amount": "372,952.00", "Q4Amount":"0.00", "MAmount":"518,378.00", "LTDAmount":"1,789,320.00", "LTDRP":"", "Q1RP":"","Q2RP": "","Q3RP": "","Q4RP": "", "MRP":"","YOY": 51, "brand":"Straumann"
+            },
+            {"no":4, "CustmerName":"南京康贝佳齿科", "family":"南京康贝佳口腔", "clientcode":"56500386", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "717,768.00", "Q1Amount":"300,855.00",  "Q2Amount":"263,505.00", "Q3Amount":"153,408.00", "Q4Amount":"0.00","MAmount": "209,487.00","LTDAmount": "1,378,285.00", "LTDRP":"", "Q1RP":"", "Q2RP":"","Q3RP": "","Q4RP": "","MRP": "", "YOY":-48, "brand":"Straumann"
+            },
+            {"no":5, "CustmerName":"苏州市口腔医院", "family":"苏州口腔医院", "clientcode":"56500405", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "2,662,240.00","Q1Amount": "727,716.00", "Q2Amount": "1,304,904.00","Q3Amount": "629,620.00", "Q4Amount":"0.00","MAmount": "271,046.00", "LTDAmount":"6,336,615.00", "LTDRP":"", "Q1RP":"", "Q2RP":"","Q3RP": "","Q4RP": "","MRP": "", "YOY":-58, "brand":"Straumann"
+            },
+            {"no":6, "CustmerName":"江苏省口腔医院", "family":"江苏省口腔医院", "clientcode":"56500556", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "3,411,166.00","Q1Amount": "1,188,354.00", "Q2Amount": "1,463,310.00", "Q3Amount":"759,502.00", "Q4Amount":"0.00","MAmount": "580,528.00","LTDAmount": "7,375,275.00", "LTDRP":"", "Q1RP":"", "Q2RP":"","Q3RP": "","Q4RP": "","MRP": "", "YOY":-54, "brand":"Straumann"
+            },
+            {"no":7, "CustmerName":"西安诺贝尔口腔门诊部", "family":"西安诺贝尔牙科连锁", "clientcode":"56500728", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "1,977,915.00","Q1Amount": "645,810.00",  "Q2Amount":"987,201.00", "Q3Amount":"344,904.00", "Q4Amount":"0.00", "MAmount":"635,034.00", "LTDAmount":"0.00", "LTDRP":"", "Q1RP":"","Q2RP": "","Q3RP": "","Q4RP": "", "MRP":"",  "YOY":197791500, "brand":"Straumann"
+            },
+            {"no":8, "CustmerName":"成都华西牙种植医院", "family":"成都华西牙种植医院", "clientcode":"56500812", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "2,203,748.00","Q1Amount": "840,432.00", "Q2Amount": "889,944.00", "Q3Amount":"473,372.00", "Q4Amount":"0.00","MAmount": "375,158.00", "LTDAmount":"638,625.00", "LTDRP":"", "Q1RP":"","Q2RP": "","Q3RP": "","Q4RP": "", "MRP":"", "YOY":245, "brand":"Straumann"
+            },
+            {"no":9, "CustmerName":"安徽省立医院", "family":"安徽省立医院", "clientcode":"56500825", "Month":3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "348,514.00", "Q1Amount":"0.00",  "Q2Amount":"290,370.00", "Q3Amount":"58,144.00", "Q4Amount":"0.00", "MAmount":"0.00", "LTDAmount":"0.00", "LTDRP":"", "Q1RP":"","Q2RP": "","Q3RP": "","Q4RP": "", "MRP":"", "YOY":34851400, "brand":"Straumann"
+            },
+            {"no":10,"CustmerName": "厦门医学院附属口腔医院","family":"厦门医学院附属口腔医院",  "clientcode":"56500936","Month": 3, "Year":2018, "Region":"", "team":"Digital ","RSM": "", "Supervisor":"U111845","saleCode": "U105781_02","RName": "", "SName":"David Wei","CName": "Adam Guo暂代","YTDAmount": "1,848,014.00","Q1Amount": "1,848,014.00",  "Q2Amount":"0.00","Q3Amount": "0.00", "Q4Amount":"0.00", "MAmount":"655,262.00", "LTDAmount":"0.00", "LTDRP":"", "Q1RP":"","Q2RP": "","Q3RP": "","Q4RP": "", "MRP":"","YOY": 184801400, "brand":"Straumann"}
+
+
+        ];
+        function getReportChartTypes(report) {
+            var charts = report.theme.chart;
+            var result = [];
+
+            for (var i = 0; i < charts.length; i++) {
+                var code = charts[i];
+                var btnOption = ButtonList[code];
+
+                result.push({
+                    "code": code,
+                    "img": btnOption.img
+                });
+            }
+            return result;
+        }
+
+        function resetPanelData(widget) {
+            OlapTab.init([
+                {code: "olap-filters", header: "olap-filters-header", body: "olap-filters"},
+                {code: "olap-fields", header: "olap-fields-header", body: "olap-fields"}
+            ]);
+
+            chartToolItems = getReportChartTypes(report);
+
+            mainTool = new Toolbar({
+                element: "#mainTool",
+                items: [
+                    {type: "spliter"},
+                    {
+                        text: "隐藏/显示", icon: "icon-yunduanxiazai", onClick: function () {
+                       		toggleleft();  	
+                        }
+                    },
+                    {
+                        text: "导出数据", icon: "icon-yunduanxiazai", onClick: function () {
+                            alert("导出数据");
+                        }
+                    },
+                    {
+                        text: "导出图表", icon: "icon-weizhigeshi", onClick: function () {
+                            alert("导出图表");
+                        }
+                    },
+                    {
+                        text: "数据列表", icon: "icon-liebiao2", onClick: function () {
+                            alert("数据列表");
+                        }
+                    },
+                    {type: "spliter"},
+                    {
+                        text: "报表设计", icon: "icon-ceshishenqing", onClick: function () {
+                            alert("报表设计");
+                        }
+                    },
+                    {type: "spliter"},
+                    {
+                        text: "报表说明", icon: "icon-huixingzhen", onClick: function () {
+                            alert("报表说明");
+                        }
+                    },
+                    {
+                        text: "操作手册", icon: "icon-icon_bangzhuwendang", onClick: function () {
+                            alert("操作手册");
+                        }
+                    }
+                ]
+            });
+
+            chartTool = new Toolbar({
+                element: "#chartTool",
+                showText: false,
+                autoSize: true,
+                items: chartToolItems,
+                imgPath: "../../img/charttype/",
+                btnTemplate: "<span><img id='img' class='tool-img'></span>",
+                onClick: function (code) {
+                    var series = option.series;
+                    for (var i = 0; i < series.length; i++) {
+                        series[i].type = code;
+                    }
+
+                    chart.setOption(option);
+                }
+            });
+
+            AxisArea.init({
+                element: "#area-axis",
+                axises: widget.axisList,
+                onFieldClick: function (name, option) {
+                    alert(name);
+                }
+            });
+
+            FieldArea.init({
+                element: "#olap-fields",
+                report: report,
+                groupIcon: "icon-liebiao",
+                onChangeFilterSetting: function (fieldOption, checked) {
+                    if (checked) {
+                        FilterArea.addFilter(fieldOption);
+                    }
+                    else {
+                        FilterArea.deleteFilter(fieldOption);
+                    }
+                }
+            });
+
+            FilterArea.init({
+                element: "#olap-filters",
+                items: FieldArea.items,
+                groupIcon: "icon-liebiao",
+                onChangeFilter: function () {
+
+                }
+            });
+
+            Spliter.init({
+                element: "#spliterbar",
+                left: "#area-olap",
+                right: "#area-content"
+            });
+
+            var gridOption = widget.gridOption;
+            if (gridOption != null) {
+                grid = new $.fm.Grid({
+                    element: "grid",
+                    limit: gridOption.page.pageSize,
+                    hasSubTitle: gridOption.hasTitle,
+                    columns:[
+                        {field: "no", caption: "no", width: 120},
+                        {field: "brand", caption: "产品线", width: 120},
+                        {field: "CustmerName", caption: "终端客户名称 ", width: 120},
+                        {field: "clientcode", caption: "终端客户编码", width: 120},
+                        {field: "team", caption: "客户母公司 ", width: 120},
+                        {field: "Year", caption: "年", width: 120},
+                        {field: "Month", caption: "月", width: 120},
+                        {field: "SName", caption: "主管", width: 120},
+                        {field: "CName", caption: "负责销售", width: 120},
+                        {field: "YTDAmount", caption: "YTD销售额", width: 120},
+                        {field: "Q1Amount", caption: "Q1销售额", width: 120},
+                        {field: "Q2Amount", caption: "Q2销售额", width: 120},
+                        {field: "Q3Amount", caption: "Q3销售额", width: 120},
+                        {field: "Q4Amount", caption: "Q4销售额", width: 120},
+                        {field: "MAmount", caption: "月销售额", width: 120},
+                        {field: "YRP", caption: "YTD达成率%", width: 120},
+                        {field: "Q1RP", caption: "Q1达成率%", width: 120},
+                        {field: "Q2RP", caption: "Q2达成率%", width: 120},
+                        {field: "Q3RP", caption: "Q3达成率%", width: 120},
+                        {field: "Q4RP", caption: "Q4达成率%", width: 120},
+                        {field: "MRP", caption: "月达成率%", width: 120},
+                        {field: "YOY", caption: "同比增长率", width: 120},
+
+                    ]
+                });
+
+                grid.loadData(tabledata, 1);
+            }
+
+
+            chart.setOption(option);
+        }
+
+        $(document).ready(function () {
+            reportPanel = $("#reportPanel");
+            gridPanel = $("#gridPanel");
+
+            chart = echarts.init(document.getElementById('reportPanel'));
+
+            /*Server.getData("root/report/getWidget?id=001", function (widget) {
+                resetPanelData(widget);
+            })*/
+
+            resetPanelData(staticdatas.widget);
+            //$( ".selector" ).draggable( "option", "scope", "tasks" );
+        });
+
+    </script>
+</head>
+
+<body>
+<div id="mainTool" class="area-tool" style="position: fixed;"></div>
+
+<div id="area-olap" class="area-olap">
+    <div class="area-olap-header">
+        <div id="olap-filters-header" class="tab-header" onclick="OlapTab.changeActive('olap-filters')">
+            <span class="iconfont icon-chazhaobiaodanliebiao"></span>
+            过滤条件
+        </div>
+    </div>
+    <div class="area-olap-body">
+        <div class="tab-body-outer">
+            <div id="olap-filters" class="tab-body"></div>
+        </div>
+        <div id="olap-fields" class="tab-body" style="display: none;">
+            <div id="olap-fields-dimension" class="area-fields">
+            </div>
+            <div id="olap-fields-value" class="area-fields">
+            </div>
+        </div>
+    </div>
+    <div class="area-olap-tabbody"></div>
+</div>
+
+<div id="spliterbar" class="spliterbar"></div>
+
+<div id="area-content" class="area-content">
+    <!--<div id="area-axis" class="area-axis">
+        <div class="axis-lines">
+            <div class="axis-line">
+                <div id="y-segment1" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        Y轴-1
+                    </div>
+                    <div id="axisY-1" class="axis-body"></div>
+                </div>
+                <div id="y-segment2" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        Y轴-2
+                    </div>
+                    <div id="axisY-2" class="axis-body"></div>
+                </div>
+            </div>
+
+            <div class="axis-line">
+                <div id="x-segment1" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        X轴-1
+                    </div>
+                    <div id="axisX-1" class="axis-body"></div>
+                </div>
+                <div id="x-segment2" class="axis-line-segment" style="width: 50%">
+                    <div class="axis-header">
+                        X轴-2
+                    </div>
+                    <div id="axisX-2" class="axis-body"></div>
+                </div>
+            </div>
+
+            <div class="axis-change">
+                <span class="iconfont icon-shuaxin" style="font-size: 14px"></span>
+            </div>
+        </div>
+        <div class="axis-tools">
+            <div class="axis-tool-line">
+                <div id="axisY-add" class="axis-btn iconfont">
+                    +
+                </div>
+                <div id="axisY-delete" class="axis-btn iconfont">
+                    -
+                </div>
+            </div>
+            <div class="axis-tool-line">
+                <div id="axisX-add" class="axis-btn">
+                    +
+                </div>
+                <div id="axisX-delete" class="axis-btn">
+                    -
+                </div>
+            </div>
+        </div>
+    </div>-->
+
+    <div class="area-report">
+        <div class="reportBand">
+            <div id="reportPanel" class="reportPanel">
+
+            </div>
+            <div id="chartTool" class="chartTool" align="center"></div>
+        </div>
+        <div class="gridPanel">
+            <div id="grid"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

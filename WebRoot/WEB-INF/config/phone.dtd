@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!ELEMENT phone (param, template*)+> 
+
+<!ELEMENT param (url, username, password)> 
+
+<!ELEMENT url (#PCDATA)>
+<!ELEMENT username (#PCDATA)>
+<!ELEMENT password (#PCDATA)>
+
+<!ELEMENT template (content)>
+<!ATTLIST template
+	name CDATA #REQUIRED
+>
+
+<!ELEMENT content (#PCDATA)>

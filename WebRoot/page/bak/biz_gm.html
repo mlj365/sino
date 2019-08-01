@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>销售达成</title>
+		<link href="../../css/sales_gm.css" rel="stylesheet">
+		<script type="text/javascript" src="../../js/jquery1.8.min.js" ></script>
+		<script type="text/javascript" src="../../js/echarts.min.3.8.5.js" ></script>
+		<script type="text/javascript" src="../../js/echarts-wordcloud.js" ></script>
+		<script type="text/javascript" src="../../js/random.js" ></script>
+		<script type="text/javascript" src="../../data/report.js" ></script>
+		<script type="text/javascript" src="../../option/sellin_gm.js" ></script>
+	</head>
+	
+	<script>
+		changeOption(middleOption, "series[0];data[0];value", 140);
+		
+		var saleachieveOption = clone(middleOption);
+	    var areaOption = clone(barlineoption);
+	    var productlineOption = clone(productlineoption);
+
+        $(document).ready(function(){
+			var saleachieveChart = echarts.init(document.getElementById("saleachieve"));
+       	 	saleachieveChart.setOption(saleachieveOption);
+       	 	
+       	 	var middletopChart = echarts.init(document.getElementById("salehistory"));
+        	middletopChart.setOption(areaOption);
+        	
+        	var middlebottomChart = echarts.init(document.getElementById("distributorRank"));
+       	 	middlebottomChart.setOption(distributorOption);
+       	 	
+       	 	var halfrightbottomChart = echarts.init(document.getElementById("provincceRank"));
+        	halfrightbottomChart.setOption(provienceOption);
+        	
+        	var halfrightbottomChart = echarts.init(document.getElementById("productlineSale"));
+        	halfrightbottomChart.setOption(productlineOption);
+       	 	
+       	 	
+
+		});
+	</script>
+	
+	<body style="margin: 0;">
+		
+		<div class="left-top" onclick="changetab('../bi/sales_gm.html')">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="title">公司商务达成</div>
+				<div class="subtitle" style="">Target：<b id="saletarget">65648.49</b>万元</div>
+				<div class="subtitle" style="top: 70px;">YTD：<b id="salereal">91727.68</b>万元</div>
+				<div class="middle-cricle" >
+					<div id="saleachieve" style="height: 100%;width: 100%;"></div>
+				</div>			
+			</div>
+		</div>
+		
+		<div class="middle-top">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="report-title">商务达成——区域</div>
+				<div id="salehistory" class="report-body"></div>
+			</div>
+		</div>
+		
+		<div class="right-top">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="report-title">商务达成——品牌</div>
+				<div id="productlineSale" class="report-body"></div>
+			</div>
+		</div>
+		
+		<div class="left-bottom"  onclick="changetab('../bi/biz_gm.html')">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="title">经销商排名</div>
+				<div id="distributorRank" class="report-body"></div>
+			</div>
+		</div>
+		
+		<div class="right-bottom">
+			<div class="panel-inner">
+				<div class="title-img">
+					<img src="../../image/report-color.png" width="24">
+				</div>
+				<div class="report-title">各省采购</div>
+				<div id="provincceRank" class="report-body"></div>
+			</div>
+		</div>		
+	</body>
+	
+</html>

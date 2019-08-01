@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>非活跃客户统计</title>
+    <link href="../../css/common11.css" rel="stylesheet">
+    <link href="../../css/control.css" rel="stylesheet">
+    <link href="../../css/detail.css" rel="stylesheet">
+    <link href="../../css/iconfont.css" rel="stylesheet">
+    <link href="../../css/grid.css" rel="stylesheet">
+    <script src="../../js/jquery1.8.min.js"></script>
+    <script src="../../js/jquery-ui-1.10.4.js"></script>
+    <script src="../../js/foundation-2.0.js"></script>
+    <script src="../../js/control.js"></script>
+    <script src="../../data/data.js"></script>
+    <script src="../../js/designer.js"></script>
+    <script src="../../js/grid.js"></script>
+    <script src="../../js/staticpaneldata.js"></script>
+   <script src="../../data/totalterminal.js"></script>
+   <script src="../../js/random.js"></script>
+    <script type="text/javascript">
+        var mainTool, chartTool, chartToolItems, reportPanel, gridPanel;
+        var chart, grid;
+		var olapFiltersHide = false;
+
+        function query() {
+            var filterUrl = FilterArea.getFilterUrl();
+            exporturl = "code=TerminalSelloutSum&fileExtension=xlsx&sqlName=getTerminalSelloutSum&fileName=非活跃客户统计&"+filterUrl;
+
+            grid.setURL("root/data/procedure/getTerminalSelloutSum/getDataSet?"+filterUrl);
+        }
+
+        function goScroll(taskid){
+            exportTimer = setInterval(function() {doScroll(taskid)}, 3000);
+        }
+
+        function doScroll(taskid){
+            Server.call("root/console/getFileStep", "taskid=" + taskid, function(result) {
+                if (!result.filetask) {
+                    return;
+                }
+
+                var status = result.filetask.status;
+                var statusText = statusToText(status);
+
+                if (status == "downloading") {
+                    stopScroll();
+                    var main_shelter = $("#shelter");
+                    main_shelter.css("height", 0);
+                    var url = encodeURI("root/console/downloadFile?filename=" + result.filetask.filename);
+                    mainTool.message.a.attr("href",url);
+                    mainTool.message.a.html("《" + result.filetask.filename + "》");
+                    mainTool.message.a.click(function(){
+                        mainTool.message.label.text("");
+                        mainTool.message.a.html("");
+                        mainTool.message.hide();
+                    });
+
+                    Server.call("root/console/clearFileStep", "taskid=" + taskid, function(result) {});
+                }
+                else if(status == "error"){
+                    stopScroll(exportTimer);
+                }
+
+                mainTool.message.label.text(statusText);
+            });
+        }
+
+        function resetPanelData(widget) {
+            OlapTab.init([
+                {code: "olap-filters", header: "olap-filters-header", body: "olap-filters"}
+            ]);
+
+            mainTool = new Toolbar({
+                element: "#mainTool",
+                items: [
+                    {type: "spliter"},
+                    {
+                        text: "隐藏/显示", icon: "icon-yunduanxiazai", onClick: function () {
+                       		toggleleft();  	
+                        }
+                    },
+                    /*{
+                        text: "显示设置", icon: "icon-yunduanxiazai", onClick: function () {
+                            alert("导出数据");
+                        }
+                    },*/
+                    {
+                        text: "导出数据", icon: "icon-weizhigeshi", onClick: function () {
+                            var exportTimer = null;
+                            var exportID = 0;
+                            //var url = "http://47.92.117.138:3456/api/FileCenter/Download?";
+                            Dialog.confirm("下载提示","确认要导出当前的记录？",function(data) {
+                                if (data){
+                                    mainTool.message.show();
+                                    var main_shelter = $("#shelter");
+                                    main_shelter.css("height", "100%");
+                                    mainTool.message.label.text('正在导出数据，请等待！');
+                                    mainTool.message.css("width", $(window).width());
+                                    var preFilter = "1=1";
+
+                                    if (exporturl.split("filterList=").length > 1){
+                                        preFilter = exporturl.split("filterList=")[1];
+                                        exporturl = exporturl.split("filterList=")[0];
+                                    }
+
+                                    var filter = FilterArea.getOnlyFilterUrl();
+                                    var id = $.fm.guid();
+                                    exporturl += "&filterList=" + filter + " and " + preFilter + "&taskid=" + id;
+                                    exporturl = encodeURI(exporturl);
+
+                                    Server.call("root/console/export", exporturl);
+                                    goScroll(id);
+                                }
+                            });
+                        }
+                    },
+                    {type: "spliter"},
+                    /*{
+                        text: "报表说明", icon: "icon-huixingzhen", onClick: function () {
+                            alert("报表说明");
+                        }
+                    },
+                    {
+                        text: "操作手册", icon: "icon-icon_bangzhuwendang", onClick: function () {
+                            alert("操作手册");
+                        }
+                    }*/
+                ]
+            });
+			
+			FieldArea.init({
+                element: "#olap-fields",
+                report: report,
+                groupIcon: "icon-liebiao",
+                onChangeFilterSetting: function (fieldOption, checked) {
+                }
+            });
+	
+            FilterArea.init({
+                element: "#olap-filters",
+                items: toFieldArray(totalTerminalFields),
+                groupIcon: "icon-liebiao",
+                onFilterChange: function (field, value, ele) {
+                    query();
+                }
+            });
+
+            Spliter.init({
+                element: "#spliterbar",
+                left: "#area-olap",
+                right: "#area-content"
+            });
+
+            var gridOption = widget.gridOption;
+            if (gridOption != null) {
+                grid = new $.fm.Grid({
+                    element: "grid",
+                    limit: 20,
+                    showPage:true,
+                    hasSubTitle: gridOption.hasTitle,
+                    columns:[
+                    	{"field": "brand", "caption": "产品线", "width": 80,"align": "center"},
+						{"field": "region", "caption": "区域", "width": 80,"align": "left"},
+						{"field": "year", "caption": "年份", "width": 100,"align": "center"},
+						{"field": "month", "caption": "月份", "width": 100,"align": "left"},
+						{"field": "rsm", "caption": "区域经理", "width": 100,"align": "center"},
+						{"field": "rname", "caption": "区域经理姓名", "width": 120,"align": "center"},
+						{"field": "supervisor", "caption": "主管", "width": 100,"align": "left"},
+						{"field": "sname", "caption": "主管姓名", "width": 120,"align": "center"},
+						{"field": "salecode", "caption": "负责销售", "width": 100,"align": "center"},
+						{"field": "cname", "caption": "销售姓名", "width": 120,"align": "left"},
+						{"field": "customername", "caption": "终端客户名称", "width": 200,"align": "left"},
+						{"field": "clientcode", "caption": "终端客户代码", "width": 100,"align": "center"},
+						{"field": "ytdamount", "caption": "YTD销售额", "width": 100,"align": "left"},	
+						{"field": "ltdamount", "caption": "LYTM销售额", "width": 100,"align": "center"},
+						{"field": "roll90", "caption": "销售金额(R90)", "width": 100,"align": "left"}
+                    ]
+                });
+
+                //grid.loadData(tabledata, page);
+            }
+        }
+
+        $(document).ready(function () {
+            gridPanel = $("#gridPanel");
+            resetPanelData(staticdatas.widget);
+            initDateime("year");
+            initDateime("month");
+            query();
+        });
+
+    </script>
+</head>
+
+<body>
+
+<div class="report-title">
+	<div class="title-icon">
+		<img src="../../image/report-color.png" width="24">
+	</div>
+	<div class="title-text">
+		<label>《非活跃客户统计》&nbsp;&nbsp;</label>
+		<label>数据日期：2019-01-05: 13:45:00</label>
+	</div>
+</div>
+
+<div id="area-olap" class="area-olap">
+    <div class="area-olap-header">
+        <div id="olap-filters-header" class="tab-header" onclick="OlapTab.changeActive('olap-filters')">
+            <span class="iconfont icon-chazhaobiaodanliebiao"></span>
+			过滤条件
+        </div>
+    </div>
+    <div class="area-olap-body">
+        <div class="tab-body-outer">
+            <div id="olap-filters" class="tab-body"></div>
+        </div>
+        <div id="olap-fields" class="tab-body" style="display: none;">
+            <div id="olap-fields-dimension" class="area-fields">
+            </div>
+            <div id="olap-fields-value" class="area-fields">
+            </div>
+        </div>
+    </div>
+    <div class="area-olap-tabbody"></div>
+</div>
+
+<div id="spliterbar" class="spliterbar"></div>
+
+<div id="area-content" class="area-content">
+	<div id="mainTool" class="area-tool"></div>
+	
+    <div class="area-report">
+        <div class="reportBand">
+            <div id="grid"></div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

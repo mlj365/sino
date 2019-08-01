@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+
+	<dataSpace name="getList">
+		<sql name="getstdflow">
+			<![CDATA[
+				SELECT top 10
+					[BizDate] ,
+			        DATA.[DistributorCode] ,
+			        DATA.[DistributorName] ,
+			        DATA.[DistributorLevel] ,
+			        D.DistributorCode AS AscriptionCode ,
+			        D.DistributorName AS AscriptionName ,
+			        [CustomerCode] ,
+			        C.Family ,
+			        [CustomerName] ,
+			        [CustomerType] ,
+			        DATA.[ProductCode] ,
+			        DATA.[ProductName] ,
+			        P.ProductType ,
+			        [Quantity] ,
+			        [dbo].[GetSeparatorThousandMoney](DATA.[Price], 1) AS [Price] ,
+			        [dbo].[GetSeparatorThousandMoney]([Amount], 1) AS [Amount] ,
+			        [dbo].[GetSeparatorThousandMoney]([RawPrice], 1) AS [RawPrice] ,
+			        [dbo].[GetSeparatorThousandMoney]([RawAmount], 1) AS [RawAmount] ,
+			        [CustomerProvince] ,
+			        [CustomerCity] ,
+			       	DATA.[Specification] ,
+			        [LotNo] ,
+			        [UnitName] ,
+			        DATA.[Manufacturer] ,
+			        [CustomerAddress] ,
+			        [RawSpecification]
+					FROM    [dbo].[VIEW_DataSales] AS DATA
+			        LEFT  JOIN [dbo].[DistributorRelationship] DRS ON DRS.SubDistributorCode = DATA.DistributorCode
+			        LEFT  JOIN dbo.Distributor D ON D.DistributorCode = DRS.DistributorCode
+			        LEFT  JOIN dbo.Company C ON C.CompanyCode = DATA.CustomerCode
+			        LEFT  JOIN dbo.Product P ON P.ProductCode = DATA.ProductCode
+				WHERE   1 = 1 
+			]]>
+		</sql>
+			
+		<sql name="getFlowslit">
+			<![CDATA[
+				select flowslit.*, product.code as productcode, product.name as productname
+				from flowslit
+					left join product on product.id = flowslit.productid
+				where @{filter} order by customercode
+			]]>
+		</sql>
+		
+		<sql name="getTerritory">
+			<![CDATA[
+			select hierarchy.name as positionname, customer.province, customer.city, customer.name as customername, customer.code as customercode, brand.name as brandname from 
+			(select * from territory where  position in (select position from hiryflat where @{filter})) terr
+			left join hierarchy on terr.position = hierarchy.position
+			left join customer on terr.customerid = customer.id
+			left join brand on terr.brandid = brand.id
+			limit 1, 10
+			]]>
+		</sql>
+
+	</dataSpace>	
+		
+	<dataSpace name="salesflow">
+		<sql name="getSalesflowOption">
+			<![CDATA[
+			select salesflow.customercode as optionval, salesflow.customername as optionhtml from salesflow LIMIT 0, 20
+			]]>
+		</sql>
+		
+		<sql name="getSalesflow">
+			<![CDATA[
+				select salesflow.*, (salesflow.qty * product.price) as amt,
+					product.name as productname, product.code as productcode
+				from salesflow 
+				left join product on salesflow.productid = product.id
+				where @{filter}
+				limit @{beginno}, @{pagesize}
+			]]>
+		</sql>
+		
+	</dataSpace>
+	
+	<dataSpace name="application">
+		<sql name="getAgreementList">
+			<![CDATA[
+				select agreement.*, dict_salesDepartment.value as salesDepartmentName,
+				manager.name as manager, operator.name as operator
+				from agreement
+				left join dictionary dict_salesDepartment 
+					on dict_salesDepartment.groupcode = 'salesDepartment' and agreement.salesDepartmentId = dict_salesDepartment.id
+				left join v_hierarchy manager on agreement.managerid = manager.id
+				left join v_hierarchy operator on agreement.operatorid = operator.id
+				where @{filter}
+				
+				ORDER BY updatetime desc
+				limit @{beginno}, @{pagesize}
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace name="agreement">
+		<sql name="getAgreementFineDetail">
+			<![CDATA[
+			select agreementfinedetail.* from agreementfinedetail
+			where parentid = '@{parentid}'
+			]]>
+		</sql>
+		
+		<sql name="getAgreementQTYDetail">
+			<![CDATA[
+			select agreementqtydetail.* from agreementqtydetail
+			where parentid = '@{parentid}'
+			]]>
+		</sql>
+		
+		<sql name="getApplicationTemplatePath">
+			<![CDATA[
+			select url from applicationtemplate where code = '@{code}'
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace name="approve">
+		<sql name="updateAgreementStatus">
+			<![CDATA[
+			update agreement set statuscode = '@{statuscode}' where id = '@{agreementid}'
+			]]>
+		</sql>
+	</dataSpace>
+		
+	
+</sqls>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>SmartBI平台</title>
+    <link href="../../css/main.css" rel="stylesheet">
+    <link href="../../css/control.css" rel="stylesheet">
+    <script src="../../js/jquery1.8.min.js"></script>
+    <script src="../../js/foundation-2.0.js"></script>
+    <script src="../../js/control.js"></script>
+    <script src="../../data/main.js"></script>
+    <script src="../../js/random.js"></script>
+	<script type="text/javascript" src="../../js/echarts.min.js" ></script>
+    
+	<style type="text/css">
+		.cilcked{
+			background-color: #5a9fc5;
+			color: #fff;
+		}
+		.arrow{
+			position: absolute;
+			width: 30px;
+			height: 30px;
+			top: 50%;
+			left: 14%;
+			z-index: 4;
+			display: none;
+			cursor: pointer;
+		}
+	</style>
+    <script type="text/javascript">
+	    var template_group = [
+		    '<div class="gm_group">',
+	           '<div class="gm_header" style="background: #374c67; color: rgb(255, 255, 255);">',
+	               '<div class="gm_header_indicator" style="background: #467abd;"></div>',
+	               '<img id="menu-img" class="gm_header_img">',
+	               '<div id="menu-text" class="gm_header_text"></div>',
+	           '</div>',
+	        '</div>'
+	    ];
+        
+        var template_item = [       
+            '<div class="gm_menu" style="color: white; overflow: hidden; display: block;">',
+               '<img id="menu-img" class="gm_menu_img">',
+               '<div id="menu-text" class="gm_menu_text"></div>',
+            '</div>'
+ 	    ];
+ 	                   
+		var role, leftMenu;
+		var olapFiltersHide = false;
+		var lastdate;
+		function goPage(url) {
+			window.top.location.href = url;
+		}
+		
+        function showContent(page) {
+            var src = "../bi/" + page;
+            $("#content").attr("src", src);
+        }
+        
+        function createMenus(element, menus) {
+        	for (var i = 0; i < menus.length; i++) {
+        		createOneGroupMenus(element, menus[i]);
+        	}
+        }
+        
+        function createOneGroupMenus(element, groupMenus) {
+        	if (!groupMenus.url) {
+        		var group = createOneGroup(element, groupMenus);
+        		createMenuItems(group, groupMenus.children);
+        	}
+        	else {
+        		createMenuItems(element, groupMenus);
+        	}
+        }
+        
+        function createOneGroup(parent, option) {
+        	var group = $(template_group.join(""));
+        	
+        	var img = $("#menu-img", group);
+        	img.attr("src", option.img);
+        	var text = $("#menu-text", group);
+        	text.html(option.text);
+        	
+        	parent.append(group);
+        	return group;
+        }
+        
+        function createMenuItems(parent, option) {
+        	if ($.isArray(option)) {
+        		for (var i = 0; i < option.length; i++) {
+        			createMenuItems(parent, option[i]);
+        		}
+        		
+        		return;
+        	}
+        	
+        	var menu = $(template_item.join(""));
+        	var img = $("#menu-img", menu);
+        	img.attr("src", option.img);
+        	var text = $("#menu-text", menu);
+        	text.html(option.text);
+        	
+        	menu.click(function() {
+        		
+        		showClickMenuItem(this);
+				        		
+        		$("#lblDirector").html("&nbsp;" + "BI报告" + "&nbsp;&gt;&gt;&nbsp;" + option.text);
+        		showContent(option.url);
+        		 
+        	});
+        	
+        	parent.append(menu);
+        	return menu;
+        }
+        
+        
+        
+        function showClickMenuItem(item) {
+			var preGroupIndex = leftMenu.attr("groupIndex");
+       		var preItemIndex = leftMenu.attr("itemIndex");
+        
+        	toggleClickClass(preGroupIndex, preItemIndex);
+        	
+        	var itemIndex = -1, groupIndex = -1;
+        		
+       		var item = $(item);
+       		var group = item.parent();
+       		
+       		var groups = $(".gm_group");
+       		
+       		for(var i = 0; i <groups.length; i++) {
+       			var onegroup = $(groups[i]);
+       			if(group.is(onegroup)) {
+       				groupIndex = i;
+       			}
+       		}
+       		var items = group.children();
+       		
+       		for(var i = 0; i <items.length; i++) {
+       			var oneitem = $(items[i]);
+       			if(item.is(oneitem)) {
+       				itemIndex = i;
+       			}
+       		}
+       		
+       		leftMenu.attr("groupIndex", groupIndex);
+       		leftMenu.attr("itemIndex", itemIndex);
+       		
+       		toggleClickClass(groupIndex, itemIndex);
+        }
+        
+        function toggleleft() {
+		var width;
+        if(olapFiltersHide) {
+        	 width = $("#leftMenu").data("prewidth");
+        
+        }else {
+        	var prewidth = $("#leftMenu").width();
+        	$("#leftMenu").data("prewidth", prewidth);
+        	width = 0;
+        }
+        
+       	var leftshow ={
+        	 	width: width
+      	 };
+      	 var leftoffset ={
+      	 	left: width
+      	 };
+      	 
+      	 var arrowoffset = {
+      	 	left: width -15
+      	 }
+      	 $("#leftMenu").animate(leftshow, "normal", null);
+      	 $(".content").animate(leftoffset, "normal", null);
+      	 $(".switch").animate(leftoffset, "normal", null);
+      	 $("#arrow").animate(arrowoffset, "normal", null);
+         olapFiltersHide = !olapFiltersHide;
+         
+	}
+        function initPeroidYear() {
+            Server.call("root/bi/lasttime", function (result) {
+                if (result.success){
+                    lastdate = new Date(result.bizdate);
+                    $("#lastdate").html(lastdate.format("yyyy-MM-dd"));
+                    setLocalData("lastdate", lastdate);
+                }
+            })
+
+        }
+        
+        $(document).ready(function () {
+        	role = "总经理";
+            initPeroidYear();
+        	var menus = menutree[role];
+			leftMenu = $("#leftMenu");
+			createMenus(leftMenu, menus);
+			
+			showContent(menus[0].url);
+			
+			toggleClickClass();
+            var user = getLocalData("user");
+
+			$("#username").html(user.caption);
+        });
+        
+    </script>
+</head>
+
+<body>
+<div class="client">
+	<img id="arrow"  src="../../img/arrow1.png" class="arrow" onmouseover="$('#arrow').show();" onmouseout="$('#arrow').hide();" onclick="toggleleft();">
+    <div id="pnl_header" class="main-header" onclick="hidePanel()">
+        <div id="btn_toggle" class="but_toggle" onclick="left_action()">
+            <div style="position: absolute; height: 50%; top: 25%; left: 0px; right: 0px; text-align: center;">
+                <img src="../../img/header_menu.png" height="100%" width="60%">
+            </div>
+        </div>
+        
+        <div class="periodPanel">
+        	<label>数据时间：<span id="lastdate">2019-01-05</span></label>
+        </div>
+        
+
+
+        <div class="bar_system" style="width: 280px">
+            <div class="bar_btn" style="left: 0px; width: 110px" onclick="togglePanel(pnl_account)">
+                <img class="photo-preview" src="../../img/user.png">
+                <span id="username" class="usrname" style="margin-left: 10px; font-size: 14px;">管理员</span>
+            </div>
+            <div class="bar_btn" style="left: 120px; width: 110px" onclick="goPage('./login.html');">
+                <img class="photo-preview" src="../../img/user.png">
+                <span class="usrname" style="margin-left: 10px; font-size: 14px;">退出</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="left">
+        <div class="logoArea">
+            <div class="logoText">
+                <span class="close_logo" style="font-size: 24px;">BMP</span>
+                <span class="open_logo" style="font-size: 18px; font-style: italic;">
+						士卓曼BI报表系统
+					</span>
+            </div>
+        </div>
+        
+        <div id="leftMenu" class="leftMenu"></div>
+        <div class="switch" onmouseover="$('#arrow').show();" onmouseout="$('#arrow').hide();"></div>
+       
+   </div>
+	
+    <div class="content">
+        <div class="indicator">
+            <img src="../../img/hand.png" style="float: left; height: 18px; margin: 2px 5px 0px 8px">
+            <div id="pnl_indicator" style="float: left; margin: 2px 0px 0px 5px;">&gt;&gt;&nbsp;<label id="lblDirector"></label></div>
+        </div>
+        <div class="content-body">
+            <iframe id="content" width="100%" height="100%" style="overflow: hidden; border: none; background-color: #fff;" frameborder="no"></iframe>
+        </div>
+    </div>
+</div>
+
+<div id="pnl_account" class="my-account" style="top: 55px;">
+    <div style="width: 100%; height: 175px; background-color: #434398; color: white; padding-top: 15px;" align="center">
+        <img src="../../img/user.png" width="96" style="border: 3px solid; border-radius: 50%">
+        <p class="usrname">CEO</p>
+    </div>
+    <div id="cntitle"
+         style="height: 52px; width: 100%; line-height: 52px; padding-left: 20px; border: 1px solid rgb(244, 244, 244); background-color: #fff;">
+        内容
+    </div>
+
+    <div style="height: 52px; width: 100%; background-color: #f9f9f9; padding: 10px 10px;">
+        <div class="btn-light-blue" style="float: left;" onclick="pageTo('myAccount')">帐号</div>
+        <div class="btn-light-blue" style="float: right;" onclick="logout()">退出</div>
+    </div>
+</div>
+
+<div id="pnl_message" class="my-panel" style="top: 55px;">
+    <div class="pnl-header">系统消息</div>
+    <div class="pnl-board">
+        <div style="margin: 15px 10px; border-bottom: 1px solid #aaa">1、您有一条《佣金备案》待审批(张天)</div>
+        <div style="margin: 15px 10px; border-bottom: 1px solid #aaa">2、您有一条《底价备案》待审批(张天)</div>
+    </div>
+</div>
+
+<div id="pnl_setting" class="my-panel" style="top: 55px;">
+    <div class="pnl-header">系统设置</div>
+</div>
+
+<div class="loading_mask" style="display: none;" align="center">
+    <div id="area" class="loading_area" align="center">
+        <div class="loading_image"></div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,414 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="getList">
+		<sql name="getTotal4Sales">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by saleCode DESC ) as rownum, * 
+			from(
+			SELECT 
+					R.area AS [Region],
+					V.ProvinceName [Province],
+					V.CityName     [City],
+					R.LoginName [RSM],
+					R.EnglishName AS RName,
+					O.ParentLoginName [Supervisor],
+					S.[EnglishName] AS [SName],
+	        		SH.[CSF] AS [saleCode],
+					O.[EnglishName] AS [CName],
+					[year],
+					[Month],
+					[CustomerCode] clientcode,
+					[CustomerName],
+					[CustomerType],
+					CompanySubType,
+					[Family],
+					[DistributorCode],
+					[DistributorName],
+					[DistributorLevel],
+					[TerminalLevel],
+					Y.[brand],
+					DATA.[ProductCode],
+					DATA.[ProductName],
+					DATA.[Description],
+					DATA.[PRH4],
+					DATA.[PRH4Description],
+					DATA.[PRH5],
+					DATA.[PRH5Description],
+					DATA.[ProductType],
+					DATA.[updatetime],
+					[UnitName],
+					[Quantity],
+					[SalePrice],
+					[PurchasePrice],
+					[ActualSales],
+					[NDPSales],
+					R.team
+			FROM dbo.Agg_TotalSales DATA
+			LEFT JOIN SaleHierarchy SH ON SH.ClientCode = DATA.CustomerCode
+			LEFT JOIN  [dbo].Company V ON V.CompanyCode =DATA.CustomerCode
+			LEFT JOIN  [dbo].[organization] O ON  O.LoginName = SH.CSF
+			LEFT JOIN  [dbo].[usr] S ON  S.LoginName = O.ParentLoginName
+			LEFT JOIN  [dbo].[organization] c ON  c.LoginName = S.LoginName
+			LEFT JOIN  [dbo].[usr] R ON  R.LoginName = c.ParentLoginName
+			LEFT JOIN  [dbo].[Product] Y ON Y.ProductCode = DATA.ProductCode
+		  	WHERE year = @{year} and Month in (@{month}) and Quantity <> 0 AND SH.[CSF] <> '' AND SH.[CSF] IS NOT NULL 
+		   ) tb
+      	   WHERE @{filter} and  @{salecode} and @{supervisr} and @{salecodeFilter} and @{team}
+			]]>
+		</sql>
+			
+		<sql name="getTotal4Distributor">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Province) as rownum, * 
+			from(
+				SELECT 
+						Province,
+	        			DistributorCity,
+	       	 			CustomerCode,
+	        			CustomerName,
+	        			[year],
+	        			[Month],
+	        			CustomerType,
+	        			Family,
+	        			[brand],
+	        			ProductCode,
+	        			ProductName,
+	        			[Description],
+	        			PRH4,PRH5,
+	        			PRH4Description,
+	        			ProductType,
+	        			UnitName,
+	        			SalePrice,
+	        			PurchasePrice,
+	        			Quantity,
+	        			ActualSales,
+	        			NDPSales,
+	        			DistributorCode,
+	        			DistributorName,
+	        			DistributorLevel
+				FROM    Agg_DistributorTotalSales DATA
+       			LEFT  JOIN dbo.Company ON DATA.CustomerCode = CompanyCode
+       			WHERE   year = @{year} and month in (@{month})
+       			) tb
+				WHERE   @{filter} and @{distributor}
+			]]>
+		</sql>
+		
+		<sql name="getTotal4Terminal">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Province) as rownum, tb.*,c.family,companytype,aw.englishname,aw.DSOType
+			from(
+				SELECT  [Year],
+						[Month],
+						CustomerCode clientcode,
+						CustomerName,
+						CustomerCity,
+						CustomerProvince province, 
+						brand,
+						ProductCode,
+						ProductName,
+						PRH4,
+						PRH5,
+						ProductType,
+						SUM(quantity) quantity, 
+						max(price) price,
+						ISNULL(SUM(Amount), 0)  Amount
+				FROM VIEW_DataSales 
+				WHERE   year = @{year} and month in (@{month})
+				GROUP BY    [Year],
+							[Month],
+							CustomerCode,
+							CustomerName,
+							CustomerCity,
+							CustomerProvince,
+							brand,
+						    ProductCode,
+						    ProductName,
+						    PRH4,
+						    PRH5,
+						    ProductType
+       			 ) tb
+       			 left join company C ON C.CompanyCode = tb.clientcode
+       			 LEFT JOIN LargeDSO aw ON aw.terminalname = C.family
+				WHERE   @{filter} and  @{salecode}
+			]]>
+		</sql>
+		
+		<sql name="getInvoicingComparisonTotal">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Region) as rownum, * 
+			from(
+			SELECT 
+				T.DistributorCode,
+        		W.DistributorName,
+        		T.brand,
+        		Region,
+        		R.team,
+        		RSM,
+        		R.EnglishName AS RName,
+        		Supervisor,
+        		S.EnglishName AS SName,
+        		DutyRegion,
+        		[Year],
+        		[Month],
+        		[dbo].[GetSeparatorThousandMoney](( SumAmount_S0 + SumAmount_S1 ), 1) SelloutAmount ,
+        		[dbo].[GetSeparatorThousandMoney](( SumAmount_P0 + SumAmount_P1 ), 1) SellinAmount ,
+        		CONVERT(INT, ( CASE WHEN ( SumAmount_P0 + SumAmount_P1 ) = 0 THEN 0
+                               ELSE ( SumAmount_S0 + SumAmount_S1 + Exchange0 + Exchange1 ) / ( SumAmount_P0 + SumAmount_P1 ) * 100
+                       END )) AS SelloutSellin,
+        		[dbo].[GetSeparatorThousandMoney](( Exchange0 + Exchange1 ), 1) Exchange
+			FROM Agg_InvoicingComparisonTotal T
+        	LEFT JOIN [dbo].[usr] R ON R.LoginName = RSM
+        	LEFT JOIN [dbo].[usr] S ON S.LoginName = Supervisor
+        	LEFT JOIN [dbo].[Distributor] W ON W.DistributorCode = T.DistributorCode
+        	WHERE year = @{year} and month in (@{month})
+        	) tb
+			WHERE    @{filter} and @{distributor} and @{team}
+			]]>
+		</sql>
+
+	</dataSpace>	
+		
+	<dataSpace name="salesflow">
+		<sql name="getDistributorInvoicingDetails">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by Supervisor desc) as rownum, * from
+			(
+			SELECT  
+					DistributorCode,
+        			DistributorName,
+        			ProvinceName DistributorProvince,
+       			 	CityName DistributorCity,
+        			Region,
+        			R.team,
+        			RSM,
+        			R.EnglishName AS RName,
+        			Supervisor,
+        			S.EnglishName AS SName,
+        			DutyRegion,
+        			[Year],
+        			[Month],
+        			ProductType,
+       			 	PRH4,PRH5,
+        			PRH4Description,
+        			[brand],
+        			ProductCode,
+        			ProductName,
+        			[dbo].[GetSeparatorThousandMoney]([Price], 1) AS [Price],
+        			[Description],
+        			( SumQuantity_I0 + SumQuantity_I1 ) InventoryQuantity,
+        			InventoryStatus,
+        			( SumConsignmentQuantity_I0 + SumConsignmentQuantity_I1 ) ConsignmentQuantity,
+        			( SumQuantity_S0 + SumQuantity_S1 ) SelloutQuantity,
+        			[dbo].[GetSeparatorThousandMoney](( SumAmount_S0 + SumAmount_S1 ), 1) SelloutAmount,
+        			( SumQuantity_P0 + SumQuantity_P1 ) SellinQuantity,
+        			[dbo].[GetSeparatorThousandMoney](( SumAmount_P0 + SumAmount_P1 ), 1) SellinAmount,
+        			CONVERT(INT, ( CASE WHEN ( SumAmount_P0 + SumAmount_P1 ) = 0 THEN 0
+                            ELSE ( SumAmount_S0 + SumAmount_S1 + Exchange0 + Exchange1 ) / ( SumAmount_P0+ SumAmount_P1 ) * 100
+                       END )) AS SelloutSellin ,
+        			[dbo].[GetSeparatorThousandMoney](( Exchange0 + Exchange1 ), 1) Exchange
+			FROM [dbo].Agg_DistributorInvoicingDetails T
+        	LEFT JOIN [dbo].[usr] R ON R.LoginName = RSM
+        	LEFT JOIN [dbo].[usr] S ON S.LoginName = Supervisor
+        	WHERE year = @{year} and month in (@{month})
+        	) tb
+			WHERE    @{filter} and @{distributor} and @{team}
+			]]>
+		</sql>
+		
+		<sql name="getInventorySum">
+			<![CDATA[
+				select ROW_NUMBER() OVER(order by Region) as rownum, * from(
+				SELECT    [Year],
+                          [Month],
+                          [brand],
+                          [DistributorCode],
+                          [DistributorName],
+                          [DistributorLevel],
+                          [Region],
+                          [DistributorProvince],
+                          [DistributorCity],
+                          [Inventoryamount],
+                          [Consignmentamount],
+                          ISNULL([Saleamount], 0)[Saleamount],
+                          ISNULL(CONVERT (INT,ROUND((CASE WHEN [Saleamount] = 0 OR [Saleamount] = 0 THEN 0
+                                              ELSE (CAST ([Inventoryamount] AS DECIMAL (30, 8)) / CAST ([Saleamount] AS DECIMAL(30, 8)) * 90) END),0)),0) AS InventoryDays  
+FROM(
+                SELECT
+                         DATENAME(YEAR, [BizDate]) AS [Year],
+                         DATENAME(MONTH, [BizDate]) AS [Month],
+                         [brand],
+                         [DistributorCode],
+                         [DistributorName],
+                         [DistributorLevel],
+                         [Region],
+                         [DistributorProvince],
+                         [DistributorCity],
+                         ISNULL(SUM([Inventoryamount]), 0) [Inventoryamount],
+                         ISNULL(SUM([Consignmentamount]), 0) [Consignmentamount],
+                         (   
+                            SELECT    SUM(ISNULL(Quantity, 0) * S.Price) [Saleamount]
+                            FROM      DDIDaily_S S
+                            LEFT JOIN Product Pr ON Pr.ProductCode = S.ProductCode
+                            WHERE     S.DistributorCode = V.DistributorCode AND Pr.brand =V.brand
+                                      AND BizDate <= '@{date}'
+                                      AND BizDate >= DATEADD(dd, -89, '@{date}')
+                            GROUP BY Brand
+                         ) [Saleamount]
+                FROM [dbo].[InventorySumView] V
+				WHERE BizDate = '@{date}' 
+				GROUP BY DATENAME(YEAR, [BizDate]),
+		                 DATENAME(MONTH, [BizDate]),
+		                 [brand],
+		                 [DistributorCode],
+		                 [DistributorName],
+		                 [DistributorLevel],
+		                 [Region],
+		                 [DistributorProvince],
+		                 [DistributorCity]) TB
+				) tb
+				WHERE   @{filter} and @{distributor}
+			]]>
+		</sql>
+		
+		<sql name="getInventoryQuantitySum">
+			<![CDATA[
+				select ROW_NUMBER() OVER(order by Region) as rownum, * from(
+				SELECT  [Year],
+				        [Month],
+				        [DistributorCode],
+				        [DistributorName],
+				        [DistributorLevel],
+				        [brand],
+				        ProductCode,
+						ProductType,
+						ProductName,
+						PRH4,PRH5,
+				        [Region],
+				        [consignmentquantity] AS [consignmentquantity],
+				        [dbo].[GetSeparatorThousandMoney]([inventoryquantity], 1) AS [inventoryquantity],
+				        quantitysum
+				FROM    ( SELECT    [Year],
+				                    [Month],
+				                    [DistributorCode],
+				                    [DistributorName],
+				                    [DistributorLevel],
+				                    [Region],
+				                    v.Brand,
+				                    V.ProductCode,
+									V.ProductType,
+									V.ProductName,
+									V.PRH4,V.PRH5,
+				                    SUM([Quantity]) [inventoryquantity],
+				                    SUM([ConsignmentQuantity]) [ConsignmentQuantity],
+				                    SUM([Quantity]) + SUM([ConsignmentQuantity]) AS quantitysum
+				          FROM      [dbo].[InventorySumView] V
+				          WHERE     BizDate = '@{date}'
+				          GROUP BY  [Year] ,
+				                    [Month] ,
+				                    [DistributorCode] ,
+				                    [DistributorName] ,
+				                    [DistributorLevel] ,
+				                    v.Brand,
+				                    V.ProductCode,
+									V.ProductType,
+									V.ProductName,
+									V.PRH4,V.PRH5,
+				                    [Region] 
+				        ) DATA) tb
+				WHERE   @{filter} and @{distributor}
+			]]>
+		</sql>
+		
+		<sql name="getTerminalSelloutSum">
+			<![CDATA[
+				select ROW_NUMBER() OVER(order by saleCode) as rownum, * from (
+				SELECT  *
+				FROM    (SELECT DISTINCT H.ClientName CustomerName,
+                                H.ClientCode clientcode,
+                                S.YearNo AS [Year],
+                                S.MonthNo AS [Month],
+                                U.area Region,
+                                U.team,
+                                R.ParentLoginName RSM,
+                                C.ParentLoginName Supervisor,
+                                H.CSF AS saleCode,
+                                R.ParentName RName,
+                                C.ParentName SName,
+                                C.EnglishName CName,
+                                [dbo].[GetSeparatorThousandMoney](CONVERT(BIGINT,ROUND(S.YTDSellOut,0)),1) AS YTDAmount,
+                                ISNULL(( 
+                                    SELECT ISNULL(SUM (ISNULL(Quantity, 0) * D.Price),0) [Roll90]
+                                    FROM VIEW_DataSales D
+                                    LEFT JOIN Product P ON P.ProductCode = D.ProductCode
+                                    WHERE D.CustomerCode = S.CustomerCode AND P.Brand = S.brand
+                                            AND Datepart(MONTH, BizDate) IN(@{month}-2,@{month}-1,@{month}) AND  Datepart(Year, BizDate)  = @{year}
+                                GROUP BY  CustomerCode,P.brand
+                                ), 0) [Roll90],
+                                (SELECT ISNULL(SUM (ISNULL(Quantity, 0) * DD.Price),0) [LYTDSellOut]
+                                 FROM VIEW_DataSales DD
+                                 LEFT JOIN Product P ON P.ProductCode = DD.ProductCode
+                                 WHERE DD.CustomerCode = S.CustomerCode
+                                             AND P.Brand = S.brand
+                                             AND Datepart(MONTH, BizDate) <= @{month}  AND Datepart(Year, BizDate)= @{year}-1
+                                ) LTDAmount,
+                                S.brand
+                        FROM Agg_Terminal_SellOut4kpi S 
+                        LEFT JOIN SaleHierarchy H ON S.CustomerCode = H.ClientCode
+                        LEFT JOIN organization C ON C.LoginName = H.CSF
+                        LEFT JOIN organization R ON R.LoginName = C.ParentLoginName
+                        LEFT JOIN usr U ON U.LoginName = R.ParentLoginName
+						WHERE S.[YearNo] = @{year}  AND s.MonthNo = @{month}  AND S.[TypeCode] = '总销售额'  
+				 		)DATA) tb 
+				WHERE   @{filter} and @{saleCode} and @{supervisr} and @{salecodeFilter} and [Roll90] = 0 and @{team}
+			]]>
+		</sql>
+		
+		<sql name="getDistributorAccount">
+			<![CDATA[
+				select ROW_NUMBER() OVER(order by distributorcode) as rownum, * from (
+						SELECT [YEAR],D.distributorcode,D.Distributorname,MAX(DistributorLevel) DistributorLevel,MAX(Region) Region,max(ProvinceName) Province, MAX(CityName) CityName,SUM(Target) Target, sum(CustomerTotal) CustomerTotal, SUM(total) total, convert(decimal(18,2),ISNULL(SUM(average),0)) average 
+						 FROM(
+							 SELECT CT.[YEAR],CT.DistributorCode,CT.DistributorName,CT.CustomerCode,CT.CustomerName,Target,CustomerTotal,total,(CustomerTotal*Target)/total average
+							 FROM (
+									SELECT YEAR(BizDate) [YEAR],DistributorCode,DistributorName,CustomerCode,CustomerName,SUM(Amount) CustomerTotal 
+									FROM DDIDaily_S s
+									WHERE YEAR(BizDate) = @{year}  AND MONTH(BizDate) <= DateName(month,GetDate()) -1 AND EXISTS (SELECT 1 from AccountTargets A WHERE S.CustomerCode = A.terminalcode AND YEAR (BizDate) = A.[year])
+									GROUP BY DistributorCode,DistributorName,CustomerCode,CustomerName,YEAR(BizDate)
+								) CT
+							 LEFT JOIN AccountTargets AT ON [AT].terminalcode = CT.CustomerCode
+							 LEFT JOIN (
+										SELECT YEAR(BizDate) [YEAR], DistributorCode,DistributorName,sum(Amount) total 
+										FROM DDIDaily_S
+										WHERE YEAR(BizDate) = @{year}  AND MONTH(BizDate) <= DateName(month,GetDate())-1
+										GROUP BY DistributorCode,
+												 DistributorName,YEAR(BizDate)	
+								) DT ON DT.DistributorCode = CT.DistributorCode) tb
+				 LEFT JOIN Distributor D ON D.DistributorCode = tb.DistributorCode
+				 LEFT JOIN DistributorHierarchy DH ON DH.DistributorCode = tb.DistributorCode
+				 WHERE DistributorLevel = '一级商' 
+				 GROUP BY [YEAR],D.distributorcode,D.Distributorname,Region)DATA 
+				WHERE   @{filter} and @{distributor} and [Year] = @{year}
+			]]>
+		</sql>
+		
+		<sql name="getInventorySumRefresh">
+			<![CDATA[
+					SELECT top 1 BizDate,DistributorCode,DistributorName
+					from Agg_InventorySumRefresh
+					where @{distributor}
+					ORDER BY BizDate DESC
+			]]>
+		</sql>	
+		
+		<sql name="getAggSales">
+            <![CDATA[
+                    SELECT top 1 bizdate
+					from VIEW_DataSales                  
+					ORDER BY bizdate DESC
+            ]]>
+        </sql>  
+	</dataSpace>
+</sqls>

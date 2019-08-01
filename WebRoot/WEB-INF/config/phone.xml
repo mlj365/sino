@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE config PUBLIC "phone" "phone.dtd">
+
+<phone>
+	
+	<!-- 1.基本参数 -->
+	<param>
+		<url>http://www.youxinyun.com:3070/Platform_Http_Service/servlet/SendSms</url>
+		<username>blr</username>
+		<password>420455</password>
+	</param>
+	
+	
+	<!-- 2.短信模板 -->
+	<template name="vcode">
+		<content>【士卓曼BI系统】您的登录码是：@{value}。欢迎体验。</content>
+	</template>
+	
+</phone>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>SmartBI平台</title>
+	<link href="../css/common11.css" rel="stylesheet">
+	<link href="../css/main.css" rel="stylesheet">
+	<link href="../css/control.css" rel="stylesheet">
+	<link href="../css/report.css" rel="stylesheet">
+	<link href="../css/iconfont.css" rel="stylesheet">
+    <link href="../css/grid.css" rel="stylesheet">
+
+    <script src="../js/jquery1.8.min.js"></script>
+    <script src="../js/jquery-ui-1.10.4.js"></script>
+	<script src="../js/foundation-2.0.js"></script>
+	<script src="../js/control.js"></script>
+	<script src="../data/data.js"></script>
+	<script src="../js/designer.js"></script>
+	<script src="../js/echarts.min.js"></script>
+    <script src="../js/grid.js"></script>
+	
+	<script type="text/javascript">
+        var t1=window.setInterval(refreshCount, 5000);
+        
+        $(document).ready(function() {
+			Server.call("root/report/agg", null, function (result) {
+				if (result) {
+
+                }
+            })
+          
+		});
+
+        function refreshCount() {
+			Server.call("root/report/info", null, function (result) {
+				if (result) {
+				    if (result.working) {
+                        var step = result.workinfo.step;
+                        console.info(step);
+                        $("#process").val(step? step:0);
+
+                        $("#info").html(result.workinfo.messagelist);
+                    }
+                }
+            })
+        }
+		
+	</script>
+</head>
+	
+<body>
+	<div id="mainTool" class="area-tool" style="position: fixed;"></div>
+		<progress id="process" value="0" max="100"></progress>
+		<div id="info"></div>
+	</div>
+</body>
+</html>

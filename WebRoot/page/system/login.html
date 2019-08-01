@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<base href="http://192.168.5.63:8081/smbi/page/system/">
+    <!-- <base href="http://47.92.117.138:9020/smbi/page/system/"> -->
+	<title>士卓曼BI报表系统</title>
+	<link href="../../css/login.css" rel="stylesheet">
+    <script src="../../js/jquery1.8.min.js"></script>
+	<script src="../../js/foundation-2.0.js"></script>
+	
+	<script type="text/javascript">
+		var edt_username, edt_password, edt_vcode, lbl_msg, lbl_message, message, param;
+		function login() {
+			var username = edt_username.val();
+			var password = edt_password.val();
+			var vcode = edt_vcode.val();
+			if (username =="") {
+				lbl_msg.html("用户名不能为空");
+				return;
+			} else if (password == "") {
+				lbl_msg.html("密码不能为空");
+				return;
+			} else if (vcode == "") {
+				lbl_msg.html("验证码不能为空");
+				return;
+			} else {
+				param = "username=" + username + "&password=" + password + "&vcode=" + vcode;
+				Server.call("root/user/login", param, function(result) {
+					if (result.success) {
+					    setLocalData("user", result.user);
+						window.top.location.href = "main.html?" + new Date().getTime();
+					}
+					else {
+						var errorcode = result.errorcode;
+						if ("USER_EmptyOrgCode" == errorcode) {
+							lbl_msg.html("您隶属于多家公司，请输入公司简称或代码");
+						}
+						else if ("USER_InvalidUser" == errorcode) {
+							lbl_msg.html("密码不正确！请输入正确密码！");
+						}
+						else if ("USER_NotExist" == errorcode) {
+							lbl_msg.html("用户不存在");
+						}
+						else if ("orgcheck" == errorcode) {
+							lbl_msg.html("请输入公司码");
+						}						
+						else if ("USER_EmptyVCodeOrPass" == errorcode) {
+							lbl_msg.html("请填写密码");
+						}
+						else if ("USER_InvalidVCode" == errorcode) {
+							lbl_msg.html("验证码不正确");
+						} else if ("Error_MultiUser" == errorcode) {
+							lbl_msg.html("工号被使用");
+						}
+						else if ("needGetVcode" == errorcode) {
+							lbl_msg.html("您需要先获取验证码");
+						}
+					}
+				});	 
+			}
+		}
+		
+		function clearmessage() {
+			message.attr("onclick","Sendsms()");  
+			message.html("获取验证码");
+			lbl_msg.html("");
+		}
+		
+		function userTest() {
+			var filter;
+			var data = {};
+			var tablename = "usr";
+			var username = edt_username.val();
+			filter = "loginname" + "=" + "'"+username+"'";
+			data = {
+				tablename:tablename,
+				filter:filter
+			};
+			Server.call("root/user/dataexists?", data, function(result) {
+				if (!result.exists) {
+					lbl_msg.html("请输入正确的用户名！");
+					return;
+				} else {
+					lbl_msg.html("");
+				}
+			}); 
+		}
+		
+		function passwordTest() {
+			var filter;
+			var tablename = "usr";
+			var username = edt_username.val();
+			var password = edt_password.val();
+			filter = "password" + "=" + "'"+password+"'" + "  and  " + "loginname" + "=" + "'"+username+"'";
+			var data = {
+				tablename:tablename,
+				filter:filter
+			};
+			Server.call("root/user/dataexists?", data, function(result) {
+				if (!result.exists) {
+					lbl_msg.html("请输入正确的密码！");
+					return;
+				} else {
+					lbl_msg.html("");
+				}
+			}); 
+		}
+		
+		function vcodeTest() {
+			if ("验证码不能为空" == lbl_msg.html()) {
+					lbl_msg.html("");
+				}
+		}   
+		
+		function SetTimeOut() {
+		    //定时器
+		    var startTime = 120;
+		    var newTimer = setInterval(function (){
+		        startTime --;
+		        if(startTime < 0){
+		            $("#message").html("点击获取验证码");
+		            clearInterval(newTimer); //停止定时器
+		        }else{
+		            $("#message").html(startTime+"秒后重试");
+		        }
+		    },1000);
+		}
+		function Sendsms () {
+			var param;
+			var username = edt_username.val();
+			var password = edt_password.val();
+			message =  $("#message");
+			var msg = message.html();
+			param = "username=" + username + "&password=" + password;
+			if (username !="" && password != ""){
+				if ("点击获取验证码" == msg) {
+					Server.call("root/user/getvcade", param, function(result) {
+						if (!result.success) {
+							lbl_msg.html("验证码发送失败,账号或密码不正确");
+						} else {
+							SetTimeOut();
+						}
+					});
+				}
+			}else {
+				if (username =="") {
+					lbl_msg.html("用户名不能为空！");
+				} else if (password == "") {
+					lbl_msg.html("密码不能为空！");
+				}
+				message.attr("onclick","Sendsms()");  
+				message.html("点击获取验证码");
+			}
+		}
+		
+		$(document).ready(function() {
+			lbl_msg = $("#lbl_msg");
+			edt_username = $("#username");
+			edt_password = $("#password");
+			edt_vcode = $("#edt_vcode");
+			lbl_message = $("#lbl_message");
+			btn_verificationCode = $("#btn_verificationCode");
+		});
+		$(document).keypress(function(e) {
+	       var eCode = e.keyCode ? e.keyCode : e.which ? e.which : e.charCode;
+	       if (eCode == 13){
+	           login();
+	       }
+		}); 
+		
+	</script>
+</head>
+	
+<body>
+	<div class="topbar" align="left">
+		<img src="../../image/str-group-black.svg" height="60px;" style="margin-right: 30px; margin-top: -10px;">
+		<div style="position: absolute; left: 350px; top: 15px; font-size: 24px; font-style: italic;">士卓曼商业智能决策分析系统</div>
+	</div>
+	<div class="content" align="center">
+		<div class="login">
+			<div class="username">
+				<div class="usernameicon">
+					<span class="userinput">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+				</div>	
+				<div class="usernamevalue">
+					<input type="text" class="logininput" id="username" name="username" placeholder="E-mail / Username" >
+				</div>
+			</div>
+			<div class="password">
+				<div class="passwordicon">
+					<span class="lockinput">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+				</div>	
+				<div class="passwordvalue">
+					<input type="password" class="logininput" id="password" name="password" placeholder="Password">
+				</div>
+			</div>
+			<div class="username" style="top:160px">
+				<div class="usernameicon">
+					<span class="vcodeinput">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+				</div>	
+				<div class="usernamevalue">
+					<input id="edt_vcode" class="logininput" placeholder="验证码" type="text" onchange = "vcodeTest()">
+					<span style="position:absolute;top:8px;left: 106px;font-size: 12px; color:black">
+                        <a id = "message" href="javascript:void(0)" style = "color: black"  onclick="Sendsms()">点击获取验证码</a>
+                      </span>
+				</div>
+			</div>
+			<div class="loginbutton" id="submitButton" onclick="login();">Login</div>
+		</div>
+	</div>
+</body>
+</html>

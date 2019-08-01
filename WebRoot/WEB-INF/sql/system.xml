@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="user">
+		
+	
+		<sql name="getClientUserByPhoneOrName">
+			<![CDATA[
+				select * from usr where LoginName = '@{username}'  AND usr.active = 'T'
+			]]>
+		</sql>
+		
+		<sql name="getMyOwnPhone">
+			<![CDATA[
+				select * from usr where password = '@{password}' and (LoginName = '@{username}' or Telephone ='@{username}') AND usr.active = 'T'
+			]]>
+		</sql>
+
+		<sql name="changePassword">update usr set password = '@{password}' where loginname = '@{username}'</sql> 
+		
+		<sql name="getUser">
+			SELECT
+				usr.UserID AS id,
+				usr.LoginName AS name,
+				usr.englishname,
+				usr.team,
+				usr.type,
+				usr.ChinaName AS caption,
+				usr.Telephone AS phone,
+				usr.rolecode,
+				usr.title,
+				usr.employeeid AS emp_id,
+				usr.name AS emp_name,
+				'' AS emp_enname,
+				'' AS emp_title,
+				'' AS emp_entitle,
+				'' AS emp_department,
+				'' AS emp_endepartment,
+				'' AS emp_position
+				from  usr 
+				left join usrorg on usr.UserID = usrorg.userid
+			where usr.active = 'T'
+				  and @{userfilter} @{orgfilter}
+		</sql>
+	</dataSpace>	
+	
+	<dataSpace name="menu">
+		<sql name="getRootMenu" > 
+			select * from menu where menu.id in (select menuid from roleauthority where rolecode = '@{rolecode}') and parentid is null order by orderno
+		</sql>
+
+		<sql name="getMenuTreeByRoot" > 
+			select * from menu 
+			where menu.id in (select menuid from roleauthority where rolecode = '@{rolecode}') and rootId = '@{rootid}' 
+			order by grade, parentId, orderno
+		</sql>
+	</dataSpace>
+</sqls>

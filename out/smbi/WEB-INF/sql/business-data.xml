@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sql PUBLIC "sql" "../config/sql.dtd" >
+
+<sqls>
+	<dataSpace name="getList">
+		<sql name="getSalesamountIndicator">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from (
+				SELECT 
+						s.[ID],
+						[Year],
+						[SaleCode],
+						u.[EnglishName],
+						brand,
+						[Category],
+						[Target] AS [Target],
+						[Quarter1],
+						[Quarter2],
+						[Quarter3],
+						[Quarter4],
+						CONVERT (NVARCHAR, s.[updatetime], 120) [updatetime]
+               FROM [dbo].[SaleTargets] s
+               LEFT JOIN dbo.usr u ON s.SaleCode=u.LoginName
+               WHERE Category='总销售额') tb
+             where @{filter} and brand = '@{brand}'
+			]]>
+		</sql>
+		
+		<sql name="getSalescategoryIndicator">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from (
+				SELECT 
+						s.[ID],
+						[Year],
+						[SaleCode],
+						u.[EnglishName],
+						[brand],
+						[Category],
+						[Target],
+						[Quarter1],
+						[Quarter2],
+						[Quarter3],
+						[Quarter4],
+						CONVERT (NVARCHAR, s.[updatetime], 120) [updatetime]
+				FROM [dbo].[SaleTargets] s  
+				LEFT JOIN [dbo].[usr] u ON s.SaleCode=u.LoginName 
+			   	WHERE Category='Roxolid' OR Category='Abutment') tb
+		   WHERE @{filter} and brand = '@{brand}'
+			]]>
+		</sql>
+	</dataSpace>	
+		
+	<dataSpace name="salesflow">
+		<sql name="getDistributorIndicator">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from(
+			SELECT 
+					T.[ID],
+					[Year],
+					T.[DistributorCode],
+					DistributorName,
+					T.[brand],
+					[Category],
+					[Target] AS [Target],
+					[Quarter1],
+					[Quarter2],
+					[Quarter3],
+					[Quarter4],
+					CONVERT (NVARCHAR, T.[updatetime], 120) [updatetime]  
+			 FROM [dbo].[DistributorTargets] T
+			 LEFT JOIN [dbo].[Distributor] D ON D.DistributorCode = T.DistributorCode 
+			 WHERE  [Category]='总销售额') tb
+			 where @{filter} and brand = '@{brand}'
+			]]>
+		</sql>
+		
+		<sql name="getDistributorCategoryIndicator">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from(
+			SELECT 
+					T.[ID],
+					[Year],
+					T.[DistributorCode],
+					DistributorName,
+					T.[brand],
+					[Category],
+					[Target] AS [Target],
+					[Quarter1],
+					[Quarter2],
+					[Quarter3],
+					[Quarter4],
+					CONVERT (NVARCHAR, T.[updatetime], 120) [updatetime]  
+			 FROM [dbo].[DistributorTargets] T
+			 LEFT JOIN [dbo].[Distributor] D ON D.DistributorCode = T.DistributorCode
+			 WHERE Category='Roxolid' OR Category='Abutment') tb
+			 where @{filter} and brand = '@{brand}'
+			]]>
+		</sql>
+		
+		<sql name="getTerminalIndicator">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from (
+				SELECT 
+						s.[ID],
+						[Year],
+						S.[rsm] rsm,
+						C.EnglishName AS rname,
+						[Category],
+						[Target] AS [Target],
+						[Quarter1],
+						[Quarter2],
+						[Quarter3],
+						[Quarter4],
+						CONVERT (NVARCHAR, s.[updatetime], 120) [updatetime]
+				FROM [dbo].[TerminalTargets] S
+				LEFT JOIN dbo.usr C ON S.rsm = C.LoginName
+               ) tb
+             where @{filter} 
+			]]>
+		</sql>
+		
+		<sql name="getAccountIndicator">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from (
+				SELECT 
+                        s.[ID],
+                        [Year],
+                        terminalcode,
+                        terminalname,
+                        C.ProvinceName,
+                        C.CityName,
+                        convert(int,Target) [Target],
+                        CONVERT (NVARCHAR, s.[updatetime], 120) [updatetime]
+                FROM [dbo].[AccountTargets] S 
+                LEFT JOIN company C on C.CompanyCode = S.terminalcode
+               ) tb
+             where @{filter} 
+			]]>
+		</sql>
+		
+		<sql name="getDistributorLYTD">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * 
+			from(
+				SELECT 
+					L.[DistributorCode],
+					DistributorName,
+					[Year],
+					[Month],
+					[LYTDTotalSales] AS [LYTDTotalSales],
+					[LYTDRoxolid],
+					[LYTDAbutment],
+					[LYTDImplant],
+					CONVERT (NVARCHAR, L.[updatetime], 120) [updatetime],
+					L.brand     
+				FROM [dbo].[DistributorLYTD] L
+				LEFT JOIN [dbo].[Distributor] D ON D.DistributorCode = L.DistributorCode) tb 
+			where @{filter} and brand = '@{brand}'
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace name="application">
+		<sql name="getSalesLYTD">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from (
+				SELECT  
+				 	 [SaleCode],      
+					 u.[EnglishName],
+					 [Year],
+					 [Month],
+				 	 [LYTDTotalSales] AS [LYTDTotalSales],
+					 [LYTDRoxolid],
+					 [LYTDAbutment],
+					 [LYTDImplant],
+					 CONVERT (NVARCHAR, s.[updatetime], 120) [updatetime]         
+				FROM [dbo].[SaleLYTD] s
+				LEFT JOIN [dbo].[usr] u
+				ON s.SaleCode=u.LoginName) tb
+			 where @{filter} 
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace name="agreement">
+		<sql name="getBusinessamountIndicator">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * 
+			from(
+				SELECT 
+					s.[ID],
+					[Year],
+					[SupervisorID],
+					u.[EnglishName],
+					brand,
+					[Category],
+					[Target] AS [Target],
+					[Quarter1],
+					[Quarter2],
+					[Quarter3],
+					[Quarter4],
+					CONVERT (NVARCHAR, s.[updatetime], 120) [updatetime]   
+				FROM [dbo].[SupervisorTargets] s
+				LEFT JOIN [dbo].[usr] u ON s.SupervisorID=u.LoginName
+				WHERE  [Category]='总销售额') tb
+			where @{filter} and brand = '@{brand}'
+			]]>
+		</sql>
+		
+		<sql name="getBusinesscategoryIndicator">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from (
+				SELECT 
+		   			 s.[ID], 
+		   			 [Year],
+		  			 [SupervisorID],
+		  			 u.[EnglishName],
+		   			 [Category],
+		   			 brand,
+		  			 [Target],
+		  			 [Quarter1],
+		  			 [Quarter2],
+		   			 [Quarter3],
+		   			 [Quarter4],
+		   			 CONVERT (NVARCHAR, s.[updatetime], 120) [updatetime]  
+				FROM [dbo].[SupervisorTargets] s
+		   		LEFT JOIN [dbo].[usr] u ON s.SupervisorID=u.LoginName
+				WHERE Category='Roxolid' OR Category='Abutment') tb
+			 where @{filter} and brand = '@{brand}'
+			]]>
+		</sql>
+		
+		<sql name="getCompanyUserList">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by createtime DESC) as rownum, * 
+			from(
+				SELECT
+					userid,
+					loginname,
+					password,
+					chinaname,
+					englishname,
+					gender,
+					telephone,
+					email,
+					type,
+					area,
+					team,
+					active,
+					case when active = 'T' THEN '激活'
+					     else '禁用' 
+					     end AS  cn_active,
+					CONVERT (NVARCHAR, [createtime], 120) createtime
+				FROM usr
+			) tb
+			where @{filter}
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace name="approve">
+		<sql name="getCompanyData">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * 
+			from(
+					SELECT  
+							c.[CompanyCode],     
+							c.[CompanyName],       
+							c.[ProvinceName],       
+							c.[CityName],      
+							c.[CompanyType],      
+							c.[CompanySubType],     
+							c.[IsTarget],       
+							c.[CustomerProvided],       
+							c.[MergeTo],
+							m.[CompanyName] AS MergeToName,
+							c.[Family],
+							c.updatetime   
+					FROM [dbo].[Company] c
+					LEFT JOIN [dbo].[Company] m ON c.MergeTo=m.CompanyCode
+					) tb
+			where @{filter}
+			]]>
+		</sql>
+		
+		<sql name="getLargeDSOData">
+            <![CDATA[
+            select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * 
+            from(
+                    SELECT
+                    c.[terminalname],
+                    c.[englishname],
+                    c.[DSOType],
+                    c.updatetime,
+                    CO.CompanyCode,
+                    CO.CompanyName,
+                    CO.ProvinceName,
+                    aw.TerminalLevel
+                FROM [dbo].[LargeDSO] c
+                LEFT JOIN Company CO ON CO.Family = C.terminalname
+                LEFT JOIN AwardingTerminal aw ON aw.TerminalCode = CO.companycode
+                    ) tb
+            where @{filter}
+            ]]>
+        </sql>
+	</dataSpace>
+	
+	<dataSpace>
+		<sql name="getDistributorData">
+				<![CDATA[
+				select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * 
+				from(
+				SELECT 
+					[DistributorCode],
+					[ProjectCode],
+					[ProjectName],
+					[DistributorName],
+					[ProvinceName],
+					[CityName],
+					[CountyName],
+					[DistributorLevel],
+					[ExecuteYear],
+					[ExecuteMonth],
+					[Remark],
+					[IsDDIDaily],
+					updatetime,brand 
+	  			FROM [dbo].[Distributor]) tb
+	  			where @{filter}
+				]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace>
+	<sql name="getDistributorRelationship">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by DistributorCode ) as rownum, * 
+			from (
+				SELECT 
+					drs.[DistributorCode],
+					d.[DistributorName],
+					drs.[SubDistributorCode],
+					sd.[DistributorName] AS SubDistributorName,
+					CONVERT (NVARCHAR, drs.[updatetime], 120) [updatetime]
+	  			FROM [dbo].[DistributorRelationship] drs
+	  			LEFT JOIN [dbo].Distributor d ON drs.DistributorCode=d.DistributorCode
+	  			LEFT JOIN [dbo].Distributor sd ON drs.SubDistributorCode=sd.DistributorCode) tb
+  			where @{filter}
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace>
+	<sql name="getProductData">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from (
+				SELECT
+					 [brand],  
+					 [ProductCode],
+	        		 [ProductName],
+	        		 [EnglishName],
+	       			 [ProductType],
+	        		 [ProductCategory],
+	       			 [Category],
+	        		 [Price] AS [Price],
+	        		 [Material],
+	         		 [SurfaceTreatment],
+	        		 [PackingSpec],
+	       			 [RegistrationCertificateNumber],
+	       			 [Manufacturer],
+	       			 [ManufactureAddress],
+	       			 [ProductState],
+	      		     [Unit],
+	       			 [Specification],
+	       			 [Remark],
+	      		     [PRH4],
+	       			 [PRH4Description],
+	       			 [PRH5],
+	       			 [PRH5Description],
+			         [Description],
+			         updatetime 
+			   FROM  [dbo].[Product]) tb
+			where @{filter}
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace>
+	<sql name="getOrganizationList">
+			<![CDATA[
+					SELECT
+							O.*, U.active,
+							CASE WHEN U.type = 'Salesperson' THEN 1
+							WHEN U.type = 'Supervisor' THEN 2
+							WHEN U.type = 'RSM' THEN 3
+							ELSE 10
+							END AS Post
+							FROM [dbo].[organization] O
+							LEFT JOIN usr U ON U.UserID = O.id
+					where @{filter} and U.type <> 'distributor' and U.type <> 'superadmin'
+					ORDER BY post DESC
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace>
+	<sql name="getAnnouncementList">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by CreateTime DESC ) as rownum, * 
+			from(
+				SELECT 
+					Id, 
+					Title,
+					CONVERT(varchar(100), CreateTime, 23) AS CreateTime,
+					IsEnable 
+				FROM [dbo].[Announcement]) tb
+			where @{filter}
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace>
+	<sql name="getAwardingTerminal">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * 
+			from(
+				SELECT  
+					[District],
+	        		[TerminalName],
+	        		[TerminalCode],
+	        		[TerminalLevel],
+					C.Family,
+	        		CONVERT (NVARCHAR, A.[updatetime], 120) [updatetime]
+				FROM [dbo].[AwardingTerminal] A
+				LEFT JOIN Company C ON C.CompanyCode = TerminalCode
+				) tb
+			where @{filter} 
+			]]>
+		</sql>
+	</dataSpace>
+	
+	<dataSpace>
+	<sql name="getDistributorHierarchy">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * 
+			from(
+					SELECT  H.[DistributorCode],
+					        D.[DistributorName],
+					        D.[DistributorCode] AS [DistributorLoginName],
+					        D.ProvinceName AS Province,
+					        R.area AS [Region],
+					        [RSM],
+					        R.[EnglishName] AS RSMName,
+					        [Supervisor],
+					        S.[EnglishName] AS SupervisorName,
+					        CONVERT (NVARCHAR, H.[updatetime], 120) [updatetime],
+					        CASE WHEN ISNULL(D.[DistributorName], 0) = '0'  THEN '不存在'
+							ELSE '存在' end AS isexists
+					FROM [dbo].[DistributorHierarchy] H
+					LEFT JOIN [dbo].[usr] R ON R.LoginName = RSM
+					LEFT JOIN [dbo].[usr] S ON S.LoginName = Supervisor
+					LEFT JOIN [dbo].[Distributor] D ON D.DistributorCode = H.DistributorCode
+					) tb
+		  where @{filter}
+			]]>
+		</sql>
+	</dataSpace>
+		
+	<dataSpace>
+		<sql name="getSalesHierarchy">
+				<![CDATA[
+				select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from(
+					SELECT 	SaleHierarchy.id,
+						    R.area AS [Region],
+					        M.ProvinceName AS Province,
+					        M.CityName AS City,
+					        R.LoginName [RSM],
+							R.EnglishName AS RName,
+							O.ParentLoginName [Supervisor],
+							S.[EnglishName] AS SChinaName,
+		          			[CSF],
+							O.[EnglishName] AS CChinaName,
+			                [CSFType],
+			                [ClientCode],
+			                M.CompanyName [ClientName],
+			          	    M.CompanyType AS [ClientType],
+			          	    [NewClient],
+			          	    M.CompanySubType AS [TerminalType],
+			          	    [Motivation],
+			          	    R.team,
+			          	    CONVERT (NVARCHAR, [SaleHierarchy].[updatetime], 120) [updatetime],
+			          	    CASE WHEN ISNULL(M.CompanyName, 0) = '0'  THEN '不存在'
+							ELSE '存在' end AS isexists
+					FROM  [dbo].[SaleHierarchy]
+					LEFT JOIN  [dbo].[organization] O ON  O.LoginName = CSF
+					LEFT JOIN  [dbo].[usr] S ON  S.LoginName = O.ParentLoginName
+					LEFT JOIN  [dbo].[organization] c ON  c.LoginName = S.LoginName
+					LEFT JOIN  [dbo].[usr] R ON  R.LoginName = c.ParentLoginName
+					LEFT JOIN  [dbo].Company M ON M.CompanyCode = ClientCode) tb
+				where @{filter}
+				]]>
+		</sql>
+		
+		<sql name="getDistributorAuthorizedProductLine">
+			<![CDATA[
+			select ROW_NUMBER() OVER(order by updatetime DESC) as rownum, * from(
+				SELECT
+					province,
+					DistributorCode,
+					DistributorName,
+					Brand,
+					CONVERT (nvarchar, updatetime, 120) updatetime
+				FROM DistributorAuthorizedProductLine) tb
+			where @{filter}
+			]]>
+		</sql>
+	</dataSpace>	
+</sqls>
